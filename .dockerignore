@@ -1,0 +1,33 @@
+node_modules
+.next
+out
+build
+dist
+.git
+.gitignore
+.vscode
+.idea
+*.swp
+.DS_Store
+Thumbs.db
+
+# Env — supply via Railway env vars at runtime
+.env
+.env.*
+!.env.example
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+
+# Tests + coverage
+coverage
+.eslintcache
+
+# Docs we don't need at runtime
+README.md
+LICENSE
+
+# Tooling caches
+.npm
+.cache

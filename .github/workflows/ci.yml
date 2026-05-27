@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Typecheck + build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install (npm ci)
+        # We mock the file: ui-kit dep with a build artifact in CI when needed.
+        # For now CI is a smoke check on the frontend in isolation.
+        run: |
+          # Create a minimal ui-kit stub so npm ci doesn't fail on the file: dep
+          mkdir -p ../sentry-ui-kit/dist
+          cat > ../sentry-ui-kit/package.json <<'JSON'
+          {
+            "name": "@chipmo-sentry/ui-kit",
+            "version": "0.1.0",
+            "main": "./dist/index.js",
+            "types": "./dist/index.d.ts",
+            "exports": { ".": { "import": "./dist/index.js", "types": "./dist/index.d.ts" }, "./styles.css": "./dist/styles.css" }
+          }
+          JSON
+          echo "export {};" > ../sentry-ui-kit/dist/index.js
+          echo "export {};" > ../sentry-ui-kit/dist/index.d.ts
+          echo "/* stub */" > ../sentry-ui-kit/dist/styles.css
+          npm ci --no-audit --no-fund
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build (Next.js standalone)
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+          NEXT_PUBLIC_API_BASE_URL: "http://localhost:8000"

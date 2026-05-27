@@ -94,11 +94,49 @@ Latest build: 5 routes (root + login + dashboard + clips/upload + alerts), 102 k
 
 ---
 
-## Deployment
+## Deployment — Railway
 
-Target: **Vercel**. Set `NEXT_PUBLIC_API_BASE_URL` to `https://api.sentry.chipmo.mn` in Vercel project settings, point a CNAME `app.sentry.chipmo.mn` → Vercel.
+Target: **Railway Pro**. Frontend ships as a Docker container with Next.js standalone output (small ~100 MB runtime image, no `node_modules` carried at runtime).
 
-CORS: backend's `ALLOWED_ORIGINS` env must include `https://app.sentry.chipmo.mn`.
+### Why the Dockerfile builds from the parent directory
+
+The Dockerfile is monorepo-aware — it expects to see both `sentry-frontend/` and `sentry-ui-kit/` siblings at the build context root so it can build the ui-kit first and then npm-link it into the frontend. This matches our local workspace layout:
+
+```
+Sentry-v.3/                  ← Docker build context lives here for the parent build
+├── sentry-frontend/
+│   └── Dockerfile           ← uses ../sentry-ui-kit
+└── sentry-ui-kit/
+```
+
+### Railway setup (two options)
+
+**Option A — Per-repo, slim image (recommended once ui-kit is published)**
+
+1. Once `@chipmo-sentry/ui-kit` is published to GitHub Packages (workflow lands in ui-kit Session 2), bump the dep in `package.json` from `file:../sentry-ui-kit` to `^0.1.0`.
+2. Railway points at the `sentry-frontend` repo directly. Dockerfile drops the `sentry-ui-kit` copy/build stage.
+
+**Option B — Monorepo build context (today, while ui-kit is unpublished)**
+
+1. Connect a Railway project to **both** repos via a small wrapper repo OR clone both as submodules.
+2. In Railway service settings, set **Root Directory** to `sentry-frontend` and **Build Context** to the parent so the Dockerfile can `COPY sentry-ui-kit/`.
+3. Set env: `NEXT_PUBLIC_API_BASE_URL=https://api.sentry.chipmo.mn`.
+4. Add a public domain → CNAME `app.sentry.chipmo.mn` to it.
+
+### CORS reminder
+
+The backend's `ALLOWED_ORIGINS` env must include `https://app.sentry.chipmo.mn` (or whatever the frontend's public domain is).
+
+### Local Docker smoke test
+
+```bash
+# From the parent (Sentry-v.3/) directory
+docker build -t sentry-frontend:dev -f sentry-frontend/Dockerfile .
+docker run --rm -p 3000:3000 \
+  -e NEXT_PUBLIC_API_BASE_URL=http://host.docker.internal:8000 \
+  sentry-frontend:dev
+curl http://localhost:3000/login
+```
 
 ---
 

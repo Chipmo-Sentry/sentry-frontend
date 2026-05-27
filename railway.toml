@@ -1,0 +1,23 @@
+# Railway deployment config
+# https://docs.railway.com/reference/config-as-code
+
+[build]
+builder = "DOCKERFILE"
+# The Dockerfile expects to be built from the PARENT directory so it can
+# COPY both sentry-frontend/ and sentry-ui-kit/. In Railway, set
+# Settings → Service → "Root Directory" to the repo root *parent* OR use
+# a monorepo build context. For simplest single-repo deploy, see README
+# "Alternative single-repo deploy" — uses a slim Dockerfile that npm-installs
+# ui-kit from GitHub Packages instead of file: dep.
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/login"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
+
+# Required env vars (set in Railway dashboard):
+#   NEXT_PUBLIC_API_BASE_URL   — e.g. https://api.sentry.chipmo.mn
+#   NODE_ENV=production         (Railway sets this automatically)
+#   PORT                        (Railway provides automatically)
