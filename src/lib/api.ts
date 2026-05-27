@@ -1,0 +1,136 @@
+/** Browser-side API client. Cookies are sent automatically (httpOnly +
+ * sameSite=lax from backend). For Server Components we use a separate fetch
+ * with `cookies()` header forwarding. */
+
+import type {
+  AlertLevel,
+  AlertPublic,
+  ClipPublic,
+  LoginResponse,
+  StorePublic,
+  UserPublic,
+} from "./types";
+
+const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+
+class ApiError extends Error {
+  constructor(public status: number, message: string) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+async function request<T>(
+  path: string,
+  init: RequestInit = {},
+): Promise<T> {
+  const url = `${BASE}${path}`;
+  const res = await fetch(url, {
+    ...init,
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(init.headers ?? {}),
+    },
+  });
+  if (!res.ok) {
+    let detail = res.statusText;
+    try {
+      const body = (await res.json()) as { detail?: string };
+      if (body.detail) detail = body.detail;
+    } catch {
+      // ignore
+    }
+    throw new ApiError(res.status, detail);
+  }
+  if (res.status === 204) return undefined as T;
+  return (await res.json()) as T;
+}
+
+// === Auth ===
+
+export const auth = {
+  login: (email: string, password: string) =>
+    request<LoginResponse>("/api/v1/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    }),
+  logout: () =>
+    request<void>("/api/v1/auth/logout", { method: "POST" }),
+  me: () => request<UserPublic>("/api/v1/auth/me"),
+};
+
+// === Stores ===
+
+export const stores = {
+  list: () => request<StorePublic[]>("/api/v1/stores"),
+};
+
+// === Clips ===
+
+export const clips = {
+  list: () => request<ClipPublic[]>("/api/v1/clips"),
+  get: (id: string) => request<ClipPublic>(`/api/v1/clips/${id}`),
+  /** Multipart upload — `fetch` strips Content-Type so the browser sets the
+   * correct multipart boundary. */
+  upload: async (params: {
+    file: File;
+    store_id: string;
+    camera_id?: string;
+    captured_at?: string;
+    duration_sec?: number;
+  }): Promise<ClipPublic> => {
+    const fd = new FormData();
+    fd.append("file", params.file);
+    fd.append("store_id", params.store_id);
+    if (params.camera_id) fd.append("camera_id", params.camera_id);
+    if (params.captured_at) fd.append("captured_at", params.captured_at);
+    fd.append("duration_sec", String(params.duration_sec ?? 0));
+
+    const res = await fetch(`${BASE}/api/v1/clips`, {
+      method: "POST",
+      body: fd,
+      credentials: "include",
+    });
+    if (!res.ok) {
+      let detail = res.statusText;
+      try {
+        const body = (await res.json()) as { detail?: string };
+        if (body.detail) detail = body.detail;
+      } catch {
+        // ignore
+      }
+      throw new ApiError(res.status, detail);
+    }
+    return (await res.json()) as ClipPublic;
+  },
+};
+
+// === Alerts ===
+
+export const alerts = {
+  list: (params?: { min_level?: AlertLevel; limit?: number }) => {
+    const q = new URLSearchParams();
+    if (params?.min_level) q.set("min_level", params.min_level);
+    if (params?.limit !== undefined) q.set("limit", String(params.limit));
+    const suffix = q.toString() ? `?${q}` : "";
+    return request<AlertPublic[]>(`/api/v1/alerts${suffix}`);
+  },
+  get: (id: string) => request<AlertPublic>(`/api/v1/alerts/${id}`),
+};
+
+// === Feedback ===
+
+export const feedback = {
+  create: (params: {
+    alert_id: string;
+    verdict: "true_positive" | "false_positive" | "unclear";
+    notes?: string;
+  }) =>
+    request("/api/v1/feedback", {
+      method: "POST",
+      body: JSON.stringify(params),
+    }),
+};
+
+export { ApiError };

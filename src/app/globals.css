@@ -1,0 +1,9 @@
+/* Loads Tailwind v4 + the shared @theme tokens from sentry-ui-kit. */
+@import "@chipmo-sentry/ui-kit/styles.css";
+
+/* App-specific overrides */
+html,
+body,
+#__next {
+  height: 100%;
+}
