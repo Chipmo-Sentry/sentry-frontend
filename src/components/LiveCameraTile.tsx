@@ -1,10 +1,10 @@
 "use client";
 
-import { Badge } from "@chipmo-sentry/ui-kit";
 import { Maximize2, Minimize2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { attachHls } from "@/lib/hls";
+import { useLiveMetadata } from "@/lib/live-ws";
 
 export type LiveCameraTileProps = {
   cameraId: string;
@@ -34,9 +34,12 @@ const STATUS_TONE: Record<
 export function LiveCameraTile({ cameraId, name, hlsUrl }: LiveCameraTileProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [status, setStatus] = useState<Status>("loading");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const { latest, state: wsState } = useLiveMetadata(cameraId);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -101,6 +104,102 @@ export function LiveCameraTile({ cameraId, name, hlsUrl }: LiveCameraTileProps) 
     }
   }
 
+  // Canvas overlay loop — redraws on each metadata update + window resize.
+  // Uses requestAnimationFrame batch so we draw only after layout settles.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    if (!canvas || !video) return;
+
+    let raf = 0;
+    function draw() {
+      raf = 0;
+      if (!canvas || !video || !latest) return;
+
+      // Match canvas backing-store to displayed size (CSS) so 1 logical px = 1 device px*
+      const rect = video.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const cssW = Math.floor(rect.width);
+      const cssH = Math.floor(rect.height);
+      if (cssW <= 0 || cssH <= 0) return;
+      if (canvas.width !== cssW * dpr || canvas.height !== cssH * dpr) {
+        canvas.width = cssW * dpr;
+        canvas.height = cssH * dpr;
+        canvas.style.width = `${cssW}px`;
+        canvas.style.height = `${cssH}px`;
+      }
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, cssW, cssH);
+
+      // Scale source coords → displayed coords. object-contain may letterbox;
+      // compute the actual displayed video area inside the <video> element.
+      const srcW = latest.width;
+      const srcH = latest.height;
+      const videoRatio = srcW / srcH;
+      const cssRatio = cssW / cssH;
+      let drawW = cssW;
+      let drawH = cssH;
+      let offX = 0;
+      let offY = 0;
+      if (videoRatio > cssRatio) {
+        // video is wider — letterbox top/bottom
+        drawH = cssW / videoRatio;
+        offY = (cssH - drawH) / 2;
+      } else {
+        drawW = cssH * videoRatio;
+        offX = (cssW - drawW) / 2;
+      }
+      const sx = drawW / srcW;
+      const sy = drawH / srcH;
+
+      for (const t of latest.tracks) {
+        const [x1, y1, x2, y2] = t.box;
+        const rx = offX + x1 * sx;
+        const ry = offY + y1 * sy;
+        const rw = (x2 - x1) * sx;
+        const rh = (y2 - y1) * sy;
+
+        const color =
+          t.color === "red"
+            ? "#ef4444"
+            : t.color === "yellow"
+              ? "#eab308"
+              : "#22c55e";
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(rx, ry, rw, rh);
+
+        // Label background
+        const label = `#${t.person_id}  ${(t.det_confidence * 100).toFixed(0)}%`;
+        ctx.font = "600 12px ui-sans-serif, system-ui, sans-serif";
+        const labelW = ctx.measureText(label).width + 8;
+        const labelH = 18;
+        const labelY = Math.max(0, ry - labelH);
+        ctx.fillStyle = color;
+        ctx.fillRect(rx, labelY, labelW, labelH);
+        ctx.fillStyle = "#000";
+        ctx.fillText(label, rx + 4, labelY + 13);
+      }
+    }
+
+    function schedule() {
+      if (raf) return;
+      raf = requestAnimationFrame(draw);
+    }
+
+    schedule();
+    const ro = new ResizeObserver(schedule);
+    ro.observe(video);
+    return () => {
+      ro.disconnect();
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [latest]);
+
   return (
     <div
       ref={wrapRef}
@@ -111,6 +210,12 @@ export function LiveCameraTile({ cameraId, name, hlsUrl }: LiveCameraTileProps) 
         onDoubleClick={toggleFullscreen}
         className="h-full w-full cursor-pointer object-contain"
         data-camera-id={cameraId}
+      />
+      {/* AI overlay — bounding boxes from /ws/live/{cam} metadata */}
+      <canvas
+        ref={canvasRef}
+        className="pointer-events-none absolute inset-0 h-full w-full"
+        aria-hidden
       />
 
       {/* Top overlay — name pill (left) + status pill (right) + fullscreen toggle.
@@ -137,6 +242,21 @@ export function LiveCameraTile({ cameraId, name, hlsUrl }: LiveCameraTileProps) 
           {name}
         </div>
         <div className="pointer-events-auto flex items-center gap-2">
+          {/* AI detection count + ws state */}
+          <span
+            className={`rounded-md px-2 py-1 text-xs font-medium backdrop-blur-sm ${
+              wsState === "connected"
+                ? "bg-black/60 text-white"
+                : "bg-yellow-500/80 text-black"
+            }`}
+            title={
+              wsState === "connected"
+                ? `AI холбогдсон · ${latest?.fps_inference.toFixed(1) ?? "—"} FPS`
+                : `AI: ${wsState}`
+            }
+          >
+            🤖 {latest ? latest.tracks.length : "—"}
+          </span>
           <span
             className={`rounded-md px-2 py-1 text-xs font-medium backdrop-blur-sm ${
               status === "playing"
