@@ -1,7 +1,7 @@
 "use client";
 
 import { Logo } from "@chipmo-sentry/ui-kit";
-import { Bell, LogOut, Radio, Upload, Video } from "lucide-react";
+import { Bell, Brain, LogOut, Radio, Upload, Video } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -12,6 +12,7 @@ const NAV = [
   { href: "/live", label: "Шууд харах", icon: Radio },
   { href: "/clips/upload", label: "Видео илгээх", icon: Upload },
   { href: "/alerts", label: "Сэжигтэй үйлдэл", icon: Video },
+  { href: "/behaviors", label: "Сэжиг шалгуур", icon: Brain },
 ];
 
 export function Sidebar() {
