@@ -1,4 +1,11 @@
-/* Loads Tailwind v4 + the shared @theme tokens from sentry-ui-kit. */
+/* Tailwind v4 — scans frontend source and emits utilities used here.
+ * Without this, only utilities pre-built into ui-kit's dist/styles.css are
+ * available (which is a narrow subset — grid-cols-N, lg:/md:/sm: prefixes,
+ * aspect-video, bg-gradient-* etc. all break silently). */
+@import "tailwindcss";
+
+/* Shared @theme tokens (Chipmo brand colors, typography) + ui-kit component
+ * utility classes. Imported AFTER tailwindcss so token overrides win. */
 @import "@chipmo-sentry/ui-kit/styles.css";
 
 /* App-specific overrides */

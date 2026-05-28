@@ -1,7 +1,7 @@
 "use client";
 
 import { Logo } from "@chipmo-sentry/ui-kit";
-import { Bell, LogOut, Upload, Video } from "lucide-react";
+import { Bell, LogOut, Radio, Upload, Video } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -9,6 +9,7 @@ import { auth } from "@/lib/api";
 
 const NAV = [
   { href: "/dashboard", label: "Самбар", icon: Bell },
+  { href: "/live", label: "Шууд харах", icon: Radio },
   { href: "/clips/upload", label: "Видео илгээх", icon: Upload },
   { href: "/alerts", label: "Сэжигтэй үйлдэл", icon: Video },
 ];
