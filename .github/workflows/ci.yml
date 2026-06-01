@@ -46,6 +46,9 @@ jobs:
           echo "/* stub */" > ../sentry-ui-kit/dist/styles.css
           npm ci --no-audit --no-fund
 
+      - name: OpenAPI types in sync
+        run: npm run codegen:check
+
       - name: Typecheck
         run: npm run typecheck
 
