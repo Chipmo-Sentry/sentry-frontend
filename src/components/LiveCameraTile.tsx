@@ -173,9 +173,12 @@ export function LiveCameraTile({ cameraId, name, hlsUrl }: LiveCameraTileProps) 
         ctx.lineWidth = 2;
         ctx.strokeRect(rx, ry, rw, rh);
 
-        // Label background
-        const label = `#${t.person_id}  ${(t.det_confidence * 100).toFixed(0)}%`;
-        ctx.font = "600 12px ui-sans-serif, system-ui, sans-serif";
+        // Raw accumulated risk score (no '%' — thresholds are absolute, see /behaviors).
+        const label =
+          t.risk_pct > 0
+            ? `#${t.person_id} · ${t.risk_pct.toFixed(1)}`
+            : `#${t.person_id}`;
+        ctx.font = "600 13px ui-sans-serif, system-ui, sans-serif";
         const labelW = ctx.measureText(label).width + 8;
         const labelH = 18;
         const labelY = Math.max(0, ry - labelH);
