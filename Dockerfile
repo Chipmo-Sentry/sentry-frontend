@@ -40,6 +40,9 @@ ARG NEXT_PUBLIC_API_BASE_URL
 ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
 ARG NEXT_PUBLIC_MEDIAMTX_HLS_BASE
 ENV NEXT_PUBLIC_MEDIAMTX_HLS_BASE=${NEXT_PUBLIC_MEDIAMTX_HLS_BASE}
+# Server-side proxy target for the /api rewrite (NOT exposed to the browser).
+ARG BACKEND_ORIGIN
+ENV BACKEND_ORIGIN=${BACKEND_ORIGIN}
 
 COPY --from=deps /app/sentry-ui-kit /app/sentry-ui-kit
 COPY --from=deps /app/sentry-frontend/node_modules /app/sentry-frontend/node_modules
