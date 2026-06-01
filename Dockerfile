@@ -1,46 +1,55 @@
 # syntax=docker/dockerfile:1.7
 # ============================================================================
-# Stage 1 — deps: install npm packages with cached layer
+# Single-repo build for Railway. The ui-kit is a separate public repo
+# (file: dependency), so we clone + build it at image-build time as a sibling
+# directory, which makes `file:../sentry-ui-kit` resolve. No GitHub Packages
+# auth required. No BuildKit cache mounts (Railway's builder rejects them).
 # ============================================================================
+
+# ----------------------------------------------------------------------------
+# Stage 1 — deps: build ui-kit, install frontend deps
+# ----------------------------------------------------------------------------
 FROM node:22-alpine AS deps
+RUN apk add --no-cache git
 WORKDIR /app
 
-# Bring the ui-kit source up; npm install resolves the file: dependency.
-COPY sentry-ui-kit/package.json sentry-ui-kit/package-lock.json* ./sentry-ui-kit/
-COPY sentry-frontend/package.json sentry-frontend/package-lock.json* ./sentry-frontend/
+# Build the public ui-kit as a sibling so `file:../sentry-ui-kit` resolves.
+ARG UI_KIT_REF=main
+RUN git clone --depth 1 --branch "${UI_KIT_REF}" \
+      https://github.com/Chipmo-Sentry/sentry-ui-kit.git sentry-ui-kit \
+    && cd sentry-ui-kit \
+    && npm ci --no-audit --no-fund \
+    && npm run build
 
-# Build the ui-kit first (its `file:` consumer needs dist/)
-WORKDIR /app/sentry-ui-kit
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci --no-audit --no-fund
-
-COPY sentry-ui-kit ./
-RUN npm run build
-
-# Install frontend deps (which now sees ../sentry-ui-kit/dist)
 WORKDIR /app/sentry-frontend
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci --no-audit --no-fund
+COPY package.json package-lock.json* ./
+RUN npm ci --no-audit --no-fund
 
-# ============================================================================
+# ----------------------------------------------------------------------------
 # Stage 2 — builder: Next.js production build (standalone output)
-# ============================================================================
+# ----------------------------------------------------------------------------
 FROM node:22-alpine AS builder
+RUN apk add --no-cache git
 WORKDIR /app
 
 ENV NEXT_TELEMETRY_DISABLED=1
+# NEXT_PUBLIC_* vars are inlined at BUILD time — Railway passes service
+# variables as build args, so declare the ones the client bundle needs.
+ARG NEXT_PUBLIC_API_BASE_URL
+ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
+ARG NEXT_PUBLIC_MEDIAMTX_HLS_BASE
+ENV NEXT_PUBLIC_MEDIAMTX_HLS_BASE=${NEXT_PUBLIC_MEDIAMTX_HLS_BASE}
 
-# Copy everything (deps + source for both packages)
 COPY --from=deps /app/sentry-ui-kit /app/sentry-ui-kit
 COPY --from=deps /app/sentry-frontend/node_modules /app/sentry-frontend/node_modules
-COPY sentry-frontend /app/sentry-frontend
+COPY . /app/sentry-frontend
 
 WORKDIR /app/sentry-frontend
 RUN npm run build
 
-# ============================================================================
+# ----------------------------------------------------------------------------
 # Stage 3 — runtime: minimal node image with the standalone server
-# ============================================================================
+# ----------------------------------------------------------------------------
 FROM node:22-alpine AS runtime
 WORKDIR /app
 
@@ -51,11 +60,9 @@ ENV NODE_ENV=production \
 
 RUN apk add --no-cache curl
 
-# Non-root user for the runtime
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nextjs -u 1001 -G nodejs
 
-# Standalone server + static assets + public
 COPY --from=builder --chown=nextjs:nodejs /app/sentry-frontend/.next/standalone /app/
 COPY --from=builder --chown=nextjs:nodejs /app/sentry-frontend/.next/static /app/sentry-frontend/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/sentry-frontend/public /app/sentry-frontend/public
@@ -67,5 +74,4 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
     CMD curl -fsS http://127.0.0.1:${PORT:-3000}/ -o /dev/null || exit 1
 
-# Railway sets PORT dynamically; the standalone server reads it from env.
 CMD ["node", "sentry-frontend/server.js"]
