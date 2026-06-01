@@ -1,19 +1,41 @@
 "use client";
 
 import { Logo } from "@chipmo-sentry/ui-kit";
-import { Bell, Brain, LogOut, Radio, Upload, Video, X } from "lucide-react";
+import {
+  Bell,
+  Brain,
+  Cctv,
+  LogOut,
+  Radio,
+  ShieldCheck,
+  Store,
+  Upload,
+  Video,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 import { auth } from "@/lib/api";
 
-export const NAV = [
+type NavItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  superAdmin?: boolean;
+};
+
+export const NAV: readonly NavItem[] = [
   { href: "/dashboard", label: "Самбар", icon: Bell },
   { href: "/live", label: "Шууд харах", icon: Radio },
   { href: "/clips/upload", label: "Видео илгээх", icon: Upload },
   { href: "/alerts", label: "Сэжигтэй үйлдэл", icon: Video },
   { href: "/behaviors", label: "Сэжиг шалгуур", icon: Brain },
-] as const;
+  { href: "/stores", label: "Дэлгүүр", icon: Store },
+  { href: "/cameras", label: "Камер", icon: Cctv },
+  { href: "/admin", label: "Админ", icon: ShieldCheck, superAdmin: true },
+];
 
 /** Returns the nav label for a given pathname (used by Topbar). */
 export function navTitle(pathname: string): string {
@@ -24,7 +46,13 @@ export function navTitle(pathname: string): string {
 }
 
 /** Inner nav content shared by the desktop rail and the mobile drawer. */
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarContent({
+  isSuperAdmin = false,
+  onNavigate,
+}: {
+  isSuperAdmin?: boolean;
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -39,14 +67,16 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     router.refresh();
   }
 
+  const items = NAV.filter((item) => !item.superAdmin || isSuperAdmin);
+
   return (
     <div className="flex h-full flex-col bg-[var(--color-background)]">
       <div className="flex h-14 items-center gap-2 border-b border-[var(--color-border)] px-4">
         <Logo className="h-6 w-6" />
         <span className="text-sm font-semibold">Chipmo Sentry</span>
       </div>
-      <nav className="flex-1 space-y-1 p-2">
-        {NAV.map((item) => {
+      <nav className="flex-1 space-y-1 overflow-y-auto p-2">
+        {items.map((item) => {
           const active =
             pathname === item.href || pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;
@@ -80,10 +110,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 /** Desktop sidebar rail — fixed width, hidden below lg. */
-export function Sidebar() {
+export function Sidebar({ isSuperAdmin }: { isSuperAdmin?: boolean }) {
   return (
     <aside className="hidden w-60 shrink-0 border-r border-[var(--color-border)] lg:block">
-      <SidebarContent />
+      <SidebarContent isSuperAdmin={isSuperAdmin} />
     </aside>
   );
 }
@@ -92,9 +122,11 @@ export function Sidebar() {
 export function MobileSidebar({
   open,
   onClose,
+  isSuperAdmin,
 }: {
   open: boolean;
   onClose: () => void;
+  isSuperAdmin?: boolean;
 }) {
   return (
     <div
@@ -125,7 +157,7 @@ export function MobileSidebar({
         >
           <X className="h-5 w-5" />
         </button>
-        <SidebarContent onNavigate={onClose} />
+        <SidebarContent isSuperAdmin={isSuperAdmin} onNavigate={onClose} />
       </div>
     </div>
   );

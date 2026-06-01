@@ -5,8 +5,11 @@
 import type {
   AlertLevel,
   AlertPublic,
+  CameraPublic,
   ClipPublic,
   LoginResponse,
+  OrganizationPublic,
+  OrgRole,
   StorePublic,
   UserPublic,
 } from "./types";
@@ -62,8 +65,83 @@ export const auth = {
 
 // === Stores ===
 
+export interface StoreInput {
+  name: string;
+  address?: string | null;
+  timezone?: string;
+}
+
 export const stores = {
   list: () => request<StorePublic[]>("/api/v1/stores"),
+  get: (id: string) => request<StorePublic>(`/api/v1/stores/${id}`),
+  create: (body: StoreInput) =>
+    request<StorePublic>("/api/v1/stores", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  update: (id: string, body: Partial<StoreInput>) =>
+    request<StorePublic>(`/api/v1/stores/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  remove: (id: string) =>
+    request<void>(`/api/v1/stores/${id}`, { method: "DELETE" }),
+};
+
+// === Cameras ===
+
+export interface CameraInput {
+  store_id: string;
+  name: string;
+  rtsp_url?: string | null;
+  stage2_threshold?: number;
+  enabled?: boolean;
+  mediamtx_path?: string | null;
+  risk_threshold?: number;
+}
+
+export const cameras = {
+  list: (storeId?: string) => {
+    const suffix = storeId ? `?store_id=${encodeURIComponent(storeId)}` : "";
+    return request<CameraPublic[]>(`/api/v1/cameras${suffix}`);
+  },
+  get: (id: string) => request<CameraPublic>(`/api/v1/cameras/${id}`),
+  create: (body: CameraInput) =>
+    request<CameraPublic>("/api/v1/cameras", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  update: (id: string, body: Partial<Omit<CameraInput, "store_id">>) =>
+    request<CameraPublic>(`/api/v1/cameras/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  remove: (id: string) =>
+    request<void>(`/api/v1/cameras/${id}`, { method: "DELETE" }),
+};
+
+// === Admin (super-admin only) ===
+
+export interface UserInviteInput {
+  email: string;
+  password: string;
+  organization_id: string;
+  role: OrgRole;
+  is_super_admin?: boolean;
+}
+
+export const admin = {
+  listOrgs: () => request<OrganizationPublic[]>("/api/v1/admin/orgs"),
+  createOrg: (body: { name: string; slug: string }) =>
+    request<OrganizationPublic>("/api/v1/admin/orgs", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  inviteUser: (body: UserInviteInput) =>
+    request<UserPublic>("/api/v1/admin/users", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 };
 
 // === Clips ===

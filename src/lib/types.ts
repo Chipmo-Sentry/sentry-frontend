@@ -47,6 +47,19 @@ export interface CameraPublic {
   enabled: boolean;
   has_rtsp_url: boolean;
   created_at: ISODateTime;
+  mediamtx_path: string | null;
+  risk_threshold: number;
+}
+
+// === Org / admin (super-admin scope) ===
+
+export type OrgRole = "owner" | "admin" | "staff";
+
+export interface OrganizationPublic {
+  id: UUID;
+  name: string;
+  slug: string;
+  created_at: ISODateTime;
 }
 
 export interface ClipPublic {

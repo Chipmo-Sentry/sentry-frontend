@@ -13,31 +13,20 @@ import {
 } from "@chipmo-sentry/ui-kit";
 import { LogOut, Menu, ShieldCheck } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 
-import { auth } from "@/lib/api";
 import { navTitle } from "@/components/Sidebar";
+import { auth } from "@/lib/api";
 import type { UserPublic } from "@/lib/types";
 
-export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
+export function Topbar({
+  user,
+  onMenuClick,
+}: {
+  user: UserPublic | null;
+  onMenuClick: () => void;
+}) {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState<UserPublic | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    auth.me().then(
-      (u) => {
-        if (!cancelled) setUser(u);
-      },
-      () => {
-        // unauthenticated state handled by middleware; ignore here
-      },
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   async function onLogout() {
     try {
