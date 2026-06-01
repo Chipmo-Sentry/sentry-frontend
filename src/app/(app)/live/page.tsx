@@ -32,7 +32,7 @@ export default function LivePage() {
   const hlsUrl = (id: string) => `${MEDIAMTX_HLS_BASE}/${id}/index.m3u8`;
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex h-[calc(100vh-3.5rem)] flex-col">
       {/* Compact header */}
       <header className="flex items-center justify-between gap-4 border-b border-[var(--color-border)] bg-[var(--color-background)] px-4 py-2">
         <div className="flex items-center gap-4">

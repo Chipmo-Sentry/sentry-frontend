@@ -12,10 +12,12 @@ import {
 import { Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { useToast } from "@/components/Toaster";
 import { ApiError, clips, stores } from "@/lib/api";
 import type { ClipPublic, StorePublic } from "@/lib/types";
 
 export default function UploadPage() {
+  const { toast } = useToast();
   const [storeList, setStoreList] = useState<StorePublic[]>([]);
   const [storeId, setStoreId] = useState<string>("");
   const [file, setFile] = useState<File | null>(null);
@@ -43,10 +45,16 @@ export default function UploadPage() {
       const clip = await clips.upload({ file, store_id: storeId });
       setResult(clip);
       setFile(null);
+      toast({
+        title: "Видео илгээгдлээ",
+        description: "AI боловсруулж байна — үр дүн Сэжигтэй үйлдэл хэсэгт гарна.",
+        tone: "success",
+      });
     } catch (err) {
-      setError(
-        err instanceof ApiError ? err.message : "Илгээх явцад алдаа гарлаа",
-      );
+      const msg =
+        err instanceof ApiError ? err.message : "Илгээх явцад алдаа гарлаа";
+      setError(msg);
+      toast({ title: "Илгээж чадсангүй", description: msg, tone: "danger" });
     } finally {
       setUploading(false);
     }
