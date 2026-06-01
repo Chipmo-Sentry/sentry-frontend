@@ -14,7 +14,8 @@ RUN apk add --no-cache git
 WORKDIR /app
 
 # Build the public ui-kit as a sibling so `file:../sentry-ui-kit` resolves.
-ARG UI_KIT_REF=main
+# Pinned to a tag for reproducible builds (bump deliberately on ui-kit release).
+ARG UI_KIT_REF=v0.1.0
 RUN git clone --depth 1 --branch "${UI_KIT_REF}" \
       https://github.com/Chipmo-Sentry/sentry-ui-kit.git sentry-ui-kit \
     && cd sentry-ui-kit \
@@ -73,7 +74,8 @@ USER nextjs
 
 EXPOSE 3000
 
+# Probe a real public 200 page (/ redirects via middleware).
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-    CMD curl -fsS http://127.0.0.1:${PORT:-3000}/ -o /dev/null || exit 1
+    CMD curl -fsS http://127.0.0.1:${PORT:-3000}/login -o /dev/null || exit 1
 
 CMD ["node", "server.js"]

@@ -11,6 +11,9 @@ import type { AlertPublic } from "./types";
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
+/** Keep at most this many streamed alerts in memory (newest-first). */
+const MAX_STREAM_ALERTS = 200;
+
 export interface AlertStreamState {
   alerts: AlertPublic[];
   connected: boolean;
@@ -41,7 +44,9 @@ export function useAlertStream(): AlertStreamState {
     source.addEventListener("alert", (event: MessageEvent) => {
       try {
         const parsed = JSON.parse(event.data) as AlertPublic;
-        setAlerts((prev) => [parsed, ...prev]);
+        // Cap the in-memory buffer — these dashboards run all day on store TVs,
+        // so an unbounded prepend would leak memory.
+        setAlerts((prev) => [parsed, ...prev].slice(0, MAX_STREAM_ALERTS));
       } catch {
         // Drop malformed event; backend should never send these
       }

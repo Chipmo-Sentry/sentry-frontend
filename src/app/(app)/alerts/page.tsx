@@ -135,6 +135,9 @@ export default function AlertsPage() {
       for (const a of history) announcedRef.current.add(a.id);
       seededRef.current = true;
     }
+    if (announcedRef.current.size > 1000) {
+      announcedRef.current = new Set(stream.alerts.map((a) => a.id));
+    }
     for (const a of stream.alerts) {
       if (announcedRef.current.has(a.id)) continue;
       announcedRef.current.add(a.id);

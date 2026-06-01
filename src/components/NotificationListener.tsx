@@ -37,6 +37,10 @@ function isActionable(level: AlertLevel): boolean {
   return level === "notify" || level === "review";
 }
 
+// Reuse a single AudioContext — browsers cap concurrent contexts (~6), so a
+// burst of alerts must not new one up per beep.
+let sharedAudioCtx: AudioContext | null = null;
+
 function playBeep() {
   try {
     const Ctor =
@@ -44,7 +48,8 @@ function playBeep() {
       (window as unknown as { webkitAudioContext?: typeof AudioContext })
         .webkitAudioContext;
     if (!Ctor) return;
-    const ctx = new Ctor();
+    if (!sharedAudioCtx) sharedAudioCtx = new Ctor();
+    const ctx = sharedAudioCtx;
     if (ctx.state === "suspended") void ctx.resume();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -57,7 +62,6 @@ function playBeep() {
     gain.connect(ctx.destination);
     osc.start();
     osc.stop(ctx.currentTime + 0.36);
-    osc.onended = () => void ctx.close();
   } catch {
     // Audio blocked — non-fatal.
   }
@@ -100,6 +104,13 @@ export function NotificationListener() {
         last = a;
       }
     }
+    // Bound the seen-set: these tabs run all day. Once it grows large, keep
+    // only ids still present in the (capped) stream — everything else can't
+    // re-arrive anyway.
+    if (seenRef.current.size > 1000) {
+      seenRef.current = new Set(alerts.map((a) => a.id));
+    }
+
     if (newActionable === 0 || !last) return;
 
     // Muted: still keep the passive tab badge, but no sound/popup.

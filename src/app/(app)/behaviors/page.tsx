@@ -13,22 +13,14 @@ import {
 import { Brain, CheckCircle2, Clock, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 
-type BehaviorDimension = {
-  key: string;
-  label_mn: string;
-  description_mn: string;
-  weight: number;
-  active_in_m1: boolean;
-  why_deferred: string | null;
-};
+import { behaviors } from "@/lib/api";
+import type { BehaviorConfig } from "@/lib/types";
 
-type BehaviorConfig = {
-  dimensions: BehaviorDimension[];
-  thresholds: { green_max: number; yellow_max: number };
-  color_labels: { green: string; yellow: string; red: string };
+const COLOR_LABEL_FALLBACK = {
+  green: "Хэвийн",
+  yellow: "Анхаар",
+  red: "Сэжигтэй",
 };
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
 export default function BehaviorsPage() {
   const [data, setData] = useState<BehaviorConfig | null>(null);
@@ -42,20 +34,17 @@ export default function BehaviorsPage() {
   const [savedAt, setSavedAt] = useState<string | null>(null);
 
   const reload = () =>
-    fetch(`${API_BASE}/api/v1/behaviors`, { credentials: "include" })
-      .then(async (r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return (await r.json()) as BehaviorConfig;
-      })
-      .then((j) => {
+    behaviors.get().then(
+      (j) => {
         setData(j);
         setWeights(
           Object.fromEntries(j.dimensions.map((d) => [d.key, d.weight])),
         );
-        setGreenMax(j.thresholds.green_max);
-        setYellowMax(j.thresholds.yellow_max);
-      })
-      .catch((e) => setErr(e instanceof Error ? e.message : "Алдаа"));
+        setGreenMax(j.thresholds.green_max ?? 5);
+        setYellowMax(j.thresholds.yellow_max ?? 15);
+      },
+      (e) => setErr(e instanceof Error ? e.message : "Алдаа"),
+    );
 
   useEffect(() => {
     reload();
@@ -73,17 +62,10 @@ export default function BehaviorsPage() {
     if (!dirty || !thresholdValid) return;
     setSaving(true);
     try {
-      const r = await fetch(`${API_BASE}/api/v1/behaviors`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          weights,
-          thresholds: { green_max: greenMax, yellow_max: yellowMax },
-        }),
+      const fresh = await behaviors.patch({
+        weights,
+        thresholds: { green_max: greenMax, yellow_max: yellowMax },
       });
-      if (!r.ok) throw new Error(`HTTP ${r.status}: ${await r.text()}`);
-      const fresh = (await r.json()) as BehaviorConfig;
       setData(fresh);
       setSavedAt(new Date().toLocaleTimeString("mn-MN"));
     } catch (e) {
@@ -98,8 +80,8 @@ export default function BehaviorsPage() {
     setWeights(
       Object.fromEntries(data.dimensions.map((d) => [d.key, d.weight])),
     );
-    setGreenMax(data.thresholds.green_max);
-    setYellowMax(data.thresholds.yellow_max);
+    setGreenMax(data.thresholds.green_max ?? 5);
+    setYellowMax(data.thresholds.yellow_max ?? 15);
   }
 
   if (err) return <p className="p-8 text-[var(--color-danger)]">{err}</p>;
@@ -172,7 +154,7 @@ export default function BehaviorsPage() {
           <div className="grid gap-4 sm:grid-cols-3">
             <ThresholdInput
               color="green"
-              label={data.color_labels.green}
+              label={data.color_labels?.green ?? COLOR_LABEL_FALLBACK.green}
               hint={`оноо < ${greenMax}`}
               value={greenMax}
               max={yellowMax - 0.1}
@@ -180,7 +162,7 @@ export default function BehaviorsPage() {
             />
             <ThresholdInput
               color="yellow"
-              label={data.color_labels.yellow}
+              label={data.color_labels?.yellow ?? COLOR_LABEL_FALLBACK.yellow}
               hint={`${greenMax} ≤ оноо < ${yellowMax}`}
               value={yellowMax}
               min={greenMax + 0.1}
@@ -189,7 +171,7 @@ export default function BehaviorsPage() {
             <div className="rounded-md border border-[var(--color-border)] p-3">
               <div className="mb-1 flex items-center gap-2">
                 <span className="inline-block h-2.5 w-2.5 rounded-full bg-red-500" />
-                <span className="text-sm font-medium">{data.color_labels.red}</span>
+                <span className="text-sm font-medium">{data.color_labels?.red ?? COLOR_LABEL_FALLBACK.red}</span>
               </div>
               <p className="text-xs text-[var(--color-muted-foreground)]">
                 оноо ≥ {yellowMax}
