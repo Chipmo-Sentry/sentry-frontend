@@ -189,10 +189,19 @@ export const clips = {
 // === Alerts ===
 
 export const alerts = {
-  list: (params?: { min_level?: AlertLevel; limit?: number }) => {
+  list: (params?: {
+    min_level?: AlertLevel;
+    store_id?: string;
+    camera_id?: string;
+    limit?: number;
+    offset?: number;
+  }) => {
     const q = new URLSearchParams();
     if (params?.min_level) q.set("min_level", params.min_level);
+    if (params?.store_id) q.set("store_id", params.store_id);
+    if (params?.camera_id) q.set("camera_id", params.camera_id);
     if (params?.limit !== undefined) q.set("limit", String(params.limit));
+    if (params?.offset !== undefined) q.set("offset", String(params.offset));
     const suffix = q.toString() ? `?${q}` : "";
     return request<AlertPublic[]>(`/api/v1/alerts${suffix}`);
   },

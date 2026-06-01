@@ -9,9 +9,10 @@ import {
   CardHeader,
   CardTitle,
   EmptyState,
+  Input,
   Spinner,
 } from "@chipmo-sentry/ui-kit";
-import { Bell, BellRing, Check, HelpCircle, X } from "lucide-react";
+import { Bell, BellRing, Check, HelpCircle, Search, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
@@ -20,6 +21,8 @@ import { alerts as alertsApi, feedback } from "@/lib/api";
 import { useAlertStreamContext } from "@/lib/alert-stream-context";
 import { relativeTime } from "@/lib/time";
 import type { AlertLevel, AlertPublic, FeedbackVerdict } from "@/lib/types";
+
+const PAGE_SIZE = 25;
 
 const CATEGORY_LABEL: Record<AlertPublic["category"], string> = {
   browsing: "Хайж байгаа",
@@ -64,23 +67,34 @@ function matchesFilter(level: AlertLevel, filter: Filter): boolean {
   return level === filter;
 }
 
+function matchesSearch(a: AlertPublic, q: string): boolean {
+  if (!q) return true;
+  const hay = `${a.reasoning} ${CATEGORY_LABEL[a.category]} ${a.model_name}`.toLowerCase();
+  return hay.includes(q.toLowerCase());
+}
+
 export default function AlertsPage() {
   const { toast } = useToast();
-  const [seed, setSeed] = useState<AlertPublic[] | null>(null);
+  // Server-paginated history (older alerts appended via "Load more").
+  const [history, setHistory] = useState<AlertPublic[] | null>(null);
   const [seedError, setSeedError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+
   const [filter, setFilter] = useState<Filter>("all");
-  // alert id -> verdict the user submitted this session
+  const [search, setSearch] = useState("");
   const [verdicts, setVerdicts] = useState<Record<string, FeedbackVerdict>>({});
-  // alert id -> true while a feedback request is in flight
   const [pending, setPending] = useState<Record<string, boolean>>({});
   const stream = useAlertStreamContext();
 
-  // One-time fetch on mount so we render history; SSE prepends new items.
+  // First page on mount.
   useEffect(() => {
     let cancelled = false;
-    alertsApi.list({ limit: 50 }).then(
+    alertsApi.list({ limit: PAGE_SIZE, offset: 0 }).then(
       (list) => {
-        if (!cancelled) setSeed(list);
+        if (cancelled) return;
+        setHistory(list);
+        setHasMore(list.length === PAGE_SIZE);
       },
       (e) => {
         if (!cancelled) setSeedError(e instanceof Error ? e.message : "Алдаа");
@@ -91,14 +105,34 @@ export default function AlertsPage() {
     };
   }, []);
 
+  async function loadMore() {
+    if (loadingMore || !history) return;
+    setLoadingMore(true);
+    try {
+      const next = await alertsApi.list({
+        limit: PAGE_SIZE,
+        offset: history.length,
+      });
+      setHistory((prev) => [...(prev ?? []), ...next]);
+      setHasMore(next.length === PAGE_SIZE);
+    } catch (e) {
+      toast({
+        title: "Ачаалж чадсангүй",
+        description: e instanceof Error ? e.message : "Алдаа",
+        tone: "danger",
+      });
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
   // Toast on each newly streamed alert (after the first render settles).
   const announcedRef = useRef<Set<string>>(new Set());
   const seededRef = useRef(false);
   useEffect(() => {
-    if (seed === null) return;
-    // Mark all seeded ids as already-seen so we don't toast history.
+    if (history === null) return;
     if (!seededRef.current) {
-      for (const a of seed) announcedRef.current.add(a.id);
+      for (const a of history) announcedRef.current.add(a.id);
       seededRef.current = true;
     }
     for (const a of stream.alerts) {
@@ -112,14 +146,14 @@ export default function AlertsPage() {
         tone: a.alert_level === "review" ? "danger" : "warning",
       });
     }
-  }, [stream.alerts, seed, toast]);
+  }, [stream.alerts, history, toast]);
 
-  // Merge streamed alerts on top of seed, dedup by id.
+  // Merge streamed alerts on top of history, dedup by id.
   const merged: AlertPublic[] = (() => {
-    if (seed === null) return stream.alerts;
+    if (history === null) return stream.alerts;
     const seen = new Set<string>();
     const out: AlertPublic[] = [];
-    for (const a of [...stream.alerts, ...seed]) {
+    for (const a of [...stream.alerts, ...history]) {
       if (seen.has(a.id)) continue;
       seen.add(a.id);
       out.push(a);
@@ -127,7 +161,9 @@ export default function AlertsPage() {
     return out;
   })();
 
-  const visible = merged.filter((a) => matchesFilter(a.alert_level, filter));
+  const visible = merged.filter(
+    (a) => matchesFilter(a.alert_level, filter) && matchesSearch(a, search),
+  );
 
   async function mark(alertId: string, verdict: FeedbackVerdict) {
     if (pending[alertId] || verdicts[alertId]) return;
@@ -158,7 +194,7 @@ export default function AlertsPage() {
   if (seedError) {
     return <p className="p-8 text-[var(--color-danger)]">{seedError}</p>;
   }
-  if (seed === null) {
+  if (history === null) {
     return (
       <div className="p-8">
         <Spinner />
@@ -183,6 +219,27 @@ export default function AlertsPage() {
             </>
           )}
         </Badge>
+      </div>
+
+      {/* Search */}
+      <div className="relative mb-4">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-muted-foreground)]" />
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Шалтгаан, ангилал, загвараар хайх…"
+          className="pl-9"
+        />
+        {search ? (
+          <button
+            type="button"
+            onClick={() => setSearch("")}
+            aria-label="Хайлт цэвэрлэх"
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)]"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        ) : null}
       </div>
 
       {/* Filter bar */}
@@ -217,12 +274,12 @@ export default function AlertsPage() {
           title={
             merged.length === 0
               ? "Одоогоор үр дүн байхгүй"
-              : "Энэ шүүлтүүрт тохирох event алга"
+              : "Тохирох event алга"
           }
           description={
             merged.length === 0
               ? "Видео илгээгээд AI-аас тайлан хүлээнэ. Шинэ event-ууд real-time-д энд гарна."
-              : "Өөр шүүлтүүр сонгож үзнэ үү."
+              : "Шүүлтүүр эсвэл хайлтаа өөрчилж үзнэ үү."
           }
           action={
             merged.length === 0 ? (
@@ -230,93 +287,121 @@ export default function AlertsPage() {
                 <Button>Видео илгээх</Button>
               </Link>
             ) : (
-              <Button variant="outline" onClick={() => setFilter("all")}>
-                Бүгдийг харах
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setFilter("all");
+                  setSearch("");
+                }}
+              >
+                Шүүлтүүр цэвэрлэх
               </Button>
             )
           }
         />
       ) : (
-        <div className="space-y-3">
-          {visible.map((a) => {
-            const verdict = verdicts[a.id];
-            const isPending = pending[a.id];
-            return (
-              <Card key={a.id}>
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Badge tone={LEVEL_TONE[a.alert_level]}>
-                          {LEVEL_LABEL[a.alert_level]}
-                        </Badge>
-                        <CardTitle className="text-base">
-                          {CATEGORY_LABEL[a.category]}
-                          <span className="ml-2 text-sm font-normal text-[var(--color-muted-foreground)]">
-                            ({Math.round(a.confidence * 100)}%)
-                          </span>
-                        </CardTitle>
+        <>
+          <div className="space-y-3">
+            {visible.map((a) => {
+              const verdict = verdicts[a.id];
+              const isPending = pending[a.id];
+              return (
+                <Card key={a.id}>
+                  <CardHeader>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Badge tone={LEVEL_TONE[a.alert_level]}>
+                            {LEVEL_LABEL[a.alert_level]}
+                          </Badge>
+                          <CardTitle className="text-base">
+                            {CATEGORY_LABEL[a.category]}
+                            <span className="ml-2 text-sm font-normal text-[var(--color-muted-foreground)]">
+                              ({Math.round(a.confidence * 100)}%)
+                            </span>
+                          </CardTitle>
+                        </div>
+                        <CardDescription>
+                          <span
+                            title={new Date(a.created_at).toLocaleString("mn-MN")}
+                          >
+                            {relativeTime(a.created_at)}
+                          </span>{" "}
+                          · {a.model_name} · {a.inference_latency_ms}ms
+                        </CardDescription>
                       </div>
-                      <CardDescription>
-                        <span title={new Date(a.created_at).toLocaleString("mn-MN")}>
-                          {relativeTime(a.created_at)}
-                        </span>{" "}
-                        · {a.model_name} · {a.inference_latency_ms}ms
-                      </CardDescription>
-                    </div>
-                    <Link
-                      href={`/alerts/${a.id}`}
-                      className="text-sm text-[var(--color-primary)] underline-offset-2 hover:underline"
-                    >
-                      Дэлгэрэнгүй
-                    </Link>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm">{a.reasoning}</p>
-                  {verdict ? (
-                    <div className="mt-3">
-                      <Badge tone="success">
-                        <Check className="h-3 w-3" />
-                        Дүгнэсэн: {VERDICT_LABEL[verdict]}
-                      </Badge>
-                    </div>
-                  ) : (
-                    <div className="mt-3 flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={isPending}
-                        onClick={() => mark(a.id, "true_positive")}
+                      <Link
+                        href={`/alerts/${a.id}`}
+                        className="text-sm text-[var(--color-primary)] underline-offset-2 hover:underline"
                       >
-                        <Check className="h-3.5 w-3.5" />
-                        Зөв илрүүлэлт
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={isPending}
-                        onClick={() => mark(a.id, "false_positive")}
-                      >
-                        <X className="h-3.5 w-3.5" />
-                        Худал сэрэлт
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        disabled={isPending}
-                        onClick={() => mark(a.id, "unclear")}
-                      >
-                        <HelpCircle className="h-3.5 w-3.5" />
-                        Тодорхойгүй
-                      </Button>
+                        Дэлгэрэнгүй
+                      </Link>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm">{a.reasoning}</p>
+                    {verdict ? (
+                      <div className="mt-3">
+                        <Badge tone="success">
+                          <Check className="h-3 w-3" />
+                          Дүгнэсэн: {VERDICT_LABEL[verdict]}
+                        </Badge>
+                      </div>
+                    ) : (
+                      <div className="mt-3 flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={isPending}
+                          onClick={() => mark(a.id, "true_positive")}
+                        >
+                          <Check className="h-3.5 w-3.5" />
+                          Зөв илрүүлэлт
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={isPending}
+                          onClick={() => mark(a.id, "false_positive")}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                          Худал сэрэлт
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={isPending}
+                          onClick={() => mark(a.id, "unclear")}
+                        >
+                          <HelpCircle className="h-3.5 w-3.5" />
+                          Тодорхойгүй
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Pagination — only when not searching (search is client-side over
+              loaded pages, so "load more" still fetches older history). */}
+          {hasMore ? (
+            <div className="mt-6 flex justify-center">
+              <Button
+                variant="outline"
+                onClick={loadMore}
+                disabled={loadingMore}
+              >
+                {loadingMore ? "Ачаалж байна…" : "Цааш үзэх"}
+              </Button>
+            </div>
+          ) : (
+            <p className="mt-6 text-center text-xs text-[var(--color-muted-foreground)]">
+              Бүх event ачаалагдсан
+            </p>
+          )}
+        </>
       )}
     </div>
   );

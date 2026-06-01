@@ -14,6 +14,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { useAlertStreamContext } from "@/lib/alert-stream-context";
+import { isMuted, onMuteChange } from "@/lib/notif-prefs";
 import type { AlertLevel, AlertPublic } from "@/lib/types";
 
 const BASE_TITLE = "Chipmo Sentry";
@@ -66,14 +67,16 @@ export function NotificationListener() {
   const { alerts } = useAlertStreamContext();
   const seenRef = useRef<Set<string>>(new Set());
   const initializedRef = useRef(false);
+  const mutedRef = useRef(false);
   const [unread, setUnread] = useState(0);
 
-  // Request notification permission once (best-effort).
+  // Track the mute preference (kept in a ref so the alert effect stays
+  // dependency-light and always reads the latest value).
   useEffect(() => {
-    if (typeof window === "undefined" || !("Notification" in window)) return;
-    if (Notification.permission === "default") {
-      void Notification.requestPermission();
-    }
+    mutedRef.current = isMuted();
+    return onMuteChange(() => {
+      mutedRef.current = isMuted();
+    });
   }, []);
 
   // React to new streamed alerts.
@@ -98,6 +101,12 @@ export function NotificationListener() {
       }
     }
     if (newActionable === 0 || !last) return;
+
+    // Muted: still keep the passive tab badge, but no sound/popup.
+    if (mutedRef.current) {
+      if (document.hidden) setUnread((u) => u + newActionable);
+      return;
+    }
 
     playBeep();
 
