@@ -6,15 +6,23 @@ Apache 2.0
 
 ---
 
-## What ships in M1 (Session 1)
+## What ships in M1
 
 - **Login** (`/login`) — email + password → httpOnly cookie from backend
-- **Dashboard** (`/dashboard`) — recent alert counts by level
+- **App shell** — `Topbar` (page title, notification bell, user menu) + responsive
+  `Sidebar` (desktop rail + mobile drawer), role-gated nav (super-admin → `/admin`)
+- **Dashboard** (`/dashboard`) — alert counts by level, 7-day trend, recent review list
+- **Live** (`/live`) — HLS camera tiles + Canvas bbox/risk overlay, driven by `/api/v1/cameras`
 - **Clip upload** (`/clips/upload`) — drag-drop mp4, store selector, posts to `/api/v1/clips`
-- **Alerts** (`/alerts`) — list with category/confidence/reasoning, TP/FP buttons, polling every 10s
-- **Middleware** — gates `/dashboard`, `/clips/*`, `/alerts/*` on presence of `sentry_access` cookie
-
-Out of scope until Session 2: SSE real-time alert stream, alert detail page with clip player, super-admin views, sentry-landing entry.
+- **Alerts** (`/alerts`) — level filter + text search + offset pagination, real-time SSE,
+  TP/FP/unclear feedback with confirmation
+- **Alert detail** (`/alerts/[id]`) — clip player + inline feedback
+- **Behaviors** (`/behaviors`) — 6-dim weights + risk thresholds editor (PATCH)
+- **Management** — Stores / Cameras full CRUD; **Admin** orgs + user invite (super-admin)
+- **Real-time** — single shared SSE (`AlertStreamProvider`) + global notification layer
+  (browser notification, beep, tab-title badge, mute toggle)
+- **Type safety** — OpenAPI codegen (`api.types.ts`) keeps types in lockstep with backend
+- **Middleware** — gates all `(app)` routes on presence of the `sentry_access` cookie
 
 ---
 
@@ -46,16 +54,37 @@ src/
 │   ├── globals.css             — @import "@chipmo-sentry/ui-kit/styles.css"
 │   ├── (auth)/login/page.tsx   — public, Suspense-wrapped form
 │   └── (app)/
-│       ├── layout.tsx          — sidebar shell
-│       ├── dashboard/page.tsx
+│       ├── layout.tsx          — <Toaster><AppShell> wrapper
+│       ├── dashboard/page.tsx  — 7-day trend + review list
+│       ├── live/page.tsx       — HLS tiles + Canvas overlay (from /api/v1/cameras)
 │       ├── clips/upload/page.tsx
-│       └── alerts/page.tsx
+│       ├── alerts/page.tsx     — filter + search + pagination + feedback
+│       ├── alerts/[id]/page.tsx
+│       ├── behaviors/page.tsx  — weights/thresholds editor (PATCH)
+│       ├── stores/page.tsx     — CRUD
+│       ├── cameras/page.tsx    — CRUD
+│       └── admin/page.tsx      — orgs + user invite (super-admin only)
 ├── components/
-│   └── Sidebar.tsx             — nav + logout
+│   ├── AppShell.tsx            — shell + AlertStreamProvider + NotificationListener
+│   ├── Topbar.tsx              — page title, notif bell, user menu
+│   ├── Sidebar.tsx             — desktop rail + mobile drawer, role-gated nav
+│   ├── Toaster.tsx             — useToast on ui-kit Radix Toast
+│   ├── NotificationListener.tsx— browser notif + beep + tab-title badge
+│   ├── Field.tsx               — labeled form field
+│   └── LiveCameraTile.tsx      — <video> + <canvas> bbox/risk overlay
 ├── lib/
 │   ├── api.ts                  — fetch wrappers, cookies via `credentials: "include"`
-│   └── types.ts                — Pydantic-mirroring TS shapes (codegen comes Session 2)
-└── middleware.ts               — cookie gate, redirect to /login?next=…
+│   ├── api.types.ts            — GENERATED from OpenAPI (do not edit by hand)
+│   ├── types.ts                — re-exports generated schemas (drift-proof)
+│   ├── sse.ts                  — useAlertStream (EventSource)
+│   ├── alert-stream-context.tsx— single shared SSE subscription
+│   ├── live-ws.ts              — useLiveMetadata (WS /ws/live/{cam})
+│   ├── hls.ts                  — attachHls helper
+│   ├── time.ts                 — Mongolian relative-time
+│   └── notif-prefs.ts          — notification mute pref (localStorage)
+├── middleware.ts               — cookie gate, redirect to /login?next=…
+openapi/backend.openapi.json    — committed backend spec snapshot
+scripts/                        — fetch-openapi.sh, codegen-check.sh
 ```
 
 ---
@@ -88,9 +117,20 @@ The `NEXT_PUBLIC_` prefix is required for env vars to reach the browser; secrets
 npm run typecheck     # tsc --noEmit (strict)
 npm run build         # production build (all routes prerendered where possible)
 npm run dev           # Turbopack dev server with HMR
+npm run codegen       # regen src/lib/api.types.ts from openapi/backend.openapi.json
+npm run codegen:check # CI drift guard — fail if api.types.ts is stale
+npm run fetch-openapi # pull spec from a running backend, then codegen
 ```
 
-Latest build: 5 routes (root + login + dashboard + clips/upload + alerts), 102 kB shared JS, middleware 34 kB.
+Latest build: 11 routes (root, login, dashboard, live, clips/upload, alerts, alerts/[id], behaviors, stores, cameras, admin), 13 build outputs, 102 kB shared JS, middleware 34 kB.
+
+### Type contract (OpenAPI codegen)
+
+`src/lib/api.types.ts` is **generated** from the committed `openapi/backend.openapi.json`
+snapshot; `lib/types.ts` re-exports those schemas so app code never drifts from the
+backend contract. After changing backend Pydantic models: regenerate the snapshot
+(`npm run fetch-openapi` against a running backend) and commit both files. CI runs
+`codegen:check` and fails PRs where the generated types are out of date.
 
 ---
 
