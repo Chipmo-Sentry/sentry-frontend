@@ -17,7 +17,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { useToast } from "@/components/Toaster";
 import { alerts as alertsApi, feedback } from "@/lib/api";
-import { useAlertStream } from "@/lib/sse";
+import { useAlertStreamContext } from "@/lib/alert-stream-context";
 import { relativeTime } from "@/lib/time";
 import type { AlertLevel, AlertPublic, FeedbackVerdict } from "@/lib/types";
 
@@ -73,7 +73,7 @@ export default function AlertsPage() {
   const [verdicts, setVerdicts] = useState<Record<string, FeedbackVerdict>>({});
   // alert id -> true while a feedback request is in flight
   const [pending, setPending] = useState<Record<string, boolean>>({});
-  const stream = useAlertStream();
+  const stream = useAlertStreamContext();
 
   // One-time fetch on mount so we render history; SSE prepends new items.
   useEffect(() => {

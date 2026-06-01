@@ -5,6 +5,8 @@
 import type {
   AlertLevel,
   AlertPublic,
+  BehaviorConfig,
+  BehaviorConfigPatch,
   CameraPublic,
   ClipPublic,
   LoginResponse,
@@ -208,6 +210,17 @@ export const feedback = {
     request("/api/v1/feedback", {
       method: "POST",
       body: JSON.stringify(params),
+    }),
+};
+
+// === Behaviors ===
+
+export const behaviors = {
+  get: () => request<BehaviorConfig>("/api/v1/behaviors"),
+  patch: (body: BehaviorConfigPatch) =>
+    request<BehaviorConfig>("/api/v1/behaviors", {
+      method: "PATCH",
+      body: JSON.stringify(body),
     }),
 };
 

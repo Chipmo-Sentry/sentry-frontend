@@ -3,9 +3,11 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
+import { NotificationListener } from "@/components/NotificationListener";
 import { MobileSidebar, Sidebar } from "@/components/Sidebar";
 import { Topbar } from "@/components/Topbar";
 import { auth } from "@/lib/api";
+import { AlertStreamProvider } from "@/lib/alert-stream-context";
 import type { UserPublic } from "@/lib/types";
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -37,19 +39,22 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isSuperAdmin = user?.is_super_admin ?? false;
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar isSuperAdmin={isSuperAdmin} />
-      <MobileSidebar
-        open={mobileOpen}
-        onClose={() => setMobileOpen(false)}
-        isSuperAdmin={isSuperAdmin}
-      />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar user={user} onMenuClick={() => setMobileOpen(true)} />
-        <main className="flex-1 overflow-auto bg-[var(--color-muted)]">
-          {children}
-        </main>
+    <AlertStreamProvider>
+      <NotificationListener />
+      <div className="flex min-h-screen">
+        <Sidebar isSuperAdmin={isSuperAdmin} />
+        <MobileSidebar
+          open={mobileOpen}
+          onClose={() => setMobileOpen(false)}
+          isSuperAdmin={isSuperAdmin}
+        />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <Topbar user={user} onMenuClick={() => setMobileOpen(true)} />
+          <main className="flex-1 overflow-auto bg-[var(--color-muted)]">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </AlertStreamProvider>
   );
 }

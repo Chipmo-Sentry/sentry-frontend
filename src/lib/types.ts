@@ -98,6 +98,29 @@ export interface AlertPublic {
   created_at: ISODateTime;
 }
 
+// === Behaviors (global 6-dim weights + risk thresholds) ===
+
+export interface BehaviorDimension {
+  key: string;
+  label_mn: string;
+  description_mn: string;
+  weight: number;
+  active_in_m1: boolean;
+  why_deferred: string | null;
+}
+
+export interface BehaviorConfig {
+  dimensions: BehaviorDimension[];
+  /** Absolute accumulated-score units: { green_max, yellow_max }. */
+  thresholds: Record<string, number>;
+  color_labels: Record<string, string>;
+}
+
+export interface BehaviorConfigPatch {
+  weights?: Record<string, number>;
+  thresholds?: Record<string, number>;
+}
+
 export type FeedbackVerdict = "true_positive" | "false_positive" | "unclear";
 
 export interface FeedbackPublic {
