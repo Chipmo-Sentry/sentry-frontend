@@ -63,9 +63,11 @@ RUN apk add --no-cache curl
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nextjs -u 1001 -G nodejs
 
+# Next traces the app (lockfile at /app/sentry-frontend) as the standalone
+# root, so server.js + .next live at the standalone ROOT → land at /app.
 COPY --from=builder --chown=nextjs:nodejs /app/sentry-frontend/.next/standalone /app/
-COPY --from=builder --chown=nextjs:nodejs /app/sentry-frontend/.next/static /app/sentry-frontend/.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/sentry-frontend/public /app/sentry-frontend/public
+COPY --from=builder --chown=nextjs:nodejs /app/sentry-frontend/.next/static /app/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/sentry-frontend/public /app/public
 
 USER nextjs
 
@@ -74,4 +76,4 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
     CMD curl -fsS http://127.0.0.1:${PORT:-3000}/ -o /dev/null || exit 1
 
-CMD ["node", "sentry-frontend/server.js"]
+CMD ["node", "server.js"]
