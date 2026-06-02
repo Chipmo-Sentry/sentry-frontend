@@ -16,6 +16,7 @@ import {
   Spinner,
 } from "@chipmo-sentry/ui-kit";
 import {
+  Cctv,
   Download,
   Laptop,
   Pencil,
@@ -28,8 +29,14 @@ import { useEffect, useState } from "react";
 
 import { Field } from "@/components/Field";
 import { useToast } from "@/components/Toaster";
-import { agents, ApiError, stores, type StoreInput } from "@/lib/api";
-import type { AgentPublic, PairingCodePublic, StorePublic } from "@/lib/types";
+import { agents, ApiError, cameras, stores, type StoreInput } from "@/lib/api";
+import { relativeTime } from "@/lib/time";
+import type {
+  AgentPublic,
+  CameraPublic,
+  PairingCodePublic,
+  StorePublic,
+} from "@/lib/types";
 
 const DEFAULT_TZ = "Asia/Ulaanbaatar";
 
@@ -48,10 +55,18 @@ export default function StoresPage() {
   const [editing, setEditing] = useState<StorePublic | "new" | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<StorePublic | null>(null);
   const [connectStore, setConnectStore] = useState<StorePublic | null>(null);
+  // store_id → camera count (what each store's agent has relayed)
+  const [camCounts, setCamCounts] = useState<Record<string, number>>({});
 
   async function reload() {
     try {
-      setList(await stores.list());
+      const [sts, cams] = await Promise.all([stores.list(), cameras.list()]);
+      setList(sts);
+      const counts: Record<string, number> = {};
+      for (const c of cams) {
+        if (c.store_id) counts[c.store_id] = (counts[c.store_id] ?? 0) + 1;
+      }
+      setCamCounts(counts);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Алдаа");
     }
@@ -126,6 +141,10 @@ export default function StoresPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
+                  <Badge tone={camCounts[s.id] ? "success" : "neutral"}>
+                    <Cctv className="h-3 w-3" />
+                    {camCounts[s.id] ?? 0} камер
+                  </Badge>
                   <Badge tone="neutral">{s.timezone}</Badge>
                   <Button
                     size="sm"
@@ -316,18 +335,36 @@ function ConnectPCModal({
   const { toast } = useToast();
   const [code, setCode] = useState<PairingCodePublic | null>(null);
   const [agentList, setAgentList] = useState<AgentPublic[] | null>(null);
+  const [camList, setCamList] = useState<CameraPublic[] | null>(null);
   const [genBusy, setGenBusy] = useState(false);
 
   const open = store !== null;
 
+  // Poll agents + cameras while the modal is open so a freshly-paired PC and
+  // the cameras it registers appear live, without reopening.
   useEffect(() => {
     if (!open || !store) return;
     setCode(null);
     setAgentList(null);
-    agents
-      .listForStore(store.id)
-      .then(setAgentList)
-      .catch(() => setAgentList([]));
+    setCamList(null);
+    let cancelled = false;
+    const sid = store.id;
+    function refresh() {
+      agents
+        .listForStore(sid)
+        .then((a) => !cancelled && setAgentList(a))
+        .catch(() => !cancelled && setAgentList([]));
+      cameras
+        .list(sid)
+        .then((c) => !cancelled && setCamList(c))
+        .catch(() => !cancelled && setCamList([]));
+    }
+    refresh();
+    const id = setInterval(refresh, 4000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
   }, [open, store]);
 
   async function generate() {
@@ -413,7 +450,8 @@ function ConnectPCModal({
               </p>
             ) : agentList.length === 0 ? (
               <p className="text-sm text-[var(--color-muted-foreground)]">
-                Одоогоор холбогдсон компьютер алга.
+                Одоогоор холбогдсон компьютер алга. Агент дээр кодоо оруулмагц
+                энд автоматаар гарч ирнэ.
               </p>
             ) : (
               <ul className="space-y-1.5">
@@ -422,11 +460,53 @@ function ConnectPCModal({
                     key={a.id}
                     className="flex items-center justify-between gap-2 text-sm"
                   >
-                    <span className="truncate">
-                      {a.name || "Нэргүй компьютер"}
+                    <span className="flex min-w-0 items-center gap-2">
+                      <Laptop className="h-4 w-4 shrink-0 text-[var(--color-muted-foreground)]" />
+                      <span className="min-w-0">
+                        <span className="block truncate">
+                          {a.name || "Нэргүй компьютер"}
+                        </span>
+                        {a.last_seen_at && (
+                          <span className="text-xs text-[var(--color-muted-foreground)]">
+                            сүүлд {relativeTime(a.last_seen_at)}
+                          </span>
+                        )}
+                      </span>
                     </span>
                     <Badge tone={a.is_active ? "success" : "neutral"}>
                       {a.is_active ? "Идэвхтэй" : "Салгасан"}
+                    </Badge>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Cameras the agent(s) relay for this store */}
+          <div className="space-y-1.5">
+            <p className="text-sm font-medium">Дамжуулж буй камерууд</p>
+            {camList === null ? (
+              <p className="text-sm text-[var(--color-muted-foreground)]">
+                Ачааллаж байна…
+              </p>
+            ) : camList.length === 0 ? (
+              <p className="text-sm text-[var(--color-muted-foreground)]">
+                Камер хараахан бүртгэгдээгүй. Агент холбогдоод камераа илрүүлмэгц
+                энд гарч ирнэ.
+              </p>
+            ) : (
+              <ul className="space-y-1.5">
+                {camList.map((c) => (
+                  <li
+                    key={c.id}
+                    className="flex items-center justify-between gap-2 text-sm"
+                  >
+                    <span className="flex min-w-0 items-center gap-2">
+                      <Cctv className="h-4 w-4 shrink-0 text-[var(--color-muted-foreground)]" />
+                      <span className="truncate">{c.name}</span>
+                    </span>
+                    <Badge tone={c.enabled ? "success" : "neutral"}>
+                      {c.enabled ? "Идэвхтэй" : "Унтраалттай"}
                     </Badge>
                   </li>
                 ))}
