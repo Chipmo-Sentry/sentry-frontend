@@ -3,6 +3,7 @@
  * with `cookies()` header forwarding. */
 
 import type {
+  AgentPublic,
   AlertLevel,
   AlertPublic,
   BehaviorConfig,
@@ -12,6 +13,7 @@ import type {
   LoginResponse,
   OrganizationPublic,
   OrgRole,
+  PairingCodePublic,
   StorePublic,
   UserPublic,
 } from "./types";
@@ -143,6 +145,25 @@ export const admin = {
     request<UserPublic>("/api/v1/admin/users", {
       method: "POST",
       body: JSON.stringify(body),
+    }),
+};
+
+// === Agents (camera-relay PC pairing) ===
+
+export const agents = {
+  /** Generate a 6-digit pairing code for a store (admin/owner only). */
+  createPairingCode: (storeId: string) =>
+    request<PairingCodePublic>(
+      `/api/v1/stores/${encodeURIComponent(storeId)}/pairing-codes`,
+      { method: "POST" },
+    ),
+  listForStore: (storeId: string) =>
+    request<AgentPublic[]>(
+      `/api/v1/stores/${encodeURIComponent(storeId)}/agents`,
+    ),
+  revoke: (agentId: string) =>
+    request<void>(`/api/v1/agents/${encodeURIComponent(agentId)}`, {
+      method: "DELETE",
     }),
 };
 

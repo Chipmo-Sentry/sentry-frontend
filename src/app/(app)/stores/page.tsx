@@ -17,8 +17,10 @@ import {
 } from "@chipmo-sentry/ui-kit";
 import {
   Download,
+  Laptop,
   Pencil,
   Plus,
+  RefreshCw,
   Store as StoreIcon,
   Trash2,
 } from "lucide-react";
@@ -26,8 +28,8 @@ import { useEffect, useState } from "react";
 
 import { Field } from "@/components/Field";
 import { useToast } from "@/components/Toaster";
-import { stores, type StoreInput } from "@/lib/api";
-import type { StorePublic } from "@/lib/types";
+import { agents, ApiError, stores, type StoreInput } from "@/lib/api";
+import type { AgentPublic, PairingCodePublic, StorePublic } from "@/lib/types";
 
 const DEFAULT_TZ = "Asia/Ulaanbaatar";
 
@@ -45,6 +47,7 @@ export default function StoresPage() {
   // null = closed; {} = create; {...store} = edit
   const [editing, setEditing] = useState<StorePublic | "new" | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<StorePublic | null>(null);
+  const [connectStore, setConnectStore] = useState<StorePublic | null>(null);
 
   async function reload() {
     try {
@@ -126,6 +129,14 @@ export default function StoresPage() {
                   <Badge tone="neutral">{s.timezone}</Badge>
                   <Button
                     size="sm"
+                    variant="outline"
+                    onClick={() => setConnectStore(s)}
+                  >
+                    <Laptop className="h-4 w-4" />
+                    Компьютер холбох
+                  </Button>
+                  <Button
+                    size="sm"
                     variant="ghost"
                     aria-label="Засах"
                     onClick={() => setEditing(s)}
@@ -156,6 +167,11 @@ export default function StoresPage() {
           setEditing(null);
           reload();
         }}
+      />
+
+      <ConnectPCModal
+        store={connectStore}
+        onClose={() => setConnectStore(null)}
       />
 
       {/* Delete confirmation */}
@@ -285,6 +301,145 @@ function StoreFormModal({
             </Button>
           </ModalFooter>
         </form>
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function ConnectPCModal({
+  store,
+  onClose,
+}: {
+  store: StorePublic | null;
+  onClose: () => void;
+}) {
+  const { toast } = useToast();
+  const [code, setCode] = useState<PairingCodePublic | null>(null);
+  const [agentList, setAgentList] = useState<AgentPublic[] | null>(null);
+  const [genBusy, setGenBusy] = useState(false);
+
+  const open = store !== null;
+
+  useEffect(() => {
+    if (!open || !store) return;
+    setCode(null);
+    setAgentList(null);
+    agents
+      .listForStore(store.id)
+      .then(setAgentList)
+      .catch(() => setAgentList([]));
+  }, [open, store]);
+
+  async function generate() {
+    if (!store) return;
+    setGenBusy(true);
+    try {
+      setCode(await agents.createPairingCode(store.id));
+    } catch (e) {
+      toast({
+        title: "Код үүсгэж чадсангүй",
+        description:
+          e instanceof ApiError && e.status === 403
+            ? "Танд энэ дэлгүүрт админ эрх алга."
+            : e instanceof Error
+              ? e.message
+              : "Алдаа",
+        tone: "danger",
+      });
+    } finally {
+      setGenBusy(false);
+    }
+  }
+
+  return (
+    <Modal open={open} onOpenChange={(o) => !o && onClose()}>
+      <ModalContent className="max-w-md">
+        <ModalHeader>
+          <ModalTitle>Компьютер холбох</ModalTitle>
+          <ModalDescription>
+            «{store?.name}» дэлгүүрт Sentry агент суулгасан компьютерийг холбоно.
+          </ModalDescription>
+        </ModalHeader>
+
+        <div className="space-y-5">
+          <div className="space-y-1.5">
+            <p className="text-sm font-medium">1. Агентыг татаж суулгана</p>
+            <Button asChild variant="outline" size="sm">
+              <a
+                href={AGENT_DOWNLOAD_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Download className="h-4 w-4" />
+                Sentry агент татах (.exe)
+              </a>
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-sm font-medium">2. Холболтын код үүсгэнэ</p>
+            {code ? (
+              <>
+                <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-muted)] p-4 text-center">
+                  <p className="font-mono text-4xl font-bold tracking-[0.3em]">
+                    {code.code}
+                  </p>
+                  <p className="mt-2 text-xs text-[var(--color-muted-foreground)]">
+                    Агент дээр энэ кодыг 10 минутын дотор оруулна уу.
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={generate}
+                  disabled={genBusy}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Шинэ код
+                </Button>
+              </>
+            ) : (
+              <Button onClick={generate} disabled={genBusy}>
+                {genBusy ? "Үүсгэж байна…" : "Код үүсгэх"}
+              </Button>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <p className="text-sm font-medium">Холбогдсон компьютерүүд</p>
+            {agentList === null ? (
+              <p className="text-sm text-[var(--color-muted-foreground)]">
+                Ачааллаж байна…
+              </p>
+            ) : agentList.length === 0 ? (
+              <p className="text-sm text-[var(--color-muted-foreground)]">
+                Одоогоор холбогдсон компьютер алга.
+              </p>
+            ) : (
+              <ul className="space-y-1.5">
+                {agentList.map((a) => (
+                  <li
+                    key={a.id}
+                    className="flex items-center justify-between gap-2 text-sm"
+                  >
+                    <span className="truncate">
+                      {a.name || "Нэргүй компьютер"}
+                    </span>
+                    <Badge tone={a.is_active ? "success" : "neutral"}>
+                      {a.is_active ? "Идэвхтэй" : "Салгасан"}
+                    </Badge>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        <ModalFooter>
+          <Button variant="ghost" onClick={onClose}>
+            Хаах
+          </Button>
+        </ModalFooter>
       </ModalContent>
     </Modal>
   );

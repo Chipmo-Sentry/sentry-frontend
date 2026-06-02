@@ -37,6 +37,10 @@ export type FeedbackPublic = Schemas["FeedbackPublic"];
 export type OrgRole = Schemas["OrgRole"];
 export type OrganizationPublic = Schemas["OrganizationPublic"];
 
+// === Agents (camera-relay PC pairing) ===
+export type PairingCodePublic = Schemas["PairingCodePublic"];
+export type AgentPublic = Schemas["AgentPublic"];
+
 // === Behaviors ===
 export type BehaviorDimension = Schemas["BehaviorDimension"];
 export type BehaviorConfig = Schemas["BehaviorConfig"];
