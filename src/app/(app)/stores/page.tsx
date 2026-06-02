@@ -57,6 +57,10 @@ export default function StoresPage() {
   const [connectStore, setConnectStore] = useState<StorePublic | null>(null);
   // store_id → camera count (what each store's agent has relayed)
   const [camCounts, setCamCounts] = useState<Record<string, number>>({});
+  // store_id → { active, total } paired agents (connected computers)
+  const [agentCounts, setAgentCounts] = useState<
+    Record<string, { active: number; total: number }>
+  >({});
 
   async function reload() {
     try {
@@ -67,6 +71,20 @@ export default function StoresPage() {
         if (c.store_id) counts[c.store_id] = (counts[c.store_id] ?? 0) + 1;
       }
       setCamCounts(counts);
+      // Agent counts per store (best-effort, one call each).
+      const entries = await Promise.all(
+        sts.map((s) =>
+          agents
+            .listForStore(s.id)
+            .then((a) => [s.id, a] as const)
+            .catch(() => [s.id, [] as AgentPublic[]] as const),
+        ),
+      );
+      const ac: Record<string, { active: number; total: number }> = {};
+      for (const [id, a] of entries) {
+        ac[id] = { active: a.filter((x) => x.is_active).length, total: a.length };
+      }
+      setAgentCounts(ac);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Алдаа");
     }
@@ -141,6 +159,16 @@ export default function StoresPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
+                  <Badge
+                    tone={
+                      agentCounts[s.id]?.active ? "success" : "neutral"
+                    }
+                  >
+                    <Laptop className="h-3 w-3" />
+                    {agentCounts[s.id]?.total
+                      ? `${agentCounts[s.id]!.active}/${agentCounts[s.id]!.total} компьютер`
+                      : "Компьютер холбоогүй"}
+                  </Badge>
                   <Badge tone={camCounts[s.id] ? "success" : "neutral"}>
                     <Cctv className="h-3 w-3" />
                     {camCounts[s.id] ?? 0} камер
