@@ -3,12 +3,13 @@
 import { Maximize2, Minimize2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import { attachHls } from "@/lib/hls";
+import { attachLiveVideo, type LiveTransport } from "@/lib/live-video";
 import { useLiveMetadata } from "@/lib/live-ws";
 
 export type LiveCameraTileProps = {
   cameraId: string;
   name: string;
+  whepUrl: string;
   hlsUrl: string;
 };
 
@@ -31,13 +32,14 @@ const STATUS_TONE: Record<
   error: "danger",
 };
 
-export function LiveCameraTile({ cameraId, name, hlsUrl }: LiveCameraTileProps) {
+export function LiveCameraTile({ cameraId, name, whepUrl, hlsUrl }: LiveCameraTileProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [status, setStatus] = useState<Status>("loading");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [transport, setTransport] = useState<LiveTransport>("webrtc");
 
   const { latest, state: wsState } = useLiveMetadata(cameraId);
 
@@ -64,19 +66,24 @@ export function LiveCameraTile({ cameraId, name, hlsUrl }: LiveCameraTileProps) 
       setErrorMsg("Видео ачаалж чадсангүй");
     }
 
-    try {
-      detach = attachHls(video, hlsUrl);
-    } catch (e) {
-      setStatus("error");
-      setErrorMsg(e instanceof Error ? e.message : "HLS дэмжлэггүй");
-      return;
-    }
-    video.addEventListener("playing", onPlaying);
-    video.addEventListener("waiting", onWaiting);
-    video.addEventListener("error", onError);
     video.muted = true;
     video.autoplay = true;
     video.playsInline = true;
+    video.addEventListener("playing", onPlaying);
+    video.addEventListener("waiting", onWaiting);
+    video.addEventListener("error", onError);
+
+    detach = attachLiveVideo(
+      video,
+      { whepUrl, hlsUrl },
+      {
+        onTransport: setTransport,
+        onError: (e) => {
+          setStatus("error");
+          setErrorMsg(e.message);
+        },
+      },
+    );
 
     return () => {
       video.removeEventListener("playing", onPlaying);
@@ -85,7 +92,7 @@ export function LiveCameraTile({ cameraId, name, hlsUrl }: LiveCameraTileProps) 
       if (stalledTimer) clearTimeout(stalledTimer);
       detach?.();
     };
-  }, [hlsUrl]);
+  }, [whepUrl, hlsUrl]);
 
   useEffect(() => {
     function onFsChange() {
@@ -245,6 +252,17 @@ export function LiveCameraTile({ cameraId, name, hlsUrl }: LiveCameraTileProps) 
           {name}
         </div>
         <div className="pointer-events-auto flex items-center gap-2">
+          {/* Transport indicator — WebRTC (low latency) vs HLS fallback */}
+          <span
+            className="rounded-md bg-black/60 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm"
+            title={
+              transport === "webrtc"
+                ? "WebRTC — бага саатал (sub-second)"
+                : "HLS — нөөц горим (WebRTC амжилтгүй)"
+            }
+          >
+            {transport === "webrtc" ? "⚡ RTC" : "HLS"}
+          </span>
           {/* AI detection count + ws state */}
           <span
             className={`rounded-md px-2 py-1 text-xs font-medium backdrop-blur-sm ${

@@ -17,6 +17,9 @@ import type { CameraPublic } from "@/lib/types";
  */
 const MEDIAMTX_HLS_BASE =
   process.env.NEXT_PUBLIC_MEDIAMTX_HLS_BASE ?? "http://localhost:8888";
+// WebRTC/WHEP endpoint (MediaMTX :8889) — primary low-latency transport.
+const MEDIAMTX_WHEP_BASE =
+  process.env.NEXT_PUBLIC_MEDIAMTX_WHEP_BASE ?? "http://localhost:8889";
 
 type LiveCamera = { path: string; name: string };
 
@@ -50,6 +53,7 @@ export default function LivePage() {
   }, []);
 
   const hlsUrl = (path: string) => `${MEDIAMTX_HLS_BASE}/${path}/index.m3u8`;
+  const whepUrl = (path: string) => `${MEDIAMTX_WHEP_BASE}/${path}/whep`;
 
   if (error) {
     return <p className="p-8 text-[var(--color-danger)]">{error}</p>;
@@ -87,7 +91,7 @@ export default function LivePage() {
       <header className="flex items-center justify-between gap-4 border-b border-[var(--color-border)] bg-[var(--color-background)] px-4 py-2">
         <div className="flex items-center gap-4">
           <p className="text-xs text-[var(--color-muted-foreground)]">
-            {cams.length} камер · MediaMTX HLS
+            {cams.length} камер · WebRTC (бага саатал)
           </p>
           {layout === "single" && (
             <select
@@ -144,6 +148,7 @@ export default function LivePage() {
             key={selected.path}
             cameraId={selected.path}
             name={selected.name}
+            whepUrl={whepUrl(selected.path)}
             hlsUrl={hlsUrl(selected.path)}
           />
         </div>
@@ -155,6 +160,7 @@ export default function LivePage() {
                 <LiveCameraTile
                   cameraId={c.path}
                   name={c.name}
+                  whepUrl={whepUrl(c.path)}
                   hlsUrl={hlsUrl(c.path)}
                 />
               </div>
