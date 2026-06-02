@@ -15,7 +15,13 @@ import {
   ModalTitle,
   Spinner,
 } from "@chipmo-sentry/ui-kit";
-import { Pencil, Plus, Store as StoreIcon, Trash2 } from "lucide-react";
+import {
+  Download,
+  Pencil,
+  Plus,
+  Store as StoreIcon,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Field } from "@/components/Field";
@@ -24,6 +30,12 @@ import { stores, type StoreInput } from "@/lib/api";
 import type { StorePublic } from "@/lib/types";
 
 const DEFAULT_TZ = "Asia/Ulaanbaatar";
+
+/** Latest published Sentry agent .exe (GitHub Releases). The `latest/download`
+ * path always resolves to the newest release's asset, so this never needs
+ * bumping per release. */
+const AGENT_DOWNLOAD_URL =
+  "https://github.com/Chipmo-Sentry/sentry-agent-pc/releases/latest/download/ChipmoSentryAgent.exe";
 
 export default function StoresPage() {
   const { toast } = useToast();
@@ -72,12 +84,24 @@ export default function StoresPage() {
 
   return (
     <div className="p-8">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">Дэлгүүр</h1>
-        <Button onClick={() => setEditing("new")}>
-          <Plus className="h-4 w-4" />
-          Шинэ дэлгүүр
-        </Button>
+        <div className="flex items-center gap-3">
+          <p className="hidden max-w-xs text-right text-xs leading-snug text-[var(--color-muted-foreground)] sm:block">
+            Камераа холбохын тулд дэлгүүрийнхээ компьютер дээр Sentry агентыг
+            суулгаад, дэлгүүрийн 6 оронтой кодоор холбоно.
+          </p>
+          <Button asChild variant="outline" title="Windows .exe — давхар товшиж асаана">
+            <a href={AGENT_DOWNLOAD_URL} target="_blank" rel="noopener noreferrer">
+              <Download className="h-4 w-4" />
+              Агент татах
+            </a>
+          </Button>
+          <Button onClick={() => setEditing("new")}>
+            <Plus className="h-4 w-4" />
+            Шинэ дэлгүүр
+          </Button>
+        </div>
       </div>
 
       {list.length === 0 ? (
