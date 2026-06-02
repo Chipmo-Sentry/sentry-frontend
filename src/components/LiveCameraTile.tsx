@@ -1,6 +1,7 @@
 "use client";
 
-import { Maximize2, Minimize2 } from "lucide-react";
+import { ExternalLink, Maximize2, Minimize2 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { attachLiveVideo, type LiveTransport } from "@/lib/live-video";
@@ -11,6 +12,8 @@ export type LiveCameraTileProps = {
   name: string;
   whepUrl: string;
   hlsUrl: string;
+  /** When set, render a link to the dedicated single-camera page (FE-L6). */
+  detailHref?: string;
 };
 
 type Status = "loading" | "playing" | "stalled" | "error";
@@ -32,7 +35,13 @@ const STATUS_TONE: Record<
   error: "danger",
 };
 
-export function LiveCameraTile({ cameraId, name, whepUrl, hlsUrl }: LiveCameraTileProps) {
+export function LiveCameraTile({
+  cameraId,
+  name,
+  whepUrl,
+  hlsUrl,
+  detailHref,
+}: LiveCameraTileProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -291,6 +300,16 @@ export function LiveCameraTile({ cameraId, name, whepUrl, hlsUrl }: LiveCameraTi
           >
             {STATUS_LABEL[status]}
           </span>
+          {detailHref && !isFullscreen && (
+            <Link
+              href={detailHref}
+              className="rounded-md bg-black/60 p-1.5 text-white backdrop-blur-sm transition-colors hover:bg-black/80"
+              aria-label="Дэлгэрэнгүй харах"
+              title="Энэ камерыг тусдаа хуудсанд нээх"
+            >
+              <ExternalLink className="h-4 w-4" />
+            </Link>
+          )}
           <button
             type="button"
             onClick={toggleFullscreen}

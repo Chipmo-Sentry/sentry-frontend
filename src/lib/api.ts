@@ -73,6 +73,7 @@ export interface StoreInput {
   name: string;
   address?: string | null;
   timezone?: string;
+  telegram_chat_id?: string | null;
 }
 
 export const stores = {

@@ -265,6 +265,7 @@ function StoreFormModal({
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [timezone, setTimezone] = useState(DEFAULT_TZ);
+  const [telegramChatId, setTelegramChatId] = useState("");
   const [saving, setSaving] = useState(false);
 
   // Sync form when the target store changes / modal opens.
@@ -273,6 +274,7 @@ function StoreFormModal({
     setName(store?.name ?? "");
     setAddress(store?.address ?? "");
     setTimezone(store?.timezone ?? DEFAULT_TZ);
+    setTelegramChatId(store?.telegram_chat_id ?? "");
   }, [open, store]);
 
   async function onSubmit(e: React.FormEvent) {
@@ -282,6 +284,7 @@ function StoreFormModal({
       name: name.trim(),
       address: address.trim() || null,
       timezone: timezone.trim() || DEFAULT_TZ,
+      telegram_chat_id: telegramChatId.trim() || null,
     };
     try {
       if (store) {
@@ -331,6 +334,17 @@ function StoreFormModal({
             <Input
               value={timezone}
               onChange={(e) => setTimezone(e.target.value)}
+              disabled={saving}
+            />
+          </Field>
+          <Field
+            label="Telegram chat ID"
+            hint="Сэжигтэй үйлдлийн мэдэгдэл энэ чат руу очно (заавал биш)"
+          >
+            <Input
+              value={telegramChatId}
+              onChange={(e) => setTelegramChatId(e.target.value)}
+              placeholder="Жишээ: -1001234567890"
               disabled={saving}
             />
           </Field>

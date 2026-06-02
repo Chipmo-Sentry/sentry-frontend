@@ -13,6 +13,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { useToast } from "@/components/Toaster";
 import { useAlertStreamContext } from "@/lib/alert-stream-context";
 import { isMuted, onMuteChange } from "@/lib/notif-prefs";
 import type { AlertLevel, AlertPublic } from "@/lib/types";
@@ -69,6 +70,7 @@ function playBeep() {
 
 export function NotificationListener() {
   const { alerts } = useAlertStreamContext();
+  const { toast } = useToast();
   const seenRef = useRef<Set<string>>(new Set());
   const initializedRef = useRef(false);
   const mutedRef = useRef(false);
@@ -113,6 +115,26 @@ export function NotificationListener() {
 
     if (newActionable === 0 || !last) return;
 
+    // In-app toast (FE-L8) — shown even when muted, since it's silent + visual.
+    // Live threshold breaches carry person_id + peak risk; surface them.
+    {
+      const a = last;
+      const isBreach = a.triggered_by === "live_threshold";
+      const parts = [`${CATEGORY_LABEL[a.category]} · ${Math.round(a.confidence * 100)}%`];
+      if (isBreach && a.person_id != null) {
+        parts.push(
+          a.peak_risk_pct != null
+            ? `Хүн #${a.person_id} · эрсдэл ${a.peak_risk_pct.toFixed(0)}`
+            : `Хүн #${a.person_id}`,
+        );
+      }
+      toast({
+        title: `${isBreach ? "🚨 Шууд сэрэмжлүүлэг" : "🔔"} ${LEVEL_LABEL[a.alert_level]}`,
+        description: parts.join(" · "),
+        tone: a.alert_level === "review" ? "danger" : "warning",
+      });
+    }
+
     // Muted: still keep the passive tab badge, but no sound/popup.
     if (mutedRef.current) {
       if (document.hidden) setUnread((u) => u + newActionable);
@@ -139,7 +161,7 @@ export function NotificationListener() {
     if (document.hidden) {
       setUnread((u) => u + newActionable);
     }
-  }, [alerts]);
+  }, [alerts, toast]);
 
   // Maintain the tab title badge; clear unread when the tab becomes visible.
   useEffect(() => {

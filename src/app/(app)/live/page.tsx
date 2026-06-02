@@ -150,6 +150,7 @@ export default function LivePage() {
             name={selected.name}
             whepUrl={whepUrl(selected.path)}
             hlsUrl={hlsUrl(selected.path)}
+            detailHref={`/live/${encodeURIComponent(selected.path)}`}
           />
         </div>
       ) : (
@@ -162,6 +163,7 @@ export default function LivePage() {
                   name={c.name}
                   whepUrl={whepUrl(c.path)}
                   hlsUrl={hlsUrl(c.path)}
+                  detailHref={`/live/${encodeURIComponent(c.path)}`}
                 />
               </div>
             ))}

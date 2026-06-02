@@ -149,6 +149,24 @@ export default function AlertDetailPage() {
             </p>
           </section>
 
+          {/* FE-L9 — trigger source + (for live breaches) tracked person and
+              peak accumulated risk. */}
+          <section className="flex flex-wrap items-center gap-2">
+            <Badge tone={alert.triggered_by === "live_threshold" ? "notify" : "neutral"}>
+              {alert.triggered_by === "live_threshold"
+                ? "🚨 Шууд хяналт"
+                : "Видео илгээлт"}
+            </Badge>
+            {alert.person_id != null && (
+              <Badge tone="neutral">Хүн #{alert.person_id}</Badge>
+            )}
+            {alert.peak_risk_pct != null && (
+              <Badge tone="warning">
+                Дээд эрсдэл {alert.peak_risk_pct.toFixed(1)}
+              </Badge>
+            )}
+          </section>
+
           {clip ? (
             <section className="text-xs text-[var(--color-muted-foreground)]">
               <div>
