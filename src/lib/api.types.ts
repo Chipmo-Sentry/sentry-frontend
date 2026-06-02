@@ -293,6 +293,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/leads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Lead */
+        post: operations["submit_lead_api_v1_leads_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/internal/alerts": {
         parameters: {
             query?: never;
@@ -444,6 +461,40 @@ export interface paths {
         patch: operations["update_user_api_v1_admin_users__user_id__patch"];
         trace?: never;
     };
+    "/api/v1/admin/leads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Leads */
+        get: operations["list_leads_api_v1_admin_leads_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/leads/{lead_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Lead */
+        patch: operations["update_lead_api_v1_admin_leads__lead_id__patch"];
+        trace?: never;
+    };
     "/api/v1/stores/{store_id}/pairing-codes": {
         parameters: {
             query?: never;
@@ -542,6 +593,30 @@ export interface paths {
         post?: never;
         /** Agent Delete Camera */
         delete: operations["agent_delete_camera_api_v1_agent_cameras__camera_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/stream-config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Agent Stream Config
+         * @description Tell a paired agent where (and whether) to publish its camera streams.
+         *
+         *     push_enabled=True → cloud topology: the agent runs ffmpeg relays pushing
+         *     each LAN camera to `push_rtsp_base/<mediamtx_path>`. False → MediaMTX pulls
+         *     cameras directly (local/on-LAN) and the agent pushes nothing.
+         */
+        get: operations["agent_stream_config_api_v1_agent_stream_config_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -684,6 +759,23 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /**
+         * AgentStreamConfig
+         * @description Where the agent should publish its camera streams (cloud topology).
+         *
+         *     push_enabled=False means MediaMTX pulls cameras directly (local/on-LAN);
+         *     the agent does NOT push and runs no ffmpeg relays.
+         */
+        AgentStreamConfig: {
+            /** Push Enabled */
+            push_enabled: boolean;
+            /** Push Rtsp Base */
+            push_rtsp_base?: string | null;
+            /** Publish User */
+            publish_user?: string | null;
+            /** Publish Pass */
+            publish_pass?: string | null;
         };
         /**
          * AlertCategory
@@ -1016,6 +1108,81 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * LeadCreate
+         * @description Public landing-page submission.
+         *
+         *     `website` is a honeypot — a hidden field real users never fill. Bots that
+         *     blindly fill every input trip it; the endpoint silently drops those.
+         */
+        LeadCreate: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Name */
+            name?: string | null;
+            /** Organization */
+            organization?: string | null;
+            /** Phone */
+            phone?: string | null;
+            /** Industry */
+            industry?: string | null;
+            /** Camera Count */
+            camera_count?: number | null;
+            /**
+             * Source
+             * @default landing
+             */
+            source: string;
+            /** Website */
+            website?: string | null;
+        };
+        /** LeadPublic */
+        LeadPublic: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Email */
+            email: string;
+            /** Name */
+            name: string | null;
+            /** Organization */
+            organization: string | null;
+            /** Phone */
+            phone: string | null;
+            /** Industry */
+            industry: string | null;
+            /** Camera Count */
+            camera_count: number | null;
+            /** Source */
+            source: string;
+            status: components["schemas"]["LeadStatus"];
+            /** Notes */
+            notes: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * LeadStatus
+         * @enum {string}
+         */
+        LeadStatus: "new" | "contacted" | "qualified" | "closed";
+        /**
+         * LeadUpdate
+         * @description Super-admin triage — change status and/or attach notes.
+         */
+        LeadUpdate: {
+            status?: components["schemas"]["LeadStatus"] | null;
+            /** Notes */
+            notes?: string | null;
         };
         /**
          * LiveMetadataBatch
@@ -2027,6 +2194,39 @@ export interface operations {
             };
         };
     };
+    submit_lead_api_v1_leads_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeadCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeadPublic"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_alert_from_ai_api_v1_internal_alerts_post: {
         parameters: {
             query?: never;
@@ -2381,6 +2581,81 @@ export interface operations {
             };
         };
     };
+    list_leads_api_v1_admin_leads_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeadPublic"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_lead_api_v1_admin_leads__lead_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                lead_id: string;
+            };
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeadUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeadPublic"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_pairing_code_api_v1_stores__store_id__pairing_codes_post: {
         parameters: {
             query?: never;
@@ -2602,6 +2877,37 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    agent_stream_config_api_v1_agent_stream_config_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentStreamConfig"];
+                };
             };
             /** @description Validation Error */
             422: {
