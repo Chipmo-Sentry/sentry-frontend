@@ -2,7 +2,6 @@
 
 import {
   Badge,
-  Button,
   Card,
   CardContent,
   CardDescription,
@@ -10,7 +9,7 @@ import {
   CardTitle,
   Spinner,
 } from "@chipmo-sentry/ui-kit";
-import { Brain, CheckCircle2, Clock, Save } from "lucide-react";
+import { Brain, CheckCircle2, Clock, Lock } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { behaviors } from "@/lib/api";
@@ -22,67 +21,29 @@ const COLOR_LABEL_FALLBACK = {
   red: "Сэжигтэй",
 };
 
+/**
+ * READ-ONLY view of the global behavior config. Editing lives in the
+ * super-admin panel (sentry-superadmin) — the backend PATCH /behaviors is
+ * super-admin only. Organization admins can only view here.
+ */
 export default function BehaviorsPage() {
   const [data, setData] = useState<BehaviorConfig | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  // Editable state mirrors data; reset on data refresh
-  const [weights, setWeights] = useState<Record<string, number>>({});
-  const [greenMax, setGreenMax] = useState<number>(5);
-  const [yellowMax, setYellowMax] = useState<number>(15);
-  const [saving, setSaving] = useState(false);
-  const [savedAt, setSavedAt] = useState<string | null>(null);
-
-  const reload = () =>
+  useEffect(() => {
+    let cancelled = false;
     behaviors.get().then(
       (j) => {
-        setData(j);
-        setWeights(
-          Object.fromEntries(j.dimensions.map((d) => [d.key, d.weight])),
-        );
-        setGreenMax(j.thresholds.green_max ?? 5);
-        setYellowMax(j.thresholds.yellow_max ?? 15);
+        if (!cancelled) setData(j);
       },
-      (e) => setErr(e instanceof Error ? e.message : "Алдаа"),
+      (e) => {
+        if (!cancelled) setErr(e instanceof Error ? e.message : "Алдаа");
+      },
     );
-
-  useEffect(() => {
-    reload();
+    return () => {
+      cancelled = true;
+    };
   }, []);
-
-  const dirty = data
-    ? data.dimensions.some((d) => weights[d.key] !== d.weight) ||
-      greenMax !== data.thresholds.green_max ||
-      yellowMax !== data.thresholds.yellow_max
-    : false;
-
-  const thresholdValid = greenMax >= 0 && yellowMax > greenMax;
-
-  async function save() {
-    if (!dirty || !thresholdValid) return;
-    setSaving(true);
-    try {
-      const fresh = await behaviors.patch({
-        weights,
-        thresholds: { green_max: greenMax, yellow_max: yellowMax },
-      });
-      setData(fresh);
-      setSavedAt(new Date().toLocaleTimeString("mn-MN"));
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Хадгалах амжилтгүй");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  function reset() {
-    if (!data) return;
-    setWeights(
-      Object.fromEntries(data.dimensions.map((d) => [d.key, d.weight])),
-    );
-    setGreenMax(data.thresholds.green_max ?? 5);
-    setYellowMax(data.thresholds.yellow_max ?? 15);
-  }
 
   if (err) return <p className="p-8 text-[var(--color-danger)]">{err}</p>;
   if (!data) {
@@ -93,109 +54,67 @@ export default function BehaviorsPage() {
     );
   }
 
+  const greenMax = data.thresholds.green_max ?? 5;
+  const yellowMax = data.thresholds.yellow_max ?? 15;
   const activeCount = data.dimensions.filter((d) => d.active_in_m1).length;
 
   return (
     <div className="p-8">
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <div>
-          <div className="mb-2 flex items-center gap-2">
-            <Brain className="h-6 w-6 text-[var(--color-primary)]" />
-            <h1 className="text-2xl font-semibold">Сэжиг шалгуурууд</h1>
-          </div>
-          <p className="text-sm text-[var(--color-muted-foreground)]">
-            AI {activeCount} / {data.dimensions.length} хэмжээсээр хүн бүрийн
-            үйлдлийг сканнердан, нийлбэр оноогоор өнгөт бүсэд хувааж дохио
-            өгнө. <strong>Оноо нь хувь биш — гүйцэтгэл бүрд жин нэмэгдэнэ.</strong>
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {savedAt && !dirty && (
-            <span className="text-xs text-[var(--color-success)]">
-              Хадгалагдсан · {savedAt}
-            </span>
-          )}
-          {dirty && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={reset}
-              disabled={saving}
-            >
-              Буцаах
-            </Button>
-          )}
-          <Button
-            size="sm"
-            onClick={save}
-            disabled={!dirty || !thresholdValid || saving}
-            title={
-              !thresholdValid
-                ? "Анхаар оноо нь хэвийн оноогоос их байх ёстой"
-                : undefined
-            }
-          >
-            <Save className="h-4 w-4" />
-            {saving ? "Хадгалж байна..." : "Хадгалах"}
-          </Button>
-        </div>
+      <div className="mb-2 flex items-center gap-2">
+        <Brain className="h-6 w-6 text-[var(--color-primary)]" />
+        <h1 className="text-2xl font-semibold">Сэжиг шалгуурууд</h1>
+      </div>
+      <p className="mb-4 text-sm text-[var(--color-muted-foreground)]">
+        AI {activeCount} / {data.dimensions.length} хэмжээсээр хүн бүрийн үйлдлийг
+        сканнердан, нийлбэр оноогоор өнгөт бүсэд хувааж дохио өгнө.{" "}
+        <strong>Оноо нь хувь биш — гүйцэтгэл бүрд жин нэмэгдэнэ.</strong>
+      </p>
+
+      <div className="mb-6 flex items-center gap-2 rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] px-3 py-2 text-xs text-[var(--color-muted-foreground)]">
+        <Lock className="h-3.5 w-3.5 shrink-0" />
+        Зөвхөн харах. Жин болон босгыг <strong>супер админ</strong> удирдлагын
+        самбараас тохируулна.
       </div>
 
-      {/* Threshold settings */}
+      {/* Risk thresholds */}
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="text-base">Risk түвшний босго (оноо)</CardTitle>
           <CardDescription>
-            Хүний нийт оноо энэ босгуудаас хамаарч өнгө сонгогдоно. Жишээ нь
-            "анхаар"-ыг 10 болгоход 10-аас дээш оноотой хэн бүхэн шар болно.
+            Хүний нийт оноо энэ босгуудаас хамаарч өнгө сонгогдоно.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <ThresholdInput
-              color="green"
+          <div className="flex flex-wrap gap-3 text-sm">
+            <Band
+              color="bg-green-500"
               label={data.color_labels?.green ?? COLOR_LABEL_FALLBACK.green}
-              hint={`оноо < ${greenMax}`}
-              value={greenMax}
-              max={yellowMax - 0.1}
-              onChange={setGreenMax}
+              range={`< ${greenMax}`}
             />
-            <ThresholdInput
-              color="yellow"
+            <Band
+              color="bg-yellow-500"
               label={data.color_labels?.yellow ?? COLOR_LABEL_FALLBACK.yellow}
-              hint={`${greenMax} ≤ оноо < ${yellowMax}`}
-              value={yellowMax}
-              min={greenMax + 0.1}
-              onChange={setYellowMax}
+              range={`${greenMax} – ${yellowMax}`}
             />
-            <div className="rounded-md border border-[var(--color-border)] p-3">
-              <div className="mb-1 flex items-center gap-2">
-                <span className="inline-block h-2.5 w-2.5 rounded-full bg-red-500" />
-                <span className="text-sm font-medium">{data.color_labels?.red ?? COLOR_LABEL_FALLBACK.red}</span>
-              </div>
-              <p className="text-xs text-[var(--color-muted-foreground)]">
-                оноо ≥ {yellowMax}
-              </p>
-              <p className="mt-2 text-xs text-[var(--color-muted-foreground)]">
-                Энэ үед автомат clip хадгалагдан alert үүснэ.
-              </p>
-            </div>
+            <Band
+              color="bg-red-500"
+              label={data.color_labels?.red ?? COLOR_LABEL_FALLBACK.red}
+              range={`≥ ${yellowMax}`}
+            />
           </div>
-          {!thresholdValid && (
-            <p className="mt-3 text-xs text-[var(--color-danger)]">
-              "Анхаар"-ын босго "Хэвийн"-ийн босгоноос их байх ёстой.
-            </p>
-          )}
+          <p className="mt-3 text-xs text-[var(--color-muted-foreground)]">
+            🔴 Сэжигтэй (≥ {yellowMax}) болоход автомат clip хадгалагдан alert
+            үүснэ.
+          </p>
         </CardContent>
       </Card>
 
-      {/* Dimensions table */}
+      {/* Dimensions table (read-only) */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">6 шалгуур — жин (оноо)</CardTitle>
           <CardDescription>
             Шалгуур триггерлэгдэх бүрд тус жин нь хүний нийт оноонд нэмэгдэнэ.
-            Жин ↑ = шалгуур илүү мэдрэмжтэй.
           </CardDescription>
         </CardHeader>
         <CardContent className="px-0 pt-0">
@@ -245,20 +164,8 @@ export default function BehaviorsPage() {
                       </Badge>
                     )}
                   </td>
-                  <td className="px-3 py-3 align-top text-right">
-                    <input
-                      type="number"
-                      step="0.5"
-                      min="0"
-                      value={weights[d.key] ?? d.weight}
-                      onChange={(e) =>
-                        setWeights((prev) => ({
-                          ...prev,
-                          [d.key]: Number(e.target.value) || 0,
-                        }))
-                      }
-                      className="w-20 rounded-md border border-[var(--color-border)] bg-[var(--color-background)] px-2 py-1 text-right font-mono text-sm focus:border-[var(--color-ring)] focus:outline-none focus:ring-2 focus:ring-[var(--color-ring)]/30"
-                    />
+                  <td className="px-3 py-3 align-top text-right font-mono">
+                    {d.weight}
                   </td>
                 </tr>
               ))}
@@ -266,54 +173,28 @@ export default function BehaviorsPage() {
           </table>
         </CardContent>
       </Card>
-
-      <p className="mt-6 text-xs text-[var(--color-muted-foreground)]">
-        Тохиргоо хадгалагдсаны дараа sentry-ai ~30 секунд дотор шинэ
-        утгуудыг хүлээн авч хэрэглэж эхэлнэ.
-      </p>
     </div>
   );
 }
 
-function ThresholdInput({
+function Band({
   color,
   label,
-  hint,
-  value,
-  min,
-  max,
-  onChange,
+  range,
 }: {
-  color: "green" | "yellow";
+  color: string;
   label: string;
-  hint: string;
-  value: number;
-  min?: number;
-  max?: number;
-  onChange: (v: number) => void;
+  range: string;
 }) {
-  const dotColor = color === "green" ? "bg-green-500" : "bg-yellow-500";
   return (
-    <div className="rounded-md border border-[var(--color-border)] p-3">
-      <div className="mb-1 flex items-center gap-2">
-        <span className={`inline-block h-2.5 w-2.5 rounded-full ${dotColor}`} />
-        <span className="text-sm font-medium">{label}</span>
-      </div>
-      <p className="text-xs text-[var(--color-muted-foreground)]">{hint}</p>
-      <div className="mt-2 flex items-center gap-1">
-        <span className="text-xs text-[var(--color-muted-foreground)]">
-          Босго ≥
+    <div className="flex items-center gap-2">
+      <span className={`inline-block h-3 w-3 rounded-full ${color}`} />
+      <span>
+        <span className="font-medium">{label}</span>{" "}
+        <span className="font-mono text-[var(--color-muted-foreground)]">
+          ({range})
         </span>
-        <input
-          type="number"
-          step="0.5"
-          min={min ?? 0}
-          max={max}
-          value={value}
-          onChange={(e) => onChange(Number(e.target.value) || 0)}
-          className="w-20 rounded-md border border-[var(--color-border)] bg-[var(--color-background)] px-2 py-1 font-mono text-sm focus:border-[var(--color-ring)] focus:outline-none focus:ring-2 focus:ring-[var(--color-ring)]/30"
-        />
-      </div>
+      </span>
     </div>
   );
 }
