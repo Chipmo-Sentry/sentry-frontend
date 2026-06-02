@@ -32,16 +32,29 @@ export default function BehaviorsPage() {
 
   useEffect(() => {
     let cancelled = false;
-    behaviors.get().then(
-      (j) => {
-        if (!cancelled) setData(j);
-      },
-      (e) => {
-        if (!cancelled) setErr(e instanceof Error ? e.message : "Алдаа");
-      },
-    );
+    let loaded = false;
+    function load() {
+      behaviors.get().then(
+        (j) => {
+          if (cancelled) return;
+          loaded = true;
+          setData(j);
+        },
+        (e) => {
+          // Only surface an error before the first successful load; keep
+          // showing the last good config on a transient poll failure.
+          if (!cancelled && !loaded)
+            setErr(e instanceof Error ? e.message : "Алдаа");
+        },
+      );
+    }
+    load();
+    // Poll so a super-admin's threshold/weight change shows here within ~30s
+    // without the operator refreshing the page.
+    const id = setInterval(load, 30_000);
     return () => {
       cancelled = true;
+      clearInterval(id);
     };
   }, []);
 
