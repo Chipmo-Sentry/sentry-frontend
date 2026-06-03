@@ -8,6 +8,7 @@ import {
   Dropdown,
   DropdownContent,
   DropdownItem,
+  DropdownSeparator,
   DropdownTrigger,
   EmptyState,
   Input,
@@ -202,38 +203,33 @@ export default function StoresPage() {
                           : "0 камер"}
                     </Badge>
                   </div>
-                  {/* Actions, separated from status. */}
-                  <div className="flex items-center gap-1">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setConnectStore(s)}
-                    >
-                      Компьютер холбох
-                    </Button>
-                    {/* Edit + destructive delete tucked into an overflow menu so
-                        delete can't be hit by accident. */}
-                    <Dropdown>
-                      <DropdownTrigger asChild>
-                        <Button size="sm" variant="ghost" aria-label="Бусад үйлдэл">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownTrigger>
-                      <DropdownContent align="end">
-                        <DropdownItem onClick={() => setEditing(s)}>
-                          <Pencil className="h-4 w-4" />
-                          Засах
-                        </DropdownItem>
-                        <DropdownItem
-                          className="text-[var(--color-danger)] focus:text-[var(--color-danger)]"
-                          onClick={() => setConfirmDelete(s)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          Устгах
-                        </DropdownItem>
-                      </DropdownContent>
-                    </Dropdown>
-                  </div>
+                  {/* All row actions live in one overflow menu — connect,
+                      edit, and (separated) the destructive delete. */}
+                  <Dropdown>
+                    <DropdownTrigger asChild>
+                      <Button size="sm" variant="ghost" aria-label="Үйлдлүүд">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownTrigger>
+                    <DropdownContent align="end">
+                      <DropdownItem onClick={() => setConnectStore(s)}>
+                        <Laptop className="h-4 w-4" />
+                        Компьютер холбох
+                      </DropdownItem>
+                      <DropdownItem onClick={() => setEditing(s)}>
+                        <Pencil className="h-4 w-4" />
+                        Засах
+                      </DropdownItem>
+                      <DropdownSeparator />
+                      <DropdownItem
+                        className="text-[var(--color-danger)] focus:text-[var(--color-danger)]"
+                        onClick={() => setConfirmDelete(s)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Устгах
+                      </DropdownItem>
+                    </DropdownContent>
+                  </Dropdown>
                 </div>
               </CardContent>
             </Card>
