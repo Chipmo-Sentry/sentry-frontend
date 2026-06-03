@@ -25,7 +25,7 @@ import {
   Store as StoreIcon,
   Trash2,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { Field } from "@/components/Field";
 import { useToast } from "@/components/Toaster";
@@ -40,11 +40,12 @@ import type {
 
 const DEFAULT_TZ = "Asia/Ulaanbaatar";
 
-/** Latest published Sentry agent .exe (GitHub Releases). The `latest/download`
- * path always resolves to the newest release's asset, so this never needs
- * bumping per release. */
+/** Latest published Sentry agent installer (GitHub Releases). The
+ * `latest/download` path always resolves to the newest release's asset, so this
+ * never needs bumping per release. Setup.exe lets the user choose the install
+ * folder, adds Start Menu / autostart, and runs from the install dir. */
 const AGENT_DOWNLOAD_URL =
-  "https://github.com/Chipmo-Sentry/sentry-agent-pc/releases/latest/download/ChipmoSentryAgent.exe";
+  "https://github.com/Chipmo-Sentry/sentry-agent-pc/releases/latest/download/ChipmoSentryAgent-Setup.exe";
 
 export default function StoresPage() {
   const { toast } = useToast();
@@ -127,10 +128,10 @@ export default function StoresPage() {
             Камераа холбохын тулд дэлгүүрийнхээ компьютер дээр Sentry агентыг
             суулгаад, дэлгүүрийн 6 оронтой кодоор холбоно.
           </p>
-          <Button asChild variant="outline" title="Windows .exe — давхар товшиж асаана">
+          <Button asChild variant="outline" title="Windows суулгац — ажиллуулж, замаа сонгож суулгана">
             <a href={AGENT_DOWNLOAD_URL} target="_blank" rel="noopener noreferrer">
               <Download className="h-4 w-4" />
-              Агент татах
+              Агент татах (Setup)
             </a>
           </Button>
           <Button onClick={() => setEditing("new")}>
@@ -379,25 +380,41 @@ function ConnectPCModal({
   const [agentList, setAgentList] = useState<AgentPublic[] | null>(null);
   const [camList, setCamList] = useState<CameraPublic[] | null>(null);
   const [genBusy, setGenBusy] = useState(false);
+  // `${kind}:${id}` of the row awaiting delete confirmation (inline).
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   const open = store !== null;
+  const storeId = store?.id ?? null;
+
+  const reload = useCallback(() => {
+    if (!storeId) return;
+    agents
+      .listForStore(storeId)
+      .then(setAgentList)
+      .catch(() => setAgentList([]));
+    cameras
+      .list(storeId)
+      .then(setCamList)
+      .catch(() => setCamList([]));
+  }, [storeId]);
 
   // Poll agents + cameras while the modal is open so a freshly-paired PC and
   // the cameras it registers appear live, without reopening.
   useEffect(() => {
-    if (!open || !store) return;
+    if (!open || !storeId) return;
     setCode(null);
     setAgentList(null);
     setCamList(null);
+    setPendingDelete(null);
     let cancelled = false;
-    const sid = store.id;
     function refresh() {
       agents
-        .listForStore(sid)
+        .listForStore(storeId!)
         .then((a) => !cancelled && setAgentList(a))
         .catch(() => !cancelled && setAgentList([]));
       cameras
-        .list(sid)
+        .list(storeId!)
         .then((c) => !cancelled && setCamList(c))
         .catch(() => !cancelled && setCamList([]));
     }
@@ -407,7 +424,48 @@ function ConnectPCModal({
       cancelled = true;
       clearInterval(id);
     };
-  }, [open, store]);
+  }, [open, storeId]);
+
+  async function removeAgent(a: AgentPublic) {
+    setDeleteBusy(true);
+    try {
+      await agents.revoke(a.id);
+      toast({ title: "Компьютер салгагдлаа", tone: "success" });
+      setPendingDelete(null);
+      reload();
+    } catch (e) {
+      toast({
+        title: "Салгаж чадсангүй",
+        description:
+          e instanceof ApiError && e.status === 403
+            ? "Танд энэ дэлгүүрт админ эрх алга."
+            : e instanceof Error
+              ? e.message
+              : "Алдаа",
+        tone: "danger",
+      });
+    } finally {
+      setDeleteBusy(false);
+    }
+  }
+
+  async function removeCamera(c: CameraPublic) {
+    setDeleteBusy(true);
+    try {
+      await cameras.remove(c.id);
+      toast({ title: "Камер устгагдлаа", tone: "success" });
+      setPendingDelete(null);
+      reload();
+    } catch (e) {
+      toast({
+        title: "Устгаж чадсангүй",
+        description: e instanceof Error ? e.message : "Алдаа",
+        tone: "danger",
+      });
+    } finally {
+      setDeleteBusy(false);
+    }
+  }
 
   async function generate() {
     if (!store) return;
@@ -450,7 +508,7 @@ function ConnectPCModal({
                 rel="noopener noreferrer"
               >
                 <Download className="h-4 w-4" />
-                Sentry агент татах (.exe)
+                Sentry агент татах (Setup.exe)
               </a>
             </Button>
           </div>
@@ -515,9 +573,43 @@ function ConnectPCModal({
                         )}
                       </span>
                     </span>
-                    <Badge tone={a.is_active ? "success" : "neutral"}>
-                      {a.is_active ? "Идэвхтэй" : "Салгасан"}
-                    </Badge>
+                    {pendingDelete === `agent:${a.id}` ? (
+                      <span className="flex shrink-0 items-center gap-1">
+                        <span className="text-xs text-[var(--color-muted-foreground)]">
+                          Устгах уу?
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          disabled={deleteBusy}
+                          onClick={() => removeAgent(a)}
+                        >
+                          Тийм
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={deleteBusy}
+                          onClick={() => setPendingDelete(null)}
+                        >
+                          Үгүй
+                        </Button>
+                      </span>
+                    ) : (
+                      <span className="flex shrink-0 items-center gap-1">
+                        <Badge tone={a.is_active ? "success" : "neutral"}>
+                          {a.is_active ? "Идэвхтэй" : "Салгасан"}
+                        </Badge>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          aria-label="Компьютер устгах"
+                          onClick={() => setPendingDelete(`agent:${a.id}`)}
+                        >
+                          <Trash2 className="h-4 w-4 text-[var(--color-danger)]" />
+                        </Button>
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -547,9 +639,43 @@ function ConnectPCModal({
                       <Cctv className="h-4 w-4 shrink-0 text-[var(--color-muted-foreground)]" />
                       <span className="truncate">{c.name}</span>
                     </span>
-                    <Badge tone={c.enabled ? "success" : "neutral"}>
-                      {c.enabled ? "Идэвхтэй" : "Унтраалттай"}
-                    </Badge>
+                    {pendingDelete === `camera:${c.id}` ? (
+                      <span className="flex shrink-0 items-center gap-1">
+                        <span className="text-xs text-[var(--color-muted-foreground)]">
+                          Устгах уу?
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          disabled={deleteBusy}
+                          onClick={() => removeCamera(c)}
+                        >
+                          Тийм
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={deleteBusy}
+                          onClick={() => setPendingDelete(null)}
+                        >
+                          Үгүй
+                        </Button>
+                      </span>
+                    ) : (
+                      <span className="flex shrink-0 items-center gap-1">
+                        <Badge tone={c.enabled ? "success" : "neutral"}>
+                          {c.enabled ? "Идэвхтэй" : "Унтраалттай"}
+                        </Badge>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          aria-label="Камер устгах"
+                          onClick={() => setPendingDelete(`camera:${c.id}`)}
+                        >
+                          <Trash2 className="h-4 w-4 text-[var(--color-danger)]" />
+                        </Button>
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>
