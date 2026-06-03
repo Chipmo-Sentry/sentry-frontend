@@ -26,25 +26,18 @@ jobs:
           node-version: "22"
           cache: "npm"
 
-      - name: Install (npm ci)
-        # We mock the file: ui-kit dep with a build artifact in CI when needed.
-        # For now CI is a smoke check on the frontend in isolation.
+      - name: "Build ui-kit (file: dependency)"
+        # ui-kit is a public sibling repo consumed via file:../sentry-ui-kit.
+        # Clone + build the REAL package so its named exports + types resolve
+        # for typecheck and the Next build (the old stub had no exports, so
+        # every ui-kit import failed typecheck).
         run: |
-          # Create a minimal ui-kit stub so npm ci doesn't fail on the file: dep
-          mkdir -p ../sentry-ui-kit/dist
-          cat > ../sentry-ui-kit/package.json <<'JSON'
-          {
-            "name": "@chipmo-sentry/ui-kit",
-            "version": "0.1.0",
-            "main": "./dist/index.js",
-            "types": "./dist/index.d.ts",
-            "exports": { ".": { "import": "./dist/index.js", "types": "./dist/index.d.ts" }, "./styles.css": "./dist/styles.css" }
-          }
-          JSON
-          echo "export {};" > ../sentry-ui-kit/dist/index.js
-          echo "export {};" > ../sentry-ui-kit/dist/index.d.ts
-          echo "/* stub */" > ../sentry-ui-kit/dist/styles.css
-          npm ci --no-audit --no-fund
+          git clone --depth 1 --branch main \
+            https://github.com/Chipmo-Sentry/sentry-ui-kit.git ../sentry-ui-kit
+          (cd ../sentry-ui-kit && npm ci --no-audit --no-fund && npm run build)
+
+      - name: Install (npm ci)
+        run: npm ci --no-audit --no-fund
 
       - name: OpenAPI types in sync
         run: npm run codegen:check
