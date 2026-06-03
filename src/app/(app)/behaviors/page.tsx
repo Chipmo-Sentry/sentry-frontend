@@ -160,11 +160,6 @@ export default function BehaviorsPage() {
                   </td>
                   <td className="max-w-md px-3 py-3 align-top text-xs text-[var(--color-muted-foreground)]">
                     {d.description_mn}
-                    {d.why_deferred && (
-                      <div className="mt-1 text-[var(--color-warning)]">
-                        <strong>Хүлээгдэж:</strong> {d.why_deferred}
-                      </div>
-                    )}
                   </td>
                   <td className="px-3 py-3 align-top text-center">
                     {d.active_in_m1 ? (
