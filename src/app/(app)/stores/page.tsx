@@ -5,6 +5,10 @@ import {
   Button,
   Card,
   CardContent,
+  Dropdown,
+  DropdownContent,
+  DropdownItem,
+  DropdownTrigger,
   EmptyState,
   Input,
   Modal,
@@ -16,9 +20,14 @@ import {
   Spinner,
 } from "@chipmo-sentry/ui-kit";
 import {
+  AlertTriangle,
   Cctv,
+  Check,
+  Clock,
+  Copy,
   Download,
   Laptop,
+  MoreVertical,
   Pencil,
   Plus,
   RefreshCw,
@@ -39,6 +48,22 @@ import type {
 } from "@/lib/types";
 
 const DEFAULT_TZ = "Asia/Ulaanbaatar";
+
+/** Curated timezone choices. Mongolia spans two zones; a few neighbours are
+ * included for stores operating cross-border. Free-text entry is error-prone,
+ * so the form offers these as a dropdown. */
+const TIMEZONES: { value: string; label: string }[] = [
+  { value: "Asia/Ulaanbaatar", label: "Улаанбаатар (GMT+8)" },
+  { value: "Asia/Hovd", label: "Ховд / баруун аймгууд (GMT+7)" },
+  { value: "Asia/Irkutsk", label: "Эрхүү (GMT+8)" },
+  { value: "Asia/Shanghai", label: "Бээжин (GMT+8)" },
+  { value: "Asia/Seoul", label: "Сөүл (GMT+9)" },
+];
+
+/** Humanise an IANA timezone for display; falls back to the raw id. */
+function tzLabel(tz: string): string {
+  return TIMEZONES.find((t) => t.value === tz)?.label ?? tz;
+}
 
 /** Latest published Sentry agent installer (GitHub Releases). The
  * `latest/download` path always resolves to the newest release's asset, so this
@@ -121,24 +146,12 @@ export default function StoresPage() {
 
   return (
     <div className="p-8">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-6 flex items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">Дэлгүүр</h1>
-        <div className="flex items-center gap-3">
-          <p className="hidden max-w-xs text-right text-xs leading-snug text-[var(--color-muted-foreground)] sm:block">
-            Камераа холбохын тулд дэлгүүрийнхээ компьютер дээр Sentry агентыг
-            суулгаад, дэлгүүрийн 6 оронтой кодоор холбоно.
-          </p>
-          <Button asChild variant="outline" title="Windows суулгац — ажиллуулж, замаа сонгож суулгана">
-            <a href={AGENT_DOWNLOAD_URL} target="_blank" rel="noopener noreferrer">
-              <Download className="h-4 w-4" />
-              Агент татах (Setup)
-            </a>
-          </Button>
-          <Button onClick={() => setEditing("new")}>
-            <Plus className="h-4 w-4" />
-            Шинэ дэлгүүр
-          </Button>
-        </div>
+        <Button onClick={() => setEditing("new")}>
+          <Plus className="h-4 w-4" />
+          Шинэ дэлгүүр
+        </Button>
       </div>
 
       {list.length === 0 ? (
@@ -158,47 +171,69 @@ export default function StoresPage() {
                   <p className="truncate text-sm text-[var(--color-muted-foreground)]">
                     {s.address || "Хаяг оруулаагүй"}
                   </p>
+                  <p className="mt-0.5 flex items-center gap-1 text-xs text-[var(--color-muted-foreground)]">
+                    <Clock className="h-3 w-3" />
+                    {tzLabel(s.timezone)}
+                  </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Badge
-                    tone={
-                      agentCounts[s.id]?.active ? "success" : "neutral"
-                    }
-                  >
-                    <Laptop className="h-3 w-3" />
-                    {agentCounts[s.id]?.total
-                      ? `${agentCounts[s.id]!.active}/${agentCounts[s.id]!.total} компьютер`
-                      : "Компьютер холбоогүй"}
-                  </Badge>
-                  <Badge tone={camCounts[s.id] ? "success" : "neutral"}>
-                    <Cctv className="h-3 w-3" />
-                    {camCounts[s.id] ?? 0} камер
-                  </Badge>
-                  <Badge tone="neutral">{s.timezone}</Badge>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setConnectStore(s)}
-                  >
-                    <Laptop className="h-4 w-4" />
-                    Компьютер холбох
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    aria-label="Засах"
-                    onClick={() => setEditing(s)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    aria-label="Устгах"
-                    onClick={() => setConfirmDelete(s)}
-                  >
-                    <Trash2 className="h-4 w-4 text-[var(--color-danger)]" />
-                  </Button>
+                <div className="flex items-center gap-3">
+                  {/* Status pills — operational state only, grouped together. */}
+                  <div className="flex items-center gap-2">
+                    <Badge tone={agentCounts[s.id]?.active ? "success" : "neutral"}>
+                      <Laptop className="h-3 w-3" />
+                      {agentCounts[s.id]?.total
+                        ? `${agentCounts[s.id]!.active}/${agentCounts[s.id]!.total} компьютер`
+                        : "Компьютер холбоогүй"}
+                    </Badge>
+                    <Badge
+                      tone={
+                        camCounts[s.id]
+                          ? "success"
+                          : agentCounts[s.id]?.active
+                            ? "warning"
+                            : "neutral"
+                      }
+                    >
+                      <Cctv className="h-3 w-3" />
+                      {camCounts[s.id]
+                        ? `${camCounts[s.id]} камер`
+                        : agentCounts[s.id]?.active
+                          ? "Камер илрээгүй"
+                          : "0 камер"}
+                    </Badge>
+                  </div>
+                  {/* Actions, separated from status. */}
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setConnectStore(s)}
+                    >
+                      Компьютер холбох
+                    </Button>
+                    {/* Edit + destructive delete tucked into an overflow menu so
+                        delete can't be hit by accident. */}
+                    <Dropdown>
+                      <DropdownTrigger asChild>
+                        <Button size="sm" variant="ghost" aria-label="Бусад үйлдэл">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownTrigger>
+                      <DropdownContent align="end">
+                        <DropdownItem onClick={() => setEditing(s)}>
+                          <Pencil className="h-4 w-4" />
+                          Засах
+                        </DropdownItem>
+                        <DropdownItem
+                          className="text-[var(--color-danger)] focus:text-[var(--color-danger)]"
+                          onClick={() => setConfirmDelete(s)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Устгах
+                        </DropdownItem>
+                      </DropdownContent>
+                    </Dropdown>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -332,23 +367,62 @@ function StoreFormModal({
             />
           </Field>
           <Field label="Цагийн бүс">
-            <Input
+            <select
               value={timezone}
               onChange={(e) => setTimezone(e.target.value)}
               disabled={saving}
-            />
+              className="flex h-10 w-full rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-2 text-sm text-[var(--color-foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {/* Preserve a stored value that isn't in the curated list. */}
+              {!TIMEZONES.some((t) => t.value === timezone) && (
+                <option value={timezone}>{timezone}</option>
+              )}
+              {TIMEZONES.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
           </Field>
-          <Field
-            label="Telegram chat ID"
-            hint="Сэжигтэй үйлдлийн мэдэгдэл энэ чат руу очно (заавал биш)"
-          >
+          <div>
+            <label
+              htmlFor="store-telegram-chat-id"
+              className="mb-1 block text-sm font-medium"
+            >
+              Telegram чат ID
+            </label>
             <Input
+              id="store-telegram-chat-id"
               value={telegramChatId}
               onChange={(e) => setTelegramChatId(e.target.value)}
               placeholder="Жишээ: -1001234567890"
               disabled={saving}
+              inputMode="numeric"
             />
-          </Field>
+            <span className="mt-1 block text-xs text-[var(--color-muted-foreground)]">
+              Сэжигтэй үйлдлийн мэдэгдэл энэ чат руу очно (заавал биш).
+            </span>
+            <details className="mt-1.5 text-xs">
+              <summary className="cursor-pointer font-medium text-[var(--color-primary)] hover:underline">
+                Чат ID-гаа хэрхэн олох вэ?
+              </summary>
+              <ol className="mt-2 list-decimal space-y-1 pl-4 text-[var(--color-muted-foreground)]">
+                <li>
+                  Telegram дээр <b>@getidsbot</b>-г хайж олоод чатаа эхлүүлнэ
+                  (мессеж бичих эсвэл <code>/start</code>).
+                </li>
+                <li>
+                  Бот таны хувийн чат ID-г (эерэг тоо) шууд хариулна. Үүнийг
+                  доорх талбарт оруулна.
+                </li>
+                <li>
+                  <b>Бүлэг рүү</b> мэдэгдэл авах бол: тухайн бүлэгтээ манай Sentry
+                  ботыг болон <b>@getidsbot</b>-г нэмж, гарч ирэх хасах
+                  тэмдэгтэй ID-г (жишээ: <code>-1001234567890</code>) хуулна.
+                </li>
+              </ol>
+            </details>
+          </div>
           <ModalFooter>
             <Button
               type="button"
@@ -383,6 +457,17 @@ function ConnectPCModal({
   // `${kind}:${id}` of the row awaiting delete confirmation (inline).
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  async function copyCode(value: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast({ title: "Хуулж чадсангүй", tone: "danger" });
+    }
+  }
 
   const open = store !== null;
   const storeId = store?.id ?? null;
@@ -518,9 +603,24 @@ function ConnectPCModal({
             {code ? (
               <>
                 <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-muted)] p-4 text-center">
-                  <p className="font-mono text-4xl font-bold tracking-[0.3em]">
-                    {code.code}
-                  </p>
+                  <div className="flex items-center justify-center gap-2">
+                    <p className="font-mono text-4xl font-bold tracking-[0.3em]">
+                      {code.code}
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-label="Кодыг хуулах"
+                      title="Кодыг хуулах"
+                      onClick={() => copyCode(code.code)}
+                    >
+                      {copied ? (
+                        <Check className="h-4 w-4 text-[var(--color-success)]" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
                   <p className="mt-2 text-xs text-[var(--color-muted-foreground)]">
                     Агент дээр энэ кодыг 10 минутын дотор оруулна уу.
                   </p>
@@ -575,9 +675,19 @@ function ConnectPCModal({
                     </span>
                     {pendingDelete === `agent:${a.id}` ? (
                       <span className="flex shrink-0 items-center gap-1">
-                        <span className="text-xs text-[var(--color-muted-foreground)]">
-                          Устгах уу?
-                        </span>
+                        {a.is_active ? (
+                          <span
+                            className="flex items-center gap-1 text-xs font-medium text-[var(--color-warning)]"
+                            title="Энэ компьютер яг одоо ажиллаж байна. Салгавал камерын дамжуулалт зогсоно."
+                          >
+                            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                            Ажиллаж байна! Салгах уу?
+                          </span>
+                        ) : (
+                          <span className="text-xs text-[var(--color-muted-foreground)]">
+                            Устгах уу?
+                          </span>
+                        )}
                         <Button
                           size="sm"
                           variant="danger"
