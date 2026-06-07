@@ -4,6 +4,7 @@ import { ExternalLink, Maximize2, Minimize2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+import { cameras as camerasApi } from "@/lib/api";
 import { attachLiveVideo, type LiveTransport } from "@/lib/live-video";
 import { useLiveMetadata } from "@/lib/live-ws";
 
@@ -12,6 +13,9 @@ export type LiveCameraTileProps = {
   name: string;
   whepUrl: string;
   hlsUrl: string;
+  /** Camera DB id. When set, the tile fetches a short-lived read token and
+   * appends `?jwt=…` to the stream URLs (authenticated WHEP/HLS). */
+  streamCameraId?: string;
   /** When set, render a link to the dedicated single-camera page (FE-L6). */
   detailHref?: string;
 };
@@ -40,6 +44,7 @@ export function LiveCameraTile({
   name,
   whepUrl,
   hlsUrl,
+  streamCameraId,
   detailHref,
 }: LiveCameraTileProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -49,12 +54,40 @@ export function LiveCameraTile({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [transport, setTransport] = useState<LiveTransport>("webrtc");
+  // Resolved stream URLs (with ?jwt=… when a read token is required). Null until
+  // resolved so we don't attach the raw URL then immediately re-attach.
+  const [authUrls, setAuthUrls] = useState<{ whep: string; hls: string } | null>(
+    streamCameraId ? null : { whep: whepUrl, hls: hlsUrl },
+  );
 
   const { latest, state: wsState } = useLiveMetadata(cameraId);
 
+  // Fetch a short-lived read token and append it to the stream URLs. On failure
+  // fall back to the raw URLs (local/dev MediaMTX without authHTTP still works).
+  useEffect(() => {
+    if (!streamCameraId) {
+      setAuthUrls({ whep: whepUrl, hls: hlsUrl });
+      return;
+    }
+    let cancelled = false;
+    camerasApi.streamToken(streamCameraId).then(
+      ({ token }) => {
+        if (cancelled) return;
+        const q = `?jwt=${encodeURIComponent(token)}`;
+        setAuthUrls({ whep: whepUrl + q, hls: hlsUrl + q });
+      },
+      () => {
+        if (!cancelled) setAuthUrls({ whep: whepUrl, hls: hlsUrl });
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [streamCameraId, whepUrl, hlsUrl]);
+
   useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || !authUrls) return;
 
     let detach: (() => void) | null = null;
     let stalledTimer: ReturnType<typeof setTimeout> | null = null;
@@ -84,7 +117,7 @@ export function LiveCameraTile({
 
     detach = attachLiveVideo(
       video,
-      { whepUrl, hlsUrl },
+      { whepUrl: authUrls.whep, hlsUrl: authUrls.hls },
       {
         onTransport: setTransport,
         onError: (e) => {
@@ -101,7 +134,7 @@ export function LiveCameraTile({
       if (stalledTimer) clearTimeout(stalledTimer);
       detach?.();
     };
-  }, [whepUrl, hlsUrl]);
+  }, [authUrls]);
 
   useEffect(() => {
     function onFsChange() {
@@ -189,10 +222,10 @@ export function LiveCameraTile({
         ctx.lineWidth = 2;
         ctx.strokeRect(rx, ry, rw, rh);
 
-        // Raw accumulated risk score (no '%' — thresholds are absolute, see /behaviors).
+        // Normalized 0-100 risk (ADR-0022).
         const label =
           t.risk_pct > 0
-            ? `#${t.person_id} · ${t.risk_pct.toFixed(1)}`
+            ? `#${t.person_id} · ${t.risk_pct.toFixed(0)}%`
             : `#${t.person_id}`;
         ctx.font = "600 13px ui-sans-serif, system-ui, sans-serif";
         const labelW = ctx.measureText(label).width + 8;

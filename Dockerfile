@@ -34,13 +34,13 @@ RUN apk add --no-cache git
 WORKDIR /app
 
 ENV NEXT_TELEMETRY_DISABLED=1
-# NEXT_PUBLIC_* vars are inlined at BUILD time — Railway passes service
-# variables as build args, so declare the ones the client bundle needs.
-ARG NEXT_PUBLIC_API_BASE_URL
-ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
+# IMPORTANT: do NOT bake NEXT_PUBLIC_API_BASE_URL. The browser talks
+# same-origin and Next rewrites /api → BACKEND_ORIGIN (server-side). Baking an
+# absolute API base makes client fetches cross-site and drops the SameSite=Lax
+# auth cookie (ADR-0017). Leaving it unset → the code's `?? ""` default → relative.
 ARG NEXT_PUBLIC_MEDIAMTX_HLS_BASE
 ENV NEXT_PUBLIC_MEDIAMTX_HLS_BASE=${NEXT_PUBLIC_MEDIAMTX_HLS_BASE}
-# Server-side proxy target for the /api rewrite (NOT exposed to the browser).
+# Server-side proxy target for the /api + /ws rewrites (NOT exposed to browser).
 ARG BACKEND_ORIGIN
 ENV BACKEND_ORIGIN=${BACKEND_ORIGIN}
 

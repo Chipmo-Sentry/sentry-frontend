@@ -14,7 +14,15 @@ const nextConfig = {
   // build/runtime server env (NOT NEXT_PUBLIC).
   async rewrites() {
     const backend = process.env.BACKEND_ORIGIN ?? "http://localhost:8000";
-    return [{ source: "/api/:path*", destination: `${backend}/api/:path*` }];
+    return [
+      { source: "/api/:path*", destination: `${backend}/api/:path*` },
+      // Same-origin WebSocket proxy for the live-metadata channel
+      // (/ws/live/{camera_id}). The browser connects to wss://<this-host>/ws/...
+      // (see live-ws.ts) so the auth cookie rides the handshake. NOTE: verify the
+      // Upgrade is forwarded on the actual deploy — if the platform's standalone
+      // server doesn't proxy WS upgrades, fall back to a dedicated WS host + token.
+      { source: "/ws/:path*", destination: `${backend}/ws/:path*` },
+    ];
   },
 };
 

@@ -21,7 +21,7 @@ const MEDIAMTX_HLS_BASE =
 const MEDIAMTX_WHEP_BASE =
   process.env.NEXT_PUBLIC_MEDIAMTX_WHEP_BASE ?? "http://localhost:8889";
 
-type LiveCamera = { path: string; name: string };
+type LiveCamera = { id: string; path: string; name: string };
 
 type Layout = "single" | "grid";
 
@@ -39,7 +39,11 @@ export default function LivePage() {
         // Only enabled cameras that have a MediaMTX path can be streamed.
         const streamable = list
           .filter((c) => c.enabled && c.mediamtx_path)
-          .map((c) => ({ path: c.mediamtx_path as string, name: c.name }));
+          .map((c) => ({
+            id: c.id,
+            path: c.mediamtx_path as string,
+            name: c.name,
+          }));
         setCams(streamable);
         setSelectedPath((prev) => prev || streamable[0]?.path || "");
       },
@@ -147,6 +151,7 @@ export default function LivePage() {
           <LiveCameraTile
             key={selected.path}
             cameraId={selected.path}
+            streamCameraId={selected.id}
             name={selected.name}
             whepUrl={whepUrl(selected.path)}
             hlsUrl={hlsUrl(selected.path)}
@@ -160,6 +165,7 @@ export default function LivePage() {
               <div key={c.path} className="aspect-video">
                 <LiveCameraTile
                   cameraId={c.path}
+                  streamCameraId={c.id}
                   name={c.name}
                   whepUrl={whepUrl(c.path)}
                   hlsUrl={hlsUrl(c.path)}

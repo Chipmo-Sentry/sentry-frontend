@@ -45,7 +45,10 @@ const VERDICT_LABEL: Record<FeedbackVerdict, string> = {
   unclear: "Тодорхойгүй",
 };
 
-const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+// Same-origin (empty) base so the clip <video> src goes through the Next `/api`
+// proxy and carries the httpOnly cookie. An absolute base drops the cookie and
+// the clip 401s in prod — keep this in lockstep with src/lib/api.ts.
+const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
 export default function AlertDetailPage() {
   const params = useParams<{ id: string }>();

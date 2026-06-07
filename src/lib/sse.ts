@@ -9,7 +9,9 @@ import { useEffect, useRef, useState } from "react";
 
 import type { AlertPublic } from "./types";
 
-const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+// Empty default → same-origin EventSource through the Next `/api` rewrite, so
+// the SameSite=Lax cookie is sent (EventSource can't set headers). See api.ts.
+const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
 /** Keep at most this many streamed alerts in memory (newest-first). */
 const MAX_STREAM_ALERTS = 200;

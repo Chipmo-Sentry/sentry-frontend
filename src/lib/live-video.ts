@@ -25,6 +25,9 @@ export type LiveVideoSource = {
  * Attach a live source to `video`. Returns a cleanup function. Attempts WHEP;
  * on failure (or timeout) tears it down and attaches HLS instead.
  */
+const RECONNECT_MIN_MS = 1000;
+const RECONNECT_MAX_MS = 30000;
+
 export function attachLiveVideo(
   video: HTMLVideoElement,
   src: LiveVideoSource,
@@ -32,48 +35,78 @@ export function attachLiveVideo(
 ): () => void {
   let disposed = false;
   let cleanup: (() => void) | null = null;
-  let fellBack = false;
+  let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  let backoffMs = RECONNECT_MIN_MS;
 
-  function startHls() {
-    if (disposed) return;
-    fellBack = true;
-    cbs.onTransport?.("hls");
-    try {
-      const detach = attachHls(video, src.hlsUrl);
-      cleanup = detach;
-    } catch (e) {
-      cbs.onError?.(e instanceof Error ? e : new Error("HLS дэмжлэггүй"));
-    }
+  // Reconnect the WHOLE pipeline (WHEP-first again) after an ESTABLISHED stream
+  // drops — without this a single blip leaves a permanent black tile, breaking
+  // the 24h ≥99%/cam uptime target.
+  function scheduleReconnect() {
+    if (disposed || reconnectTimer) return;
+    cleanup?.();
+    cleanup = null;
+    reconnectTimer = setTimeout(() => {
+      reconnectTimer = null;
+      backoffMs = Math.min(backoffMs * 2, RECONNECT_MAX_MS);
+      attempt();
+    }, backoffMs);
   }
 
-  // WebRTC first.
-  cbs.onTransport?.("webrtc");
-  const whep = attachWhep(video, src.whepUrl, {
-    onConnected: () => {
-      if (disposed || fellBack) return;
-      cbs.onConnected?.();
-    },
-    onError: () => {
-      if (disposed || fellBack) return;
-      // WHEP failed → swap to HLS.
-      whep.close();
-      startHls();
-    },
-  });
-  cleanup = () => whep.close();
+  function attempt() {
+    if (disposed) return;
+    let fellBack = false;
+    let connectedOnce = false;
 
-  // Safety net: if WebRTC produces no frames within a few seconds, fall back.
-  const fallbackTimer = setTimeout(() => {
-    if (disposed || fellBack) return;
-    if (video.readyState < 2) {
-      whep.close();
-      startHls();
+    function startHls() {
+      if (disposed) return;
+      fellBack = true;
+      cbs.onTransport?.("hls");
+      try {
+        cleanup = attachHls(video, src.hlsUrl, { onFatal: () => scheduleReconnect() });
+      } catch (e) {
+        cbs.onError?.(e instanceof Error ? e : new Error("HLS дэмжлэггүй"));
+        scheduleReconnect();
+      }
     }
-  }, 4000);
+
+    // WebRTC first.
+    cbs.onTransport?.("webrtc");
+    const whep = attachWhep(video, src.whepUrl, {
+      onConnected: () => {
+        if (disposed || fellBack) return;
+        connectedOnce = true;
+        backoffMs = RECONNECT_MIN_MS; // reset after a healthy connection
+        cbs.onConnected?.();
+      },
+      onError: () => {
+        if (disposed || fellBack) return;
+        whep.close();
+        // Post-connect drop → full reconnect; initial failure → try HLS.
+        if (connectedOnce) scheduleReconnect();
+        else startHls();
+      },
+    });
+
+    // Safety net: if WebRTC produces no frames within a few seconds, fall back.
+    const fallbackTimer = setTimeout(() => {
+      if (disposed || fellBack) return;
+      if (video.readyState < 2) {
+        whep.close();
+        startHls();
+      }
+    }, 4000);
+
+    cleanup = () => {
+      clearTimeout(fallbackTimer);
+      whep.close();
+    };
+  }
+
+  attempt();
 
   return () => {
     disposed = true;
-    clearTimeout(fallbackTimer);
+    if (reconnectTimer) clearTimeout(reconnectTimer);
     cleanup?.();
   };
 }

@@ -18,7 +18,12 @@ import type {
   UserPublic,
 } from "./types";
 
-const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+// Default to "" so the browser only ever talks to THIS origin and the Next
+// `/api/*` rewrite (see next.config.mjs) proxies to the backend server-side.
+// That keeps the auth cookie same-origin (host-only) so SameSite=Lax works
+// without a custom domain. Setting NEXT_PUBLIC_API_BASE_URL to an absolute
+// cross-site host re-introduces the dropped-cookie bug — leave it empty in prod.
+const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
 class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -123,6 +128,12 @@ export const cameras = {
     }),
   remove: (id: string) =>
     request<void>(`/api/v1/cameras/${id}`, { method: "DELETE" }),
+  /** Short-lived per-camera WHEP/HLS read token — append as `?jwt=<token>` to
+   * the MediaMTX stream URL so playback is authenticated (not `user: any`). */
+  streamToken: (id: string) =>
+    request<{ token: string; expires_in: number }>(
+      `/api/v1/cameras/${encodeURIComponent(id)}/stream-token`,
+    ),
 };
 
 // === Admin (super-admin only) ===
