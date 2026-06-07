@@ -90,6 +90,7 @@ export default function LiveCameraPage() {
         <LiveCameraTile
           key={path}
           cameraId={path}
+          streamCameraId={cam.id}
           name={cam.name}
           whepUrl={`${MEDIAMTX_WHEP_BASE}/${path}/whep`}
           hlsUrl={`${MEDIAMTX_HLS_BASE}/${path}/index.m3u8`}

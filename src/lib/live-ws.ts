@@ -27,12 +27,18 @@ export type FrameMetadata = {
 
 export type LiveConnState = "connecting" | "connected" | "disconnected" | "error";
 
-const BACKEND_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+const BACKEND_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
 function wsBase(): string {
   // http://host → ws://host  · https://host → wss://host
-  return BACKEND_BASE.replace(/^http/, "ws");
+  if (BACKEND_BASE) return BACKEND_BASE.replace(/^http/, "ws");
+  // Same-origin (default): derive ws[s]://<this-host> from the page so the
+  // host-only SameSite=Lax cookie is sent on the WS handshake. Requires the
+  // `/ws` rewrite in next.config.mjs to forward the Upgrade to the backend.
+  if (typeof window !== "undefined") {
+    return window.location.origin.replace(/^http/, "ws");
+  }
+  return "";
 }
 
 /**
