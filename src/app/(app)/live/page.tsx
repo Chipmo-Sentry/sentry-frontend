@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, EmptyState, Spinner } from "@chipmo-sentry/ui-kit";
-import { Cctv, Grid3x3, Square } from "lucide-react";
+import { Cctv } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -23,13 +23,9 @@ const MEDIAMTX_WHEP_BASE =
 
 type LiveCamera = { id: string; path: string; name: string };
 
-type Layout = "single" | "grid";
-
 export default function LivePage() {
   const [cams, setCams] = useState<LiveCamera[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [layout, setLayout] = useState<Layout>("single");
-  const [selectedPath, setSelectedPath] = useState<string>("");
 
   useEffect(() => {
     let cancelled = false;
@@ -45,7 +41,6 @@ export default function LivePage() {
             name: c.name,
           }));
         setCams(streamable);
-        setSelectedPath((prev) => prev || streamable[0]?.path || "");
       },
       (e) => {
         if (!cancelled) setError(e instanceof Error ? e.message : "Алдаа");
@@ -86,96 +81,35 @@ export default function LivePage() {
     );
   }
 
-  const selected =
-    cams.find((c) => c.path === selectedPath) ?? (cams[0] as LiveCamera);
-
   return (
     <div className="flex h-[calc(100vh-3.5rem)] flex-col">
       {/* Compact control bar */}
       <header className="flex items-center justify-between gap-4 border-b border-[var(--color-border)] bg-[var(--color-background)] px-4 py-2">
-        <div className="flex items-center gap-4">
-          <p className="text-xs text-[var(--color-muted-foreground)]">
-            {cams.length} камер · WebRTC (бага саатал)
-          </p>
-          {layout === "single" && (
-            <select
-              value={selected.path}
-              onChange={(e) => setSelectedPath(e.target.value)}
-              className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-1.5 text-sm font-medium text-[var(--color-foreground)] focus:border-[var(--color-ring)] focus:outline-none focus:ring-2 focus:ring-[var(--color-ring)]/30"
-            >
-              {cams.map((c) => (
-                <option key={c.path} value={c.path}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
-
-        {/* Layout switcher */}
-        <div className="flex items-center gap-1 rounded-[var(--radius)] border border-[var(--color-border)] p-0.5">
-          <button
-            type="button"
-            onClick={() => setLayout("single")}
-            title="Нэг камер"
-            aria-pressed={layout === "single"}
-            className={`flex items-center gap-1.5 rounded-[calc(var(--radius)-2px)] px-2.5 py-1 text-xs transition-colors ${
-              layout === "single"
-                ? "bg-[var(--color-primary)] text-[var(--color-primary-foreground)]"
-                : "text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)]"
-            }`}
-          >
-            <Square className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Нэг камер</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setLayout("grid")}
-            title="Бүх камер"
-            aria-pressed={layout === "grid"}
-            className={`flex items-center gap-1.5 rounded-[calc(var(--radius)-2px)] px-2.5 py-1 text-xs transition-colors ${
-              layout === "grid"
-                ? "bg-[var(--color-primary)] text-[var(--color-primary-foreground)]"
-                : "text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)]"
-            }`}
-          >
-            <Grid3x3 className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Бүх камер</span>
-          </button>
-        </div>
+        <p className="text-xs text-[var(--color-muted-foreground)]">
+          {cams.length} камер · WebRTC (бага саатал)
+        </p>
+        <p className="text-xs text-[var(--color-muted-foreground)]">
+          Камер дээр дарж томруулна
+        </p>
       </header>
 
-      {/* Body */}
-      {layout === "single" ? (
-        <div className="flex-1 bg-[var(--color-muted)] p-2">
-          <LiveCameraTile
-            key={selected.path}
-            cameraId={selected.path}
-            streamCameraId={selected.id}
-            name={selected.name}
-            whepUrl={whepUrl(selected.path)}
-            hlsUrl={hlsUrl(selected.path)}
-            detailHref={`/live/${encodeURIComponent(selected.path)}`}
-          />
+      {/* Body — all cameras in a grid; click a tile's ⛶ to view it full-screen. */}
+      <div className="flex-1 overflow-auto bg-[var(--color-muted)] p-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {cams.map((c) => (
+            <div key={c.path} className="aspect-video">
+              <LiveCameraTile
+                cameraId={c.path}
+                streamCameraId={c.id}
+                name={c.name}
+                whepUrl={whepUrl(c.path)}
+                hlsUrl={hlsUrl(c.path)}
+                detailHref={`/live/${encodeURIComponent(c.path)}`}
+              />
+            </div>
+          ))}
         </div>
-      ) : (
-        <div className="flex-1 overflow-auto bg-[var(--color-muted)] p-2">
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {cams.map((c) => (
-              <div key={c.path} className="aspect-video">
-                <LiveCameraTile
-                  cameraId={c.path}
-                  streamCameraId={c.id}
-                  name={c.name}
-                  whepUrl={whepUrl(c.path)}
-                  hlsUrl={hlsUrl(c.path)}
-                  detailHref={`/live/${encodeURIComponent(c.path)}`}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
