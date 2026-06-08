@@ -466,6 +466,18 @@ function ConnectPCModal({
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+  // Latest published agent version, shown on the download button. The URL is
+  // always /releases/latest; the version label just confirms it's current.
+  const [agentVersion, setAgentVersion] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("https://api.github.com/repos/Chipmo-Sentry/sentry-agent-pc/releases/latest")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.tag_name) setAgentVersion(String(d.tag_name));
+      })
+      .catch(() => {});
+  }, []);
 
   async function copyCode(value: string) {
     try {
@@ -601,7 +613,7 @@ function ConnectPCModal({
                 rel="noopener noreferrer"
               >
                 <Download className="h-4 w-4" />
-                Sentry агент татах (Setup.exe)
+                Sentry агент татах {agentVersion ? `(${agentVersion})` : "(Setup.exe)"}
               </a>
             </Button>
           </div>
