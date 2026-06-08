@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Store,
   Upload,
+  Users,
   Video,
   X,
   type LucideIcon,
@@ -34,6 +35,7 @@ export const NAV: readonly NavItem[] = [
   { href: "/behaviors", label: "Сэжиг шалгуур", icon: Brain },
   { href: "/stores", label: "Дэлгүүр", icon: Store },
   { href: "/cameras", label: "Камер", icon: Cctv },
+  { href: "/team", label: "Хэрэглэгчид", icon: Users },
   { href: "/admin", label: "Админ", icon: ShieldCheck, superAdmin: true },
 ];
 

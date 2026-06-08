@@ -160,6 +160,47 @@ export const admin = {
     }),
 };
 
+// === Org self-service (customer manages their OWN org's users) ===
+
+export interface OrgMember {
+  user: UserPublic;
+  role: OrgRole;
+}
+export interface InviteResult {
+  id: string;
+  email: string;
+  role: OrgRole;
+  invite_url: string;
+  emailed: boolean;
+  expires_at: string;
+}
+export interface PendingInvite {
+  id: string;
+  email: string;
+  role: OrgRole;
+  expires_at: string;
+  created_at: string;
+}
+
+export const org = {
+  members: () => request<OrgMember[]>("/api/v1/org/members"),
+  invitations: () => request<PendingInvite[]>("/api/v1/org/invitations"),
+  invite: (body: { email: string; role: OrgRole }) =>
+    request<InviteResult>("/api/v1/org/invitations", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  removeMember: (userId: string) =>
+    request<void>(`/api/v1/org/members/${encodeURIComponent(userId)}`, {
+      method: "DELETE",
+    }),
+  acceptInvite: (body: { token: string; password: string }) =>
+    request<UserPublic>("/api/v1/org/accept-invite", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+};
+
 // === Agents (camera-relay PC pairing) ===
 
 export const agents = {
