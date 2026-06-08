@@ -593,6 +593,10 @@ function ConnectPCModal({
     }
   }
 
+  // A camera only streams while a computer is online to relay it. If every
+  // computer is offline, its cameras can't be live — so don't show them green.
+  const anyComputerOnline = (agentList ?? []).some(isAgentOnline);
+
   return (
     <Modal open={open} onOpenChange={(o) => !o && onClose()}>
       <ModalContent className="max-w-md">
@@ -793,8 +797,16 @@ function ConnectPCModal({
                       </span>
                     ) : (
                       <span className="flex shrink-0 items-center gap-1">
-                        <Badge tone={c.enabled ? "success" : "neutral"}>
-                          {c.enabled ? "Идэвхтэй" : "Унтраалттай"}
+                        <Badge
+                          tone={
+                            c.enabled && anyComputerOnline ? "success" : "neutral"
+                          }
+                        >
+                          {!c.enabled
+                            ? "Унтраалттай"
+                            : anyComputerOnline
+                              ? "🟢 Идэвхтэй"
+                              : "⚫ Офлайн"}
                         </Badge>
                         <Button
                           size="sm"
