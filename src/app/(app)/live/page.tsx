@@ -162,7 +162,7 @@ export default function LivePage() {
         <div className="flex-1 overflow-auto bg-[var(--color-muted)] p-2">
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {cams.map((c) => (
-              <div key={c.path} className="aspect-video">
+              <div key={c.path}>
                 <LiveCameraTile
                   cameraId={c.path}
                   streamCameraId={c.id}
