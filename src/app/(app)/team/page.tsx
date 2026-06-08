@@ -22,7 +22,7 @@ import { useEffect, useState } from "react";
 
 import { Field } from "@/components/Field";
 import { useToast } from "@/components/Toaster";
-import { auth, org, ApiError, type OrgMember } from "@/lib/api";
+import { auth, org, ApiError, type OrgMember, type PendingInvite } from "@/lib/api";
 import type { OrgRole } from "@/lib/types";
 
 const ROLE_LABEL: Record<OrgRole, string> = {
@@ -39,6 +39,7 @@ const INVITE_ROLES: { value: OrgRole; label: string }[] = [
 export default function TeamPage() {
   const { toast } = useToast();
   const [members, setMembers] = useState<OrgMember[] | null>(null);
+  const [invites, setInvites] = useState<PendingInvite[]>([]);
   const [meId, setMeId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -48,6 +49,12 @@ export default function TeamPage() {
       const [mem, me] = await Promise.all([org.members(), auth.me()]);
       setMembers(mem);
       setMeId(me.id);
+      // Pending invites — admin-only endpoint; plain members get 403 → ignore.
+      try {
+        setInvites(await org.invitations());
+      } catch {
+        setInvites([]);
+      }
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Алдаа");
     }
@@ -134,6 +141,33 @@ export default function TeamPage() {
           )}
         </CardContent>
       </Card>
+
+      {invites.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Хүлээгдэж буй урилга</CardTitle>
+            <CardDescription>
+              Урилга илгээгдсэн — хэрэглэгч холбоосоор орж нууц үгээ тохируулаагүй байна
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="divide-y divide-[var(--color-border)]">
+              {invites.map((inv) => (
+                <li key={inv.id} className="flex items-center justify-between gap-2 py-2.5">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{inv.email}</p>
+                    <span className="text-xs text-[var(--color-muted-foreground)]">
+                      {ROLE_LABEL[inv.role]} · {new Date(inv.expires_at).toLocaleDateString()}-нд
+                      хүчингүй болно
+                    </span>
+                  </div>
+                  <Badge tone="warning">Хүлээгдэж буй</Badge>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
       {!canManage && (
         <p className="text-sm text-[var(--color-muted-foreground)]">
