@@ -198,6 +198,11 @@ export const org = {
     request<void>(`/api/v1/org/members/${encodeURIComponent(userId)}`, {
       method: "DELETE",
     }),
+  setMemberActive: (userId: string, isActive: boolean) =>
+    request<OrgMember>(`/api/v1/org/members/${encodeURIComponent(userId)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ is_active: isActive }),
+    }),
   acceptInvite: (body: { token: string; password: string }) =>
     request<UserPublic>("/api/v1/org/accept-invite", {
       method: "POST",

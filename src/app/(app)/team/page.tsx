@@ -17,7 +17,7 @@ import {
   ModalTitle,
   Spinner,
 } from "@chipmo-sentry/ui-kit";
-import { Trash2, UserPlus, Users } from "lucide-react";
+import { Lock, Trash2, Unlock, UserPlus, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Field } from "@/components/Field";
@@ -91,6 +91,23 @@ export default function TeamPage() {
     }
   }
 
+  async function onToggleActive(m: OrgMember) {
+    const lock = m.user.is_active; // currently active → we are locking
+    const verb = lock ? "түгжих" : "нээх";
+    if (!confirm(`${m.user.email}-ийн нэвтрэх эрхийг ${verb} үү?`)) return;
+    try {
+      await org.setMemberActive(m.user.id, !m.user.is_active);
+      toast({ title: lock ? "Хэрэглэгч түгжигдлээ" : "Хэрэглэгч нээгдлээ", tone: "success" });
+      reload();
+    } catch (e) {
+      toast({
+        title: "Болсонгүй",
+        description: e instanceof ApiError ? e.message : "Алдаа",
+        tone: "danger",
+      });
+    }
+  }
+
   async function onCancelInvite(inv: PendingInvite) {
     if (!confirm(`${inv.email}-д илгээсэн урилгыг цуцлах уу?`)) return;
     try {
@@ -137,17 +154,36 @@ export default function TeamPage() {
                     )}
                   </div>
                   <div className="flex items-center gap-2">
+                    {!m.user.is_active && <Badge tone="danger">Түгжээтэй</Badge>}
                     <Badge tone={m.role === "owner" ? "warning" : "neutral"}>
                       {ROLE_LABEL[m.role]}
                     </Badge>
                     {canManage && m.role !== "owner" && m.user.id !== meId && (
-                      <button
-                        onClick={() => onRemove(m)}
-                        aria-label="Хасах"
-                        className="rounded p-1 text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] hover:text-[var(--color-danger)]"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      <>
+                        <button
+                          onClick={() => onToggleActive(m)}
+                          aria-label={m.user.is_active ? "Түгжих" : "Нээх"}
+                          title={
+                            m.user.is_active
+                              ? "Нэвтрэх эрхийг түгжих"
+                              : "Нэвтрэх эрхийг нээх"
+                          }
+                          className="rounded p-1 text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]"
+                        >
+                          {m.user.is_active ? (
+                            <Lock className="h-4 w-4" />
+                          ) : (
+                            <Unlock className="h-4 w-4" />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => onRemove(m)}
+                          aria-label="Хасах"
+                          className="rounded p-1 text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] hover:text-[var(--color-danger)]"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </>
                     )}
                   </div>
                 </li>
