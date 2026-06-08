@@ -73,6 +73,15 @@ function tzLabel(tz: string): string {
 const AGENT_DOWNLOAD_URL =
   "https://github.com/Chipmo-Sentry/sentry-agent-pc/releases/latest/download/ChipmoSentryAgent-Setup.exe";
 
+// A computer is ONLINE if its agent reported in within this window. A running
+// agent touches the backend ~every 30s, so 120s tolerates a few missed beats.
+const AGENT_ONLINE_MS = 120_000;
+
+function isAgentOnline(a: AgentPublic): boolean {
+  if (!a.last_seen_at) return false;
+  return Date.now() - new Date(a.last_seen_at).getTime() < AGENT_ONLINE_MS;
+}
+
 export default function StoresPage() {
   const { toast } = useToast();
   const [list, setList] = useState<StorePublic[] | null>(null);
@@ -109,7 +118,10 @@ export default function StoresPage() {
       );
       const ac: Record<string, { active: number; total: number }> = {};
       for (const [id, a] of entries) {
-        ac[id] = { active: a.filter((x) => x.is_active).length, total: a.length };
+        // "active" = computers actually ONLINE now (reported in within the
+        // window), NOT merely paired — so an uninstalled / powered-off PC
+        // shows as offline instead of a stale green "connected".
+        ac[id] = { active: a.filter(isAgentOnline).length, total: a.length };
       }
       setAgentCounts(ac);
     } catch (e) {
@@ -703,8 +715,8 @@ function ConnectPCModal({
                       </span>
                     ) : (
                       <span className="flex shrink-0 items-center gap-1">
-                        <Badge tone={a.is_active ? "success" : "neutral"}>
-                          {a.is_active ? "Идэвхтэй" : "Салгасан"}
+                        <Badge tone={isAgentOnline(a) ? "success" : "neutral"}>
+                          {isAgentOnline(a) ? "🟢 Онлайн" : "⚫ Офлайн"}
                         </Badge>
                         <Button
                           size="sm"
