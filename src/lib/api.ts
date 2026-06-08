@@ -190,6 +190,10 @@ export const org = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  cancelInvite: (inviteId: string) =>
+    request<void>(`/api/v1/org/invitations/${encodeURIComponent(inviteId)}`, {
+      method: "DELETE",
+    }),
   removeMember: (userId: string) =>
     request<void>(`/api/v1/org/members/${encodeURIComponent(userId)}`, {
       method: "DELETE",

@@ -91,6 +91,21 @@ export default function TeamPage() {
     }
   }
 
+  async function onCancelInvite(inv: PendingInvite) {
+    if (!confirm(`${inv.email}-д илгээсэн урилгыг цуцлах уу?`)) return;
+    try {
+      await org.cancelInvite(inv.id);
+      toast({ title: "Урилга цуцлагдлаа", tone: "success" });
+      reload();
+    } catch (e) {
+      toast({
+        title: "Цуцалж чадсангүй",
+        description: e instanceof ApiError ? e.message : "Алдаа",
+        tone: "danger",
+      });
+    }
+  }
+
   return (
     <div className="space-y-6 p-8">
       <div className="flex items-center justify-between">
@@ -161,7 +176,17 @@ export default function TeamPage() {
                       хүчингүй болно
                     </span>
                   </div>
-                  <Badge tone="warning">Хүлээгдэж буй</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge tone="warning">Хүлээгдэж буй</Badge>
+                    <button
+                      onClick={() => onCancelInvite(inv)}
+                      aria-label="Урилга цуцлах"
+                      title="Урилга цуцлах"
+                      className="rounded p-1 text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] hover:text-[var(--color-danger)]"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
