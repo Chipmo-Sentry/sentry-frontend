@@ -13,6 +13,11 @@ export type Track = {
   det_confidence: number;
   risk_pct: number;     // 0 in L2/L3; populated by L4 behavior scoring
   color: "green" | "yellow" | "red";
+  // Cross-camera re-ID (ADR-0023): store-global person id shared across the
+  // store's cameras + their accumulated risk. null when re-ID is disabled
+  // (e.g. an older AI node) → the overlay falls back to the per-camera person_id.
+  store_person_id?: number | null;
+  store_risk_pct?: number | null;
 };
 
 export type FrameMetadata = {

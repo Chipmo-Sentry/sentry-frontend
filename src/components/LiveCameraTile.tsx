@@ -222,11 +222,14 @@ export function LiveCameraTile({
         ctx.lineWidth = 2;
         ctx.strokeRect(rx, ry, rw, rh);
 
-        // Normalized 0-100 risk (ADR-0022).
+        // Prefer the store-global re-ID number so the SAME person shows the SAME
+        // id across the store's cameras (ADR-0023); fall back to the per-camera
+        // ByteTrack id when re-ID is off. Risk likewise prefers the cross-camera
+        // accumulated value when present.
+        const pid = t.store_person_id ?? t.person_id;
+        const risk = t.store_risk_pct ?? t.risk_pct;
         const label =
-          t.risk_pct > 0
-            ? `#${t.person_id} · ${t.risk_pct.toFixed(0)}%`
-            : `#${t.person_id}`;
+          risk > 0 ? `#${pid} · ${risk.toFixed(0)}%` : `#${pid}`;
         ctx.font = "600 13px ui-sans-serif, system-ui, sans-serif";
         const labelW = ctx.measureText(label).width + 8;
         const labelH = 18;

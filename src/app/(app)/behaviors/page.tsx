@@ -9,22 +9,29 @@ import {
   CardTitle,
   Spinner,
 } from "@chipmo-sentry/ui-kit";
-import { Brain, CheckCircle2, Clock, Lock } from "lucide-react";
+import { Brain, CheckCircle2, Clock, ListOrdered, Lock } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { behaviors } from "@/lib/api";
 import type { BehaviorConfig } from "@/lib/types";
 
-const COLOR_LABEL_FALLBACK = {
-  green: "Хэвийн",
-  yellow: "Анхаар",
-  red: "Сэжигтэй",
-};
+const LEVEL_LABEL_FALLBACK = {
+  LOW: "Бага",
+  MEDIUM: "Дунд",
+  HIGH: "Өндөр",
+  CRITICAL: "Ноцтой",
+} as const;
+
+const LEVELS: { n: number; title: string }[] = [
+  { n: 1, title: "Түвшин 1 — Сэжигтэй зан" },
+  { n: 2, title: "Түвшин 2 — Нуун далдлах" },
+  { n: 3, title: "Түвшин 3 — Зохион байгуулалттай" },
+  { n: 4, title: "Түвшин 4 — Ноцтой үйлдэл" },
+];
 
 /**
- * READ-ONLY view of the global behavior config. Editing lives in the
- * super-admin panel (sentry-superadmin) — the backend PATCH /behaviors is
- * super-admin only. Organization admins can only view here.
+ * READ-ONLY view of the global behavior config (Engine v2). Editing lives in the
+ * super-admin panel — the backend PATCH /behaviors is super-admin only.
  */
 export default function BehaviorsPage() {
   const [data, setData] = useState<BehaviorConfig | null>(null);
@@ -41,16 +48,12 @@ export default function BehaviorsPage() {
           setData(j);
         },
         (e) => {
-          // Only surface an error before the first successful load; keep
-          // showing the last good config on a transient poll failure.
           if (!cancelled && !loaded)
             setErr(e instanceof Error ? e.message : "Алдаа");
         },
       );
     }
     load();
-    // Poll so a super-admin's threshold/weight change shows here within ~30s
-    // without the operator refreshing the page.
     const id = setInterval(load, 30_000);
     return () => {
       cancelled = true;
@@ -67,20 +70,29 @@ export default function BehaviorsPage() {
     );
   }
 
-  const greenMax = data.thresholds.green_max ?? 5;
-  const yellowMax = data.thresholds.yellow_max ?? 15;
-  const activeCount = data.dimensions.filter((d) => d.active_in_m1).length;
+  const greenMax = data.thresholds.green_max ?? 10;
+  const yellowMax = data.thresholds.yellow_max ?? 25;
+  const highMax = data.thresholds.high_max ?? 50;
+  const detectorCount = data.dimensions.filter((d) => d.has_detector).length;
+  const lbl = (k: keyof typeof LEVEL_LABEL_FALLBACK) =>
+    data.level_labels?.[k] ?? LEVEL_LABEL_FALLBACK[k];
+  const ll = {
+    LOW: lbl("LOW"),
+    MEDIUM: lbl("MEDIUM"),
+    HIGH: lbl("HIGH"),
+    CRITICAL: lbl("CRITICAL"),
+  };
 
   return (
     <div className="p-8">
       <div className="mb-2 flex items-center gap-2">
         <Brain className="h-6 w-6 text-[var(--color-primary)]" />
-        <h1 className="text-2xl font-semibold">Сэжиг шалгуурууд</h1>
+        <h1 className="text-2xl font-semibold">Зан үйлийн engine</h1>
       </div>
       <p className="mb-4 text-sm text-[var(--color-muted-foreground)]">
-        AI {activeCount} / {data.dimensions.length} хэмжээсээр хүн бүрийн үйлдлийг
-        сканнердан, нийлбэр оноогоор өнгөт бүсэд хувааж дохио өгнө.{" "}
-        <strong>Оноо нь хувь биш — гүйцэтгэл бүрд жин нэмэгдэнэ.</strong>
+        AI {detectorCount} / {data.dimensions.length} детектортой шалгуураар хүн
+        бүрийн үйлдлийг 0–100 эрсдэлийн оноогоор үнэлж, дараалал илрэхэд нэмэлт
+        оноо өгнө.
       </p>
 
       <div className="mb-6 flex items-center gap-2 rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] px-3 py-2 text-xs text-[var(--color-muted-foreground)]">
@@ -89,98 +101,137 @@ export default function BehaviorsPage() {
         самбараас тохируулна.
       </div>
 
-      {/* Risk thresholds */}
+      {/* 4-level thresholds */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="text-base">Risk түвшний босго (оноо)</CardTitle>
+          <CardTitle className="text-base">
+            Эрсдэлийн түвшин (оноо 0–100)
+          </CardTitle>
           <CardDescription>
-            Хүний нийт оноо энэ босгуудаас хамаарч өнгө сонгогдоно.
+            Хүний нийт оноо энэ босгуудаар 4 түвшинд хуваагдана.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3 text-sm">
-            <Band
-              color="bg-green-500"
-              label={data.color_labels?.green ?? COLOR_LABEL_FALLBACK.green}
-              range={`< ${greenMax}`}
-            />
+            <Band color="bg-green-500" label={ll.LOW} range={`< ${greenMax}`} />
             <Band
               color="bg-yellow-500"
-              label={data.color_labels?.yellow ?? COLOR_LABEL_FALLBACK.yellow}
+              label={ll.MEDIUM}
               range={`${greenMax} – ${yellowMax}`}
             />
             <Band
-              color="bg-red-500"
-              label={data.color_labels?.red ?? COLOR_LABEL_FALLBACK.red}
-              range={`≥ ${yellowMax}`}
+              color="bg-orange-500"
+              label={ll.HIGH}
+              range={`${yellowMax} – ${highMax}`}
             />
+            <Band color="bg-red-600" label={ll.CRITICAL} range={`≥ ${highMax}`} />
           </div>
           <p className="mt-3 text-xs text-[var(--color-muted-foreground)]">
-            🔴 Сэжигтэй (≥ {yellowMax}) болоход автомат clip хадгалагдан alert
-            үүснэ.
+            🔴 {ll.CRITICAL} (≥ {highMax}) болоход автомат clip хадгалагдан VLM
+            шалгаад alert үүснэ.
           </p>
         </CardContent>
       </Card>
 
-      {/* Dimensions table (read-only) */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">6 шалгуур — жин (оноо)</CardTitle>
-          <CardDescription>
-            Шалгуур триггерлэгдэх бүрд тус жин нь хүний нийт оноонд нэмэгдэнэ.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="px-0 pt-0">
-          <table className="w-full text-sm">
-            <thead className="border-y border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase tracking-wider text-[var(--color-muted-foreground)]">
-              <tr>
-                <th className="px-3 py-2 text-left font-medium">#</th>
-                <th className="px-3 py-2 text-left font-medium">Шалгуур</th>
-                <th className="px-3 py-2 text-left font-medium">Тайлбар</th>
-                <th className="px-3 py-2 text-center font-medium">Төлөв</th>
-                <th className="px-3 py-2 text-right font-medium">Жин (оноо)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.dimensions.map((d, idx) => (
-                <tr
-                  key={d.key}
-                  className={`border-b border-[var(--color-border)] ${
-                    !d.active_in_m1 ? "opacity-60" : ""
-                  }`}
+      {/* Criteria grouped by level (read-only) */}
+      {LEVELS.map((lvl) => {
+        const dims = data.dimensions.filter((d) => (d.level ?? 1) === lvl.n);
+        if (dims.length === 0) return null;
+        return (
+          <Card key={lvl.n} className="mb-4">
+            <CardHeader>
+              <CardTitle className="text-base">{lvl.title}</CardTitle>
+            </CardHeader>
+            <CardContent className="px-0 pt-0">
+              <table className="w-full text-sm">
+                <thead className="border-y border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase tracking-wider text-[var(--color-muted-foreground)]">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-medium">Шалгуур</th>
+                    <th className="px-3 py-2 text-left font-medium">Тайлбар</th>
+                    <th className="px-3 py-2 text-center font-medium">Төлөв</th>
+                    <th className="px-3 py-2 text-right font-medium">Жин</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dims.map((d) => (
+                    <tr
+                      key={d.key}
+                      className={`border-b border-[var(--color-border)] ${
+                        !d.active ? "opacity-60" : ""
+                      }`}
+                    >
+                      <td className="px-3 py-3 align-top">
+                        <div className="font-medium">{d.label_mn}</div>
+                        <code className="mt-0.5 inline-block rounded bg-[var(--color-muted)] px-1.5 py-0.5 text-xs">
+                          {d.key}
+                        </code>
+                      </td>
+                      <td className="max-w-md px-3 py-3 align-top text-xs text-[var(--color-muted-foreground)]">
+                        {d.description_mn}
+                      </td>
+                      <td className="px-3 py-3 align-top text-center">
+                        {d.has_detector && d.active ? (
+                          <Badge tone="success">
+                            <CheckCircle2 className="h-3 w-3" /> Идэвхтэй
+                          </Badge>
+                        ) : (
+                          <Badge tone="warning">
+                            <Clock className="h-3 w-3" /> Хүлээгдэж
+                          </Badge>
+                        )}
+                      </td>
+                      <td className="px-3 py-3 align-top text-right font-mono">
+                        {d.weight}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
+        );
+      })}
+
+      {/* Sequence rules (read-only) */}
+      {data.sequences && data.sequences.length > 0 && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ListOrdered className="h-4 w-4" />
+              Дарааллын дүрэм
+            </CardTitle>
+            <CardDescription>
+              Зан үйлүүд эдгээр дарааллаар илрэхэд нэмэлт оноо нэмэгдэнэ.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2">
+              {data.sequences.map((s) => (
+                <li
+                  key={s.key}
+                  className="flex items-center justify-between gap-3 rounded-md border border-[var(--color-border)] px-3 py-2"
                 >
-                  <td className="px-3 py-3 align-top text-xs text-[var(--color-muted-foreground)]">
-                    {idx + 1}
-                  </td>
-                  <td className="px-3 py-3 align-top">
-                    <div className="font-medium">{d.label_mn}</div>
-                    <code className="mt-0.5 inline-block rounded bg-[var(--color-muted)] px-1.5 py-0.5 text-xs">
-                      {d.key}
-                    </code>
-                  </td>
-                  <td className="max-w-md px-3 py-3 align-top text-xs text-[var(--color-muted-foreground)]">
-                    {d.description_mn}
-                  </td>
-                  <td className="px-3 py-3 align-top text-center">
-                    {d.active_in_m1 ? (
-                      <Badge tone="success">
-                        <CheckCircle2 className="h-3 w-3" /> Идэвхтэй
-                      </Badge>
-                    ) : (
-                      <Badge tone="warning">
-                        <Clock className="h-3 w-3" /> Хүлээгдэж
-                      </Badge>
-                    )}
-                  </td>
-                  <td className="px-3 py-3 align-top text-right font-mono">
-                    {d.weight}
-                  </td>
-                </tr>
+                  <span className="flex flex-wrap items-center gap-1.5 text-sm">
+                    {s.pattern.map((p, i) => (
+                      <span key={i} className="flex items-center gap-1.5">
+                        {i > 0 && (
+                          <span className="text-[var(--color-muted-foreground)]">
+                            →
+                          </span>
+                        )}
+                        <code className="rounded bg-[var(--color-muted)] px-1.5 py-0.5 text-xs">
+                          {p}
+                        </code>
+                      </span>
+                    ))}
+                  </span>
+                  <Badge tone="success">+{s.bonus}</Badge>
+                </li>
               ))}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
+            </ul>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
