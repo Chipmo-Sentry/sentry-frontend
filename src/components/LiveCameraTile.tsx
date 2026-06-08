@@ -54,10 +54,6 @@ export function LiveCameraTile({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [transport, setTransport] = useState<LiveTransport>("webrtc");
-  // Tile takes the video's NATIVE aspect ratio (set once metadata loads) so a
-  // 4:3 camera (e.g. Skyworth) isn't letterboxed inside a 16:9 box. Default 16:9
-  // until the real dimensions arrive.
-  const [aspect, setAspect] = useState("16 / 9");
   // Resolved stream URLs (with ?jwt=… when a read token is required). Null until
   // resolved so we don't attach the raw URL then immediately re-attach.
   const [authUrls, setAuthUrls] = useState<{ whep: string; hls: string } | null>(
@@ -111,11 +107,6 @@ export function LiveCameraTile({
       setStatus("error");
       setErrorMsg("Видео ачаалж чадсангүй");
     }
-    function onLoadedMeta() {
-      if (video && video.videoWidth > 0 && video.videoHeight > 0) {
-        setAspect(`${video.videoWidth} / ${video.videoHeight}`);
-      }
-    }
 
     video.muted = true;
     video.autoplay = true;
@@ -123,8 +114,6 @@ export function LiveCameraTile({
     video.addEventListener("playing", onPlaying);
     video.addEventListener("waiting", onWaiting);
     video.addEventListener("error", onError);
-    video.addEventListener("loadedmetadata", onLoadedMeta);
-    video.addEventListener("resize", onLoadedMeta);  // dimensions can change on transport swap
 
     detach = attachLiveVideo(
       video,
@@ -142,8 +131,6 @@ export function LiveCameraTile({
       video.removeEventListener("playing", onPlaying);
       video.removeEventListener("waiting", onWaiting);
       video.removeEventListener("error", onError);
-      video.removeEventListener("loadedmetadata", onLoadedMeta);
-      video.removeEventListener("resize", onLoadedMeta);
       if (stalledTimer) clearTimeout(stalledTimer);
       detach?.();
     };
@@ -196,26 +183,18 @@ export function LiveCameraTile({
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, cssW, cssH);
 
-      // Scale source coords → displayed coords. object-contain may letterbox;
-      // compute the actual displayed video area inside the <video> element.
+      // Scale source coords → displayed coords. The <video> is object-cover:
+      // it scales to FILL the tile (scale = max) and crops the overflow, so the
+      // displayed area is >= the tile and centered (negative offsets).
       const srcW = latest.width;
       const srcH = latest.height;
-      const videoRatio = srcW / srcH;
-      const cssRatio = cssW / cssH;
-      let drawW = cssW;
-      let drawH = cssH;
-      let offX = 0;
-      let offY = 0;
-      if (videoRatio > cssRatio) {
-        // video is wider — letterbox top/bottom
-        drawH = cssW / videoRatio;
-        offY = (cssH - drawH) / 2;
-      } else {
-        drawW = cssH * videoRatio;
-        offX = (cssW - drawW) / 2;
-      }
-      const sx = drawW / srcW;
-      const sy = drawH / srcH;
+      const scale = Math.max(cssW / srcW, cssH / srcH);
+      const drawW = srcW * scale;
+      const drawH = srcH * scale;
+      const offX = (cssW - drawW) / 2;
+      const offY = (cssH - drawH) / 2;
+      const sx = scale;
+      const sy = scale;
 
       for (const t of latest.tracks) {
         const [x1, y1, x2, y2] = t.box;
@@ -271,13 +250,12 @@ export function LiveCameraTile({
   return (
     <div
       ref={wrapRef}
-      style={{ aspectRatio: aspect }}
-      className="group relative mx-auto max-h-full w-full overflow-hidden rounded-[var(--radius)] border border-[var(--color-border)] bg-black shadow-sm"
+      className="group relative h-full w-full overflow-hidden rounded-[var(--radius)] border border-[var(--color-border)] bg-black shadow-sm"
     >
       <video
         ref={videoRef}
         onDoubleClick={toggleFullscreen}
-        className="h-full w-full cursor-pointer object-contain"
+        className="h-full w-full cursor-pointer object-cover"
         data-camera-id={cameraId}
       />
       {/* AI overlay — bounding boxes from /ws/live/{cam} metadata */}
