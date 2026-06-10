@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
   EmptyState,
+  ErrorState,
   Input,
   Spinner,
 } from "@chipmo-sentry/ui-kit";
@@ -195,7 +196,14 @@ export default function AlertsPage() {
   }
 
   if (seedError) {
-    return <p className="p-8 text-[var(--color-danger)]">{seedError}</p>;
+    return (
+      <div className="p-8">
+        <ErrorState
+          message={seedError}
+          onRetry={() => window.location.reload()}
+        />
+      </div>
+    );
   }
   if (history === null) {
     return (

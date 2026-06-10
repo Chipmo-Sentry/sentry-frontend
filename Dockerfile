@@ -15,7 +15,7 @@ WORKDIR /app
 
 # Build the public ui-kit as a sibling so `file:../sentry-ui-kit` resolves.
 # Pinned to a tag for reproducible builds (bump deliberately on ui-kit release).
-ARG UI_KIT_REF=v0.1.0
+ARG UI_KIT_REF=v0.2.0
 RUN git clone --depth 1 --branch "${UI_KIT_REF}" \
       https://github.com/Chipmo-Sentry/sentry-ui-kit.git sentry-ui-kit \
     && cd sentry-ui-kit \

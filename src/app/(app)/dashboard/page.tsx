@@ -8,11 +8,12 @@ import {
   CardHeader,
   CardTitle,
   EmptyState,
+  ErrorState,
   Spinner,
 } from "@chipmo-sentry/ui-kit";
 import { ShieldAlert } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { alerts as alertsApi } from "@/lib/api";
 import { relativeTime } from "@/lib/time";
@@ -32,7 +33,9 @@ export default function DashboardPage() {
   const [data, setData] = useState<AlertPublic[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setError(null);
+    setData(null);
     let cancelled = false;
     alertsApi.list({ limit: 200 }).then(
       (list) => {
@@ -46,6 +49,8 @@ export default function DashboardPage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => load(), [load]);
 
   const counts = useMemo(() => {
     if (!data) return null;
@@ -88,7 +93,11 @@ export default function DashboardPage() {
   }, [data]);
 
   if (error) {
-    return <p className="p-8 text-[var(--color-danger)]">{error}</p>;
+    return (
+      <div className="p-8">
+        <ErrorState message={error} onRetry={load} />
+      </div>
+    );
   }
   if (!counts || !trend) {
     return (

@@ -9,9 +9,11 @@ import {
   CardHeader,
   CardTitle,
   EmptyState,
+  ErrorState,
   Input,
   Modal,
   ModalContent,
+  ModalDescription,
   ModalFooter,
   ModalHeader,
   ModalTitle,
@@ -43,6 +45,15 @@ export default function TeamPage() {
   const [meId, setMeId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
+  // Replaces native confirm() — a styled confirmation modal. `onConfirm` runs
+  // the destructive action; the modal closes itself afterwards.
+  const [confirmState, setConfirmState] = useState<{
+    title: string;
+    message: string;
+    confirmLabel: string;
+    danger?: boolean;
+    onConfirm: () => void;
+  } | null>(null);
 
   async function reload() {
     try {
@@ -64,7 +75,19 @@ export default function TeamPage() {
     reload();
   }, []);
 
-  if (error) return <p className="p-8 text-[var(--color-danger)]">{error}</p>;
+  if (error) {
+    return (
+      <div className="p-8">
+        <ErrorState
+          message={error}
+          onRetry={() => {
+            setError(null);
+            reload();
+          }}
+        />
+      </div>
+    );
+  }
   if (members === null) {
     return (
       <div className="p-8">
@@ -76,8 +99,7 @@ export default function TeamPage() {
   const myRole = members.find((m) => m.user.id === meId)?.role;
   const canManage = myRole === "owner" || myRole === "admin";
 
-  async function onRemove(m: OrgMember) {
-    if (!confirm(`${m.user.email}-г байгууллагаас хасах уу?`)) return;
+  async function doRemove(m: OrgMember) {
     try {
       await org.removeMember(m.user.id);
       toast({ title: "Хэрэглэгч хасагдлаа", tone: "success" });
@@ -91,10 +113,18 @@ export default function TeamPage() {
     }
   }
 
-  async function onToggleActive(m: OrgMember) {
+  function onRemove(m: OrgMember) {
+    setConfirmState({
+      title: "Хэрэглэгч хасах",
+      message: `${m.user.email}-г байгууллагаас хасах уу?`,
+      confirmLabel: "Хасах",
+      danger: true,
+      onConfirm: () => doRemove(m),
+    });
+  }
+
+  async function doToggleActive(m: OrgMember) {
     const lock = m.user.is_active; // currently active → we are locking
-    const verb = lock ? "түгжих" : "нээх";
-    if (!confirm(`${m.user.email}-ийн нэвтрэх эрхийг ${verb} үү?`)) return;
     try {
       await org.setMemberActive(m.user.id, !m.user.is_active);
       toast({ title: lock ? "Хэрэглэгч түгжигдлээ" : "Хэрэглэгч нээгдлээ", tone: "success" });
@@ -108,8 +138,19 @@ export default function TeamPage() {
     }
   }
 
-  async function onCancelInvite(inv: PendingInvite) {
-    if (!confirm(`${inv.email}-д илгээсэн урилгыг цуцлах уу?`)) return;
+  function onToggleActive(m: OrgMember) {
+    const lock = m.user.is_active;
+    const verb = lock ? "түгжих" : "нээх";
+    setConfirmState({
+      title: lock ? "Нэвтрэх эрх түгжих" : "Нэвтрэх эрх нээх",
+      message: `${m.user.email}-ийн нэвтрэх эрхийг ${verb} үү?`,
+      confirmLabel: lock ? "Түгжих" : "Нээх",
+      danger: lock,
+      onConfirm: () => doToggleActive(m),
+    });
+  }
+
+  async function doCancelInvite(inv: PendingInvite) {
     try {
       await org.cancelInvite(inv.id);
       toast({ title: "Урилга цуцлагдлаа", tone: "success" });
@@ -121,6 +162,16 @@ export default function TeamPage() {
         tone: "danger",
       });
     }
+  }
+
+  function onCancelInvite(inv: PendingInvite) {
+    setConfirmState({
+      title: "Урилга цуцлах",
+      message: `${inv.email}-д илгээсэн урилгыг цуцлах уу?`,
+      confirmLabel: "Цуцлах",
+      danger: true,
+      onConfirm: () => doCancelInvite(inv),
+    });
   }
 
   return (
@@ -244,6 +295,37 @@ export default function TeamPage() {
           reload();
         }}
       />
+
+      <Modal
+        open={confirmState !== null}
+        onOpenChange={(o) => !o && setConfirmState(null)}
+      >
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>{confirmState?.title}</ModalTitle>
+            <ModalDescription>{confirmState?.message}</ModalDescription>
+          </ModalHeader>
+          <ModalFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setConfirmState(null)}
+            >
+              Болих
+            </Button>
+            <Button
+              type="button"
+              variant={confirmState?.danger ? "danger" : "primary"}
+              onClick={() => {
+                confirmState?.onConfirm();
+                setConfirmState(null);
+              }}
+            >
+              {confirmState?.confirmLabel ?? "Тийм"}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

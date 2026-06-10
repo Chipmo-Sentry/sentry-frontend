@@ -1,10 +1,10 @@
 "use client";
 
-import { Button, EmptyState, Spinner } from "@chipmo-sentry/ui-kit";
+import { Button, EmptyState, ErrorState, Spinner } from "@chipmo-sentry/ui-kit";
 import { ArrowLeft, Cctv } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { LiveCameraTile } from "@/components/LiveCameraTile";
 import { cameras as camerasApi } from "@/lib/api";
@@ -27,7 +27,9 @@ export default function LiveCameraPage() {
   const [cam, setCam] = useState<CameraPublic | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setError(null);
+    setCam(undefined);
     let cancelled = false;
     camerasApi.list().then(
       (list: CameraPublic[]) => {
@@ -46,8 +48,14 @@ export default function LiveCameraPage() {
     };
   }, [path]);
 
+  useEffect(() => load(), [load]);
+
   if (error) {
-    return <p className="p-8 text-[var(--color-danger)]">{error}</p>;
+    return (
+      <div className="p-8">
+        <ErrorState message={error} onRetry={load} />
+      </div>
+    );
   }
   if (cam === undefined) {
     return (

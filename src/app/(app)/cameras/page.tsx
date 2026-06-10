@@ -6,6 +6,7 @@ import {
   Card,
   CardContent,
   EmptyState,
+  ErrorState,
   Input,
   Modal,
   ModalContent,
@@ -66,7 +67,19 @@ export default function CamerasPage() {
     }
   }
 
-  if (error) return <p className="p-8 text-[var(--color-danger)]">{error}</p>;
+  if (error) {
+    return (
+      <div className="p-8">
+        <ErrorState
+          message={error}
+          onRetry={() => {
+            setError(null);
+            reload();
+          }}
+        />
+      </div>
+    );
+  }
   if (list === null) {
     return (
       <div className="p-8">

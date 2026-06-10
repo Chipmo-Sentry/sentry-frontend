@@ -7,6 +7,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  ErrorState,
   Spinner,
 } from "@chipmo-sentry/ui-kit";
 import { Brain, CheckCircle2, Clock, ListOrdered, Lock } from "lucide-react";
@@ -61,7 +62,13 @@ export default function BehaviorsPage() {
     };
   }, []);
 
-  if (err) return <p className="p-8 text-[var(--color-danger)]">{err}</p>;
+  if (err) {
+    return (
+      <div className="p-8">
+        <ErrorState message={err} onRetry={() => window.location.reload()} />
+      </div>
+    );
+  }
   if (!data) {
     return (
       <div className="p-8">

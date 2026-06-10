@@ -8,12 +8,13 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  ErrorState,
   Spinner,
 } from "@chipmo-sentry/ui-kit";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { alerts as alertsApi, clips, feedback } from "@/lib/api";
 import type { AlertLevel, AlertPublic, ClipPublic, FeedbackVerdict } from "@/lib/types";
@@ -59,10 +60,14 @@ export default function AlertDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<FeedbackVerdict | null>(null);
   const [feedbackSent, setFeedbackSent] = useState<FeedbackVerdict | null>(null);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setError(null);
+    setAlert(null);
+    setClip(null);
     let cancelled = false;
-    async function load() {
+    (async () => {
       try {
         const a = await alertsApi.get(alertId);
         if (cancelled) return;
@@ -72,27 +77,35 @@ export default function AlertDetailPage() {
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "Алдаа");
       }
-    }
-    load();
+    })();
     return () => {
       cancelled = true;
     };
   }, [alertId]);
 
+  useEffect(() => load(), [load]);
+
   async function sendFeedback(verdict: FeedbackVerdict) {
     setSubmitting(verdict);
+    setFeedbackError(null);
     try {
       await feedback.create({ alert_id: alertId, verdict });
       setFeedbackSent(verdict);
     } catch (e) {
-      window.alert(e instanceof Error ? e.message : "Дүгнэлт хадгалагдсангүй");
+      setFeedbackError(
+        e instanceof Error ? e.message : "Дүгнэлт хадгалагдсангүй",
+      );
     } finally {
       setSubmitting(null);
     }
   }
 
   if (error) {
-    return <p className="p-8 text-[var(--color-danger)]">{error}</p>;
+    return (
+      <div className="p-8">
+        <ErrorState message={error} onRetry={load} />
+      </div>
+    );
   }
   if (alert === null) {
     return (
@@ -215,6 +228,14 @@ export default function AlertDetailPage() {
                 </Button>
               </div>
             )}
+            {feedbackError ? (
+              <p
+                role="alert"
+                className="mt-2 text-sm text-[var(--color-danger)]"
+              >
+                {feedbackError}
+              </p>
+            ) : null}
           </section>
         </CardContent>
       </Card>
