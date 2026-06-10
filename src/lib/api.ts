@@ -32,28 +32,87 @@ class ApiError extends Error {
   }
 }
 
+/** A fetch that never threw an HTTP status (status 0) — i.e. the network
+ * itself failed (offline, DNS, CORS). Surfaced to users in Mongolian instead
+ * of the browser's raw English "Failed to fetch". */
+const NETWORK_ERROR = "Сүлжээний алдаа. Холболтоо шалгаад дахин оролдоно уу.";
+
+/** Read a backend `{detail}` error message, falling back to a Mongolian
+ * default rather than the raw English HTTP statusText. */
+async function errorDetail(res: Response): Promise<string> {
+  try {
+    const body = (await res.json()) as { detail?: string };
+    if (body.detail) return body.detail;
+  } catch {
+    // body wasn't JSON
+  }
+  return "Алдаа гарлаа. Дахин оролдоно уу.";
+}
+
+// Single-flight access-token refresh, mirroring sentry-superadmin. The access
+// cookie lives ~15 min; the refresh cookie ~7 days (Path=/api/v1/auth). Without
+// this, once the access token expires while the tab stays open EVERY request
+// starts 401-ing and pages show a raw English "Not authenticated" with no path
+// back to login. On a 401 we refresh once (collapsing concurrent 401s) and
+// retry; if refresh fails the session is truly over → bounce to /login.
+let refreshInFlight: Promise<boolean> | null = null;
+
+function refreshAccessToken(): Promise<boolean> {
+  if (!refreshInFlight) {
+    refreshInFlight = fetch(`${BASE}/api/v1/auth/refresh`, {
+      method: "POST",
+      credentials: "include",
+    })
+      .then((r) => r.ok)
+      .catch(() => false)
+      .finally(() => {
+        refreshInFlight = null;
+      });
+  }
+  return refreshInFlight;
+}
+
+/** Send the browser to the login page, preserving where we were so the user
+ * lands back after re-auth. No-op during SSR. */
+function redirectToLogin(): void {
+  if (typeof window === "undefined") return;
+  const next = window.location.pathname + window.location.search;
+  if (window.location.pathname.startsWith("/login")) return;
+  window.location.assign(`/login?next=${encodeURIComponent(next)}`);
+}
+
 async function request<T>(
   path: string,
   init: RequestInit = {},
+  retried = false,
 ): Promise<T> {
   const url = `${BASE}${path}`;
-  const res = await fetch(url, {
-    ...init,
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(init.headers ?? {}),
-    },
-  });
-  if (!res.ok) {
-    let detail = res.statusText;
-    try {
-      const body = (await res.json()) as { detail?: string };
-      if (body.detail) detail = body.detail;
-    } catch {
-      // ignore
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      ...init,
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...(init.headers ?? {}),
+      },
+    });
+  } catch {
+    // fetch() rejects only on network failure, never on HTTP status.
+    throw new ApiError(0, NETWORK_ERROR);
+  }
+  // Access token expired → refresh once and retry. Skip the auth endpoints
+  // themselves so a failing refresh/login can't loop.
+  if (res.status === 401 && !retried && !path.startsWith("/api/v1/auth/")) {
+    if (await refreshAccessToken()) {
+      return request<T>(path, init, true);
     }
-    throw new ApiError(res.status, detail);
+    // Refresh failed — the session is genuinely over. Send them to login
+    // rather than leaving every page stuck on an English 401 error.
+    redirectToLogin();
+  }
+  if (!res.ok) {
+    throw new ApiError(res.status, await errorDetail(res));
   }
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
@@ -250,20 +309,19 @@ export const clips = {
     if (params.captured_at) fd.append("captured_at", params.captured_at);
     fd.append("duration_sec", String(params.duration_sec ?? 0));
 
-    const res = await fetch(`${BASE}/api/v1/clips`, {
-      method: "POST",
-      body: fd,
-      credentials: "include",
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${BASE}/api/v1/clips`, {
+        method: "POST",
+        body: fd,
+        credentials: "include",
+      });
+    } catch {
+      throw new ApiError(0, NETWORK_ERROR);
+    }
+    if (res.status === 401) redirectToLogin();
     if (!res.ok) {
-      let detail = res.statusText;
-      try {
-        const body = (await res.json()) as { detail?: string };
-        if (body.detail) detail = body.detail;
-      } catch {
-        // ignore
-      }
-      throw new ApiError(res.status, detail);
+      throw new ApiError(res.status, await errorDetail(res));
     }
     return (await res.json()) as ClipPublic;
   },
