@@ -9,7 +9,6 @@ import {
   Radio,
   ShieldCheck,
   Store,
-  Upload,
   Users,
   Video,
   X,
@@ -30,7 +29,8 @@ type NavItem = {
 export const NAV: readonly NavItem[] = [
   { href: "/dashboard", label: "Самбар", icon: Bell },
   { href: "/live", label: "Шууд харах", icon: Radio },
-  { href: "/clips/upload", label: "Видео илгээх", icon: Upload },
+  // ADR-0014 (live-first): clip upload is admin/debug-only — route stays
+  // reachable by direct URL but is not part of the customer nav.
   { href: "/alerts", label: "Сэжигтэй үйлдэл", icon: Video },
   { href: "/behaviors", label: "Сэжиг шалгуур", icon: Brain },
   { href: "/stores", label: "Дэлгүүр", icon: Store },

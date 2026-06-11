@@ -17,33 +17,14 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { alerts as alertsApi, clips, feedback } from "@/lib/api";
+import { CATEGORY_LABEL, LEVEL_LABEL, VERDICT_LABEL } from "@/lib/labels";
 import type { AlertLevel, AlertPublic, ClipPublic, FeedbackVerdict } from "@/lib/types";
-
-const CATEGORY_LABEL: Record<AlertPublic["category"], string> = {
-  browsing: "Хайж байгаа",
-  cart_pickup: "Сагсанд авсан",
-  pocket_conceal: "Халаасанд хийсэн",
-  other: "Бусад",
-};
 
 const LEVEL_TONE: Record<AlertLevel, "ignore" | "log" | "notify" | "review"> = {
   ignore: "ignore",
   log: "log",
   notify: "notify",
   review: "review",
-};
-
-const LEVEL_LABEL: Record<AlertLevel, string> = {
-  ignore: "Үл хамаа",
-  log: "Бүртгэсэн",
-  notify: "Анхаар",
-  review: "Шалга",
-};
-
-const VERDICT_LABEL: Record<FeedbackVerdict, string> = {
-  true_positive: "Зөв илрүүлэлт",
-  false_positive: "Худал сэрэлт",
-  unclear: "Тодорхойгүй",
 };
 
 // Same-origin (empty) base so the clip <video> src goes through the Next `/api`

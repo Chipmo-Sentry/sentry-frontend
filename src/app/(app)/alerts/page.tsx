@@ -20,36 +20,17 @@ import { useEffect, useRef, useState } from "react";
 import { useToast } from "@/components/Toaster";
 import { alerts as alertsApi, feedback } from "@/lib/api";
 import { useAlertStreamContext } from "@/lib/alert-stream-context";
+import { CATEGORY_LABEL, LEVEL_LABEL, VERDICT_LABEL } from "@/lib/labels";
 import { relativeTime } from "@/lib/time";
 import type { AlertLevel, AlertPublic, FeedbackVerdict } from "@/lib/types";
 
 const PAGE_SIZE = 25;
-
-const CATEGORY_LABEL: Record<AlertPublic["category"], string> = {
-  browsing: "Хайж байгаа",
-  cart_pickup: "Сагсанд авсан",
-  pocket_conceal: "Халаасанд хийсэн",
-  other: "Бусад",
-};
 
 const LEVEL_TONE: Record<AlertLevel, "ignore" | "log" | "notify" | "review"> = {
   ignore: "ignore",
   log: "log",
   notify: "notify",
   review: "review",
-};
-
-const LEVEL_LABEL: Record<AlertLevel, string> = {
-  ignore: "Үл хамаа",
-  log: "Бүртгэсэн",
-  notify: "Анхаар",
-  review: "Шалга",
-};
-
-const VERDICT_LABEL: Record<FeedbackVerdict, string> = {
-  true_positive: "Зөв илрүүлэлт",
-  false_positive: "Худал сэрэлт",
-  unclear: "Тодорхойгүй",
 };
 
 type Filter = "all" | "actionable" | AlertLevel;
@@ -143,7 +124,7 @@ export default function AlertsPage() {
       if (announcedRef.current.has(a.id)) continue;
       announcedRef.current.add(a.id);
       toast({
-        title: `Шинэ event — ${LEVEL_LABEL[a.alert_level]}`,
+        title: `Шинэ сэрэмжлүүлэг — ${LEVEL_LABEL[a.alert_level]}`,
         description: `${CATEGORY_LABEL[a.category]} · ${Math.round(
           a.confidence * 100,
         )}%`,
@@ -221,7 +202,7 @@ export default function AlertsPage() {
           {stream.connected ? (
             <>
               <BellRing className="h-3 w-3" />
-              Real-time холбогдсон
+              Шууд холбогдсон
             </>
           ) : (
             <>
@@ -285,11 +266,11 @@ export default function AlertsPage() {
           title={
             merged.length === 0
               ? "Одоогоор үр дүн байхгүй"
-              : "Тохирох event алга"
+              : "Тохирох сэрэмжлүүлэг алга"
           }
           description={
             merged.length === 0
-              ? "Видео илгээгээд AI-аас тайлан хүлээнэ. Шинэ event-ууд real-time-д энд гарна."
+              ? "Видео илгээгээд AI-аас тайлан хүлээнэ. Шинэ сэрэмжлүүлэг бодит цагт энд гарна."
               : "Шүүлтүүр эсвэл хайлтаа өөрчилж үзнэ үү."
           }
           action={
@@ -409,7 +390,7 @@ export default function AlertsPage() {
             </div>
           ) : (
             <p className="mt-6 text-center text-xs text-[var(--color-muted-foreground)]">
-              Бүх event ачаалагдсан
+              Бүх сэрэмжлүүлэг ачаалагдсан
             </p>
           )}
         </>

@@ -16,15 +16,9 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { alerts as alertsApi } from "@/lib/api";
+import { CATEGORY_LABEL } from "@/lib/labels";
 import { relativeTime } from "@/lib/time";
 import type { AlertPublic } from "@/lib/types";
-
-const CATEGORY_LABEL: Record<AlertPublic["category"], string> = {
-  browsing: "Хайж байгаа",
-  cart_pickup: "Сагсанд авсан",
-  pocket_conceal: "Халаасанд хийсэн",
-  other: "Бусад",
-};
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WEEKDAY = ["Ня", "Да", "Мя", "Лх", "Пү", "Ба", "Бя"];
@@ -112,7 +106,7 @@ export default function DashboardPage() {
       <h1 className="text-2xl font-semibold">Самбар</h1>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="Нийт сүүлийн event" value={counts.total} />
+        <StatCard label="Нийт сүүлийн сэрэмжлүүлэг" value={counts.total} />
         <StatCard label="Анхаарал татах" value={counts.notify} tone="notify" />
         <StatCard label="Шалгах ёстой" value={counts.review} tone="review" />
       </div>
@@ -122,7 +116,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Сүүлийн 7 хоног</CardTitle>
-            <CardDescription>Өдөр тутмын event-ийн тоо</CardDescription>
+            <CardDescription>Өдөр тутмын сэрэмжлүүлгийн тоо</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex h-32 items-end gap-2">
@@ -154,14 +148,14 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Шалгах шаардлагатай</CardTitle>
-            <CardDescription>Хамгийн сүүлийн review event-ууд</CardDescription>
+            <CardDescription>«Шалга» түвшний хамгийн сүүлийн сэрэмжлүүлгүүд</CardDescription>
           </CardHeader>
           <CardContent>
             {recentReview.length === 0 ? (
               <EmptyState
                 icon={ShieldAlert}
-                title="Review event алга"
-                description="Одоогоор шалгах шаардлагатай event бүртгэгдээгүй байна."
+                title="Шалгах сэрэмжлүүлэг алга"
+                description="Одоогоор шалгах шаардлагатай сэрэмжлүүлэг бүртгэгдээгүй байна."
               />
             ) : (
               <ul className="divide-y divide-[var(--color-border)]">
@@ -218,7 +212,7 @@ function StatCard({
       </CardHeader>
       <CardContent>
         <p className="text-xs text-[var(--color-muted-foreground)]">
-          Сүүлийн 200 event
+          Сүүлийн 200 сэрэмжлүүлэг
         </p>
       </CardContent>
     </Card>

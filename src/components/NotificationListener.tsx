@@ -15,24 +15,11 @@ import { useEffect, useRef, useState } from "react";
 
 import { useToast } from "@/components/Toaster";
 import { useAlertStreamContext } from "@/lib/alert-stream-context";
+import { CATEGORY_LABEL, LEVEL_LABEL } from "@/lib/labels";
 import { isMuted, onMuteChange } from "@/lib/notif-prefs";
 import type { AlertLevel, AlertPublic } from "@/lib/types";
 
 const BASE_TITLE = "Chipmo Sentry";
-
-const LEVEL_LABEL: Record<AlertLevel, string> = {
-  ignore: "Үл хамаа",
-  log: "Бүртгэсэн",
-  notify: "Анхаар",
-  review: "Шалга",
-};
-
-const CATEGORY_LABEL: Record<AlertPublic["category"], string> = {
-  browsing: "Хайж байгаа",
-  cart_pickup: "Сагсанд авсан",
-  pocket_conceal: "Халаасанд хийсэн",
-  other: "Бусад",
-};
 
 function isActionable(level: AlertLevel): boolean {
   return level === "notify" || level === "review";
