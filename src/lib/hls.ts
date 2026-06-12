@@ -4,7 +4,19 @@ export type HlsCallbacks = {
   /** Fired when an error is fatal and in-place recovery has been exhausted —
    * the caller should tear down and re-attach (reconnect). */
   onFatal?: (err: Error) => void;
+  /** The browser cannot DECODE this stream's codec (e.g. H.265/HEVC over MSE) —
+   * reconnecting will never help, so the caller should surface a terminal,
+   * actionable message instead of looping forever on "connecting". */
+  onUnsupported?: (err: Error) => void;
 };
+
+// hls.js error details that mean "this browser can't decode the codec" — almost
+// always an H.265/HEVC stream on Chrome/Firefox/Edge (no browser HEVC in MSE).
+const CODEC_UNSUPPORTED_DETAILS = new Set<string>([
+  "manifestIncompatibleCodecsError",
+  "bufferAddCodecError",
+  "bufferIncompatibleCodecsError",
+]);
 
 /**
  * Attach an HLS source to a <video> element. Returns a cleanup function.
@@ -29,6 +41,14 @@ export function attachHls(
     });
     let mediaRecoveries = 0;
     hls.on(Hls.Events.ERROR, (_evt, data) => {
+      // Codec the browser can't decode (H.265/HEVC): terminal — no amount of
+      // reconnecting fixes it. Surface it distinctly so the UI can tell the
+      // operator to switch the camera to H.264, instead of spinning forever.
+      if (CODEC_UNSUPPORTED_DETAILS.has(data.details)) {
+        cbs.onUnsupported?.(new Error(`HLS codec unsupported: ${data.details}`));
+        hls.destroy();
+        return;
+      }
       if (!data.fatal) return; // hls.js self-heals non-fatal errors
       switch (data.type) {
         case Hls.ErrorTypes.NETWORK_ERROR:

@@ -38,6 +38,25 @@ export function attachLiveVideo(
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   let backoffMs = RECONNECT_MIN_MS;
 
+  // The browser can't play this stream at all (H.265/HEVC: unsupported over
+  // WebRTC AND undecodable in browser HLS). Stop everything and show ONE
+  // actionable message instead of looping on "connecting" forever.
+  const UNSUPPORTED_MSG =
+    "Шууд дамжуулал амжилтгүй. Энэ камер H.265 (HEVC) кодектой бол вэб хөтөч " +
+    "дээр харагдахгүй — камерынхаа тохиргооноос H.264 болгоно уу.";
+
+  function giveUp(message: string) {
+    if (disposed) return;
+    disposed = true; // halts attempt() + scheduleReconnect()
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
+    cleanup?.();
+    cleanup = null;
+    cbs.onError?.(new Error(message));
+  }
+
   // Reconnect the WHOLE pipeline (WHEP-first again) after an ESTABLISHED stream
   // drops — without this a single blip leaves a permanent black tile, breaking
   // the 24h ≥99%/cam uptime target.
@@ -61,11 +80,42 @@ export function attachLiveVideo(
       if (disposed) return;
       fellBack = true;
       cbs.onTransport?.("hls");
+
+      // Watchdog: HLS attached but never produced a decodable frame. Covers the
+      // H.265 case where hls.js neither fires a clean codec error nor plays —
+      // the tile would otherwise sit on "connecting" forever. Only armed on the
+      // INITIAL connect (a previously-healthy stream that drops keeps retrying).
+      let frameWatchdog: ReturnType<typeof setTimeout> | null = null;
+      const stopWatchdog = () => {
+        if (frameWatchdog) {
+          clearTimeout(frameWatchdog);
+          frameWatchdog = null;
+        }
+        video.removeEventListener("playing", stopWatchdog);
+      };
+      if (!connectedOnce) {
+        video.addEventListener("playing", stopWatchdog);
+        frameWatchdog = setTimeout(() => {
+          if (disposed) return;
+          if (video.readyState < 2) giveUp(UNSUPPORTED_MSG);
+        }, 12000);
+      }
+
       try {
-        cleanup = attachHls(video, src.hlsUrl, { onFatal: () => scheduleReconnect() });
-      } catch (e) {
-        cbs.onError?.(e instanceof Error ? e : new Error("HLS дэмжлэггүй"));
-        scheduleReconnect();
+        cleanup = attachHls(video, src.hlsUrl, {
+          onFatal: () => {
+            stopWatchdog();
+            scheduleReconnect();
+          },
+          onUnsupported: () => {
+            stopWatchdog();
+            giveUp(UNSUPPORTED_MSG);
+          },
+        });
+      } catch {
+        // Browser can't do HLS at all — terminal, don't loop.
+        stopWatchdog();
+        giveUp(UNSUPPORTED_MSG);
       }
     }
 
