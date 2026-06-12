@@ -4,7 +4,7 @@ import { ExternalLink, Maximize2, Minimize2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
-import { cameras as camerasApi } from "@/lib/api";
+import { ApiError, cameras as camerasApi } from "@/lib/api";
 import { attachLiveVideo, type LiveTransport } from "@/lib/live-video";
 import { useLiveMetadata } from "@/lib/live-ws";
 
@@ -53,6 +53,8 @@ export function LiveCameraTile({
   const [status, setStatus] = useState<Status>("loading");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  // 402 from the stream-token endpoint — wallet is empty, live is paywalled.
+  const [paymentRequired, setPaymentRequired] = useState(false);
   const [transport, setTransport] = useState<LiveTransport>("webrtc");
   // Resolved stream URLs (with ?jwt=… when a read token is required). Null until
   // resolved so we don't attach the raw URL then immediately re-attach.
@@ -70,14 +72,23 @@ export function LiveCameraTile({
       return;
     }
     let cancelled = false;
+    setPaymentRequired(false);
     camerasApi.streamToken(streamCameraId).then(
       ({ token }) => {
         if (cancelled) return;
         const q = `?jwt=${encodeURIComponent(token)}`;
         setAuthUrls({ whep: whepUrl + q, hls: hlsUrl + q });
       },
-      () => {
-        if (!cancelled) setAuthUrls({ whep: whepUrl, hls: hlsUrl });
+      (e: unknown) => {
+        if (cancelled) return;
+        // 402 — хэтэвчний үлдэгдэл дууссан тул live хаалттай. authUrls-ийг
+        // null-аар нь үлдээж видеог ОГТ эхлүүлэхгүй, тусгай overlay үзүүлнэ.
+        if (e instanceof ApiError && e.status === 402) {
+          setPaymentRequired(true);
+          setStatus("error");
+          return;
+        }
+        setAuthUrls({ whep: whepUrl, hls: hlsUrl });
       },
     );
     return () => {
@@ -354,10 +365,23 @@ export function LiveCameraTile({
         </div>
       </div>
 
-      {status === "error" && errorMsg && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/70 p-4 text-center text-sm text-white">
-          {errorMsg}
+      {paymentRequired ? (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/70 p-4 text-center text-sm text-white">
+          <span>Үлдэгдэл хүрэлцэхгүй байна — Төлбөр хуудаснаас цэнэглэнэ үү</span>
+          <Link
+            href="/billing"
+            className="rounded-md bg-[var(--color-primary)] px-3 py-1.5 font-medium text-white transition-opacity hover:opacity-90"
+          >
+            Цэнэглэх
+          </Link>
         </div>
+      ) : (
+        status === "error" &&
+        errorMsg && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/70 p-4 text-center text-sm text-white">
+            {errorMsg}
+          </div>
+        )
       )}
     </div>
   );

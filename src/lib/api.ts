@@ -363,6 +363,75 @@ export const feedback = {
     }),
 };
 
+// === Billing (org wallet — T14) ===
+
+export type BillingStatus = "active" | "credit" | "suspended";
+export type JournalKind =
+  | "topup"
+  | "usage_charge"
+  | "promo_credit"
+  | "adjustment";
+export type LedgerAccount = "cash" | "org_wallet" | "revenue" | "promo_expense";
+
+export interface StoreBillingLine {
+  store_id: string;
+  name: string;
+  active_cameras: number;
+  /** null — дэлгүүрт идэвхтэй камер байхгүй (төлбөргүй). */
+  tier: string | null;
+  platform_fee_mnt: number;
+  camera_fee_mnt: number;
+  monthly_mnt: number;
+}
+
+export interface BillingSummary {
+  balance_mnt: number;
+  status: BillingStatus;
+  credit_until: string | null;
+  promo_free_until: string | null;
+  daily_rate_mnt: number;
+  monthly_rate_mnt: number;
+  stores: StoreBillingLine[];
+}
+
+export interface JournalEntry {
+  id: string;
+  posted_at: string;
+  kind: JournalKind;
+  dr_account: LedgerAccount;
+  cr_account: LedgerAccount;
+  /** Always positive — direction comes from dr/cr (cr=org_wallet → орлого). */
+  amount_mnt: number;
+  description: string;
+  charge_date: string | null;
+  meta: Record<string, unknown> | null;
+}
+
+export interface PromoRedeemResult {
+  code: string;
+  kind: "bonus_amount" | "free_days";
+  amount_mnt: number | null;
+  free_days: number | null;
+  balance_mnt: number;
+  promo_free_until: string | null;
+}
+
+export const billing = {
+  summary: () => request<BillingSummary>("/api/v1/billing"),
+  journal: (params?: { limit?: number; offset?: number }) => {
+    const q = new URLSearchParams();
+    if (params?.limit !== undefined) q.set("limit", String(params.limit));
+    if (params?.offset !== undefined) q.set("offset", String(params.offset));
+    const suffix = q.toString() ? `?${q}` : "";
+    return request<JournalEntry[]>(`/api/v1/billing/journal${suffix}`);
+  },
+  redeemPromo: (code: string) =>
+    request<PromoRedeemResult>("/api/v1/billing/promo", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    }),
+};
+
 // === Behaviors ===
 
 export const behaviors = {

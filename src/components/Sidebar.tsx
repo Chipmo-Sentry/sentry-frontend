@@ -11,6 +11,7 @@ import {
   Store,
   Users,
   Video,
+  Wallet,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -36,6 +37,7 @@ export const NAV: readonly NavItem[] = [
   { href: "/stores", label: "Дэлгүүр", icon: Store },
   { href: "/cameras", label: "Камер", icon: Cctv },
   { href: "/team", label: "Хэрэглэгчид", icon: Users },
+  { href: "/billing", label: "Төлбөр", icon: Wallet },
   { href: "/admin", label: "Админ", icon: ShieldCheck, superAdmin: true },
 ];
 
