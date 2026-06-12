@@ -5,8 +5,9 @@ import { Cctv } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
+import { LiveBehaviorPanel } from "@/components/LiveBehaviorPanel";
 import { LiveCameraTile } from "@/components/LiveCameraTile";
-import { cameras as camerasApi } from "@/lib/api";
+import { behaviors as behaviorsApi, cameras as camerasApi } from "@/lib/api";
 import type { CameraPublic } from "@/lib/types";
 
 /**
@@ -26,6 +27,31 @@ type LiveCamera = { id: string; path: string; name: string };
 export default function LivePage() {
   const [cams, setCams] = useState<LiveCamera[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // REV.2 — behavior-criteria side panel: which camera it shows (null = closed)
+  // + key→Mongolian label maps from /api/v1/behaviors (best-effort: on failure
+  // the panel just shows raw keys).
+  const [panelCam, setPanelCam] = useState<LiveCamera | null>(null);
+  const [behaviorLabels, setBehaviorLabels] = useState<Record<string, string>>({});
+  const [levelLabels, setLevelLabels] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    behaviorsApi.get().then(
+      (cfg) => {
+        if (cancelled) return;
+        const map: Record<string, string> = {};
+        for (const d of cfg.dimensions) map[d.key] = d.label_mn;
+        setBehaviorLabels(map);
+        setLevelLabels(cfg.level_labels ?? {});
+      },
+      () => {
+        /* keys shown raw */
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const load = useCallback(() => {
     setError(null);
@@ -113,11 +139,24 @@ export default function LivePage() {
                 whepUrl={whepUrl(c.path)}
                 hlsUrl={hlsUrl(c.path)}
                 detailHref={`/live/${encodeURIComponent(c.path)}`}
+                onShowPanel={() => setPanelCam(c)}
               />
             </div>
           ))}
         </div>
       </div>
+
+      {/* REV.2 — live behavior-criteria breakdown for the selected camera */}
+      {panelCam && (
+        <LiveBehaviorPanel
+          key={panelCam.path}
+          cameraId={panelCam.path}
+          name={panelCam.name}
+          labels={behaviorLabels}
+          levelLabels={levelLabels}
+          onClose={() => setPanelCam(null)}
+        />
+      )}
     </div>
   );
 }

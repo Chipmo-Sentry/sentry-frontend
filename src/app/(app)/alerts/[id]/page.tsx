@@ -16,7 +16,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-import { alerts as alertsApi, clips, feedback } from "@/lib/api";
+import { alerts as alertsApi, behaviors as behaviorsApi, clips, feedback } from "@/lib/api";
 import { CATEGORY_LABEL, LEVEL_LABEL, VERDICT_LABEL } from "@/lib/labels";
 import type { AlertLevel, AlertPublic, ClipPublic, FeedbackVerdict } from "@/lib/types";
 
@@ -42,6 +42,26 @@ export default function AlertDetailPage() {
   const [submitting, setSubmitting] = useState<FeedbackVerdict | null>(null);
   const [feedbackSent, setFeedbackSent] = useState<FeedbackVerdict | null>(null);
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
+  // Criterion key → Mongolian label (best-effort; raw keys on failure).
+  const [behaviorLabels, setBehaviorLabels] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    behaviorsApi.get().then(
+      (cfg) => {
+        if (cancelled) return;
+        const map: Record<string, string> = {};
+        for (const d of cfg.dimensions) map[d.key] = d.label_mn;
+        setBehaviorLabels(map);
+      },
+      () => {
+        /* keys shown raw */
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const load = useCallback(() => {
     setError(null);
@@ -163,6 +183,29 @@ export default function AlertDetailPage() {
               </Badge>
             )}
           </section>
+
+          {/* REV.2 — the behavior-engine criteria that triggered this clip:
+              fired criterion keys (first-fired order) + completed sequences. */}
+          {((alert.triggered_behaviors?.length ?? 0) > 0 ||
+            (alert.triggered_sequences?.length ?? 0) > 0) && (
+            <section>
+              <h3 className="mb-2 text-sm font-semibold">
+                Илэрсэн сэжиг шалгуурууд
+              </h3>
+              <div className="flex flex-wrap items-center gap-2">
+                {alert.triggered_behaviors?.map((key) => (
+                  <Badge key={key} tone="warning">
+                    {behaviorLabels[key] ?? key}
+                  </Badge>
+                ))}
+                {alert.triggered_sequences?.map((key) => (
+                  <Badge key={`seq-${key}`} tone="danger">
+                    ⛓ {behaviorLabels[key] ?? key}
+                  </Badge>
+                ))}
+              </div>
+            </section>
+          )}
 
           {clip ? (
             <section className="text-xs text-[var(--color-muted-foreground)]">

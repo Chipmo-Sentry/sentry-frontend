@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, Maximize2, Minimize2 } from "lucide-react";
+import { ExternalLink, ListChecks, Maximize2, Minimize2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
@@ -18,6 +18,9 @@ export type LiveCameraTileProps = {
   streamCameraId?: string;
   /** When set, render a link to the dedicated single-camera page (FE-L6). */
   detailHref?: string;
+  /** When set, render a 📋 button that opens the behavior-criteria side panel
+   * for this camera (REV.2 — live criteria display). */
+  onShowPanel?: () => void;
 };
 
 type Status = "loading" | "playing" | "stalled" | "error";
@@ -46,6 +49,7 @@ export function LiveCameraTile({
   hlsUrl,
   streamCameraId,
   detailHref,
+  onShowPanel,
 }: LiveCameraTileProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -241,6 +245,28 @@ export function LiveCameraTile({
         ctx.fillRect(rx, labelY, labelW, labelH);
         ctx.fillStyle = "#000";
         ctx.fillText(label, rx + 4, labelY + 13);
+
+        // REV.2 — active criteria under the box: the engine's Mongolian reason
+        // strings (e.g. "Орчноо харах", "Халаас руу"). Max 2 lines + "+n" so a
+        // busy episode doesn't wallpaper the video; full list lives in the
+        // side panel (ListChecks button).
+        const reasons = t.reasons ?? [];
+        if (reasons.length > 0) {
+          const shown = reasons.slice(0, 2);
+          const extra = reasons.length - shown.length;
+          if (extra > 0) shown[shown.length - 1] += `  +${extra}`;
+          ctx.font = "500 11px ui-sans-serif, system-ui, sans-serif";
+          const lineH = 15;
+          let ly = Math.min(cssH - lineH * shown.length, ry + rh + 2);
+          for (const line of shown) {
+            const w = ctx.measureText(line).width + 8;
+            ctx.fillStyle = "rgba(0,0,0,0.65)";
+            ctx.fillRect(rx, ly, w, lineH);
+            ctx.fillStyle = color;
+            ctx.fillText(line, rx + 4, ly + 11);
+            ly += lineH;
+          }
+        }
       }
     }
 
@@ -339,6 +365,17 @@ export function LiveCameraTile({
           >
             {STATUS_LABEL[status]}
           </span>
+          {onShowPanel && !isFullscreen && (
+            <button
+              type="button"
+              onClick={onShowPanel}
+              className="rounded-md bg-black/60 p-1.5 text-white backdrop-blur-sm transition-colors hover:bg-black/80"
+              aria-label="Сэжиг шалгуурууд"
+              title="Сэжиг шалгуурын задаргааг харах"
+            >
+              <ListChecks className="h-4 w-4" />
+            </button>
+          )}
           {detailHref && !isFullscreen && (
             <Link
               href={detailHref}

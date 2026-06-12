@@ -47,7 +47,13 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Logout */
+        /**
+         * Logout
+         * @description Clear this device's cookies AND server-side revoke every outstanding
+         *     token for the user by bumping ``token_version``. Best-effort on the bump:
+         *     a missing/expired/invalid token still clears cookies (idempotent logout),
+         *     it just can't invalidate other devices.
+         */
         post: operations["logout_api_v1_auth_logout_post"];
         delete?: never;
         options?: never;
@@ -540,7 +546,14 @@ export interface paths {
         get: operations["get_org_api_v1_admin_orgs__org_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete Org
+         * @description Delete a tenant entirely (T15 #3 — the privacy policy's deletion promise).
+         *
+         *     Every org-scoped row cascades in the DB; the org's clip evidence FILES are
+         *     unlinked from disk first (a cascade can't reach the filesystem).
+         */
+        delete: operations["delete_org_api_v1_admin_orgs__org_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -723,6 +736,196 @@ export interface paths {
         patch: operations["update_ai_node_api_v1_admin_ai_nodes__node_id__patch"];
         trace?: never;
     };
+    "/api/v1/billing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Billing
+         * @description Wallet balance + status + the per-store rate breakdown.
+         */
+        get: operations["get_billing_api_v1_billing_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/billing/journal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Journal
+         * @description Ledger entries for the org, newest first.
+         */
+        get: operations["list_journal_api_v1_billing_journal_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/billing/promo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Redeem Promo
+         * @description Redeem a promo code (owner/admin only).
+         */
+        post: operations["redeem_promo_api_v1_billing_promo_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/billing/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Billing Overview */
+        get: operations["billing_overview_api_v1_admin_billing_overview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/billing/orgs/{org_id}/journal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Org Journal */
+        get: operations["org_journal_api_v1_admin_billing_orgs__org_id__journal_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/billing/orgs/{org_id}/topup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Topup
+         * @description Record a received payment: Dr cash / Cr org_wallet, balance += amount.
+         */
+        post: operations["topup_api_v1_admin_billing_orgs__org_id__topup_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/billing/orgs/{org_id}/credit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Grant Credit
+         * @description Emergency unlock: keep a non-paying org alive until `until`.
+         */
+        post: operations["grant_credit_api_v1_admin_billing_orgs__org_id__credit_post"];
+        /** Revoke Credit */
+        delete: operations["revoke_credit_api_v1_admin_billing_orgs__org_id__credit_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/billing/promo-codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Promo Codes */
+        get: operations["list_promo_codes_api_v1_admin_billing_promo_codes_get"];
+        put?: never;
+        /** Create Promo Code */
+        post: operations["create_promo_code_api_v1_admin_billing_promo_codes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/billing/promo-codes/{promo_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Promo Code */
+        patch: operations["update_promo_code_api_v1_admin_billing_promo_codes__promo_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/billing/analytics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Billing Analytics
+         * @description Daily money flow (usage / topup / promo) for the superadmin chart.
+         */
+        get: operations["billing_analytics_api_v1_admin_billing_analytics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/org/members": {
         parameters: {
             query?: never;
@@ -738,6 +941,32 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/org": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete My Org
+         * @description Owner deletes their own organization (T15 #3 — privacy policy promise).
+         *
+         *     Owner-only (admins manage the team; only the owner can erase the tenant).
+         *     The caller must retype the org slug (`confirm_slug`) so a stray DELETE can't
+         *     wipe everything. All org data cascades in the DB; clip evidence files are
+         *     removed from disk first. Members keep their user accounts but lose all
+         *     org-scoped access the moment the membership rows cascade away.
+         */
+        delete: operations["delete_my_org_api_v1_org_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -765,6 +994,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/org/invitations/{invitation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Cancel Invitation
+         * @description Revoke a pending invite. The token immediately stops working.
+         */
+        delete: operations["cancel_invitation_api_v1_org_invitations__invitation_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/org/members/{user_id}": {
         parameters: {
             query?: never;
@@ -779,7 +1028,12 @@ export interface paths {
         delete: operations["remove_member_api_v1_org_members__user_id__delete"];
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update Member
+         * @description Lock (is_active=false) or unlock a member. Locking blocks their login
+         *     immediately without deleting the account. Can't lock yourself or the owner.
+         */
+        patch: operations["update_member_api_v1_org_members__user_id__patch"];
         trace?: never;
     };
     "/api/v1/org/accept-invite": {
@@ -1016,7 +1270,7 @@ export interface paths {
         head?: never;
         /**
          * Patch Behavior Config
-         * @description Bulk weights (existing keys) + thresholds. Super-admin only.
+         * @description Bulk weights (existing keys) + thresholds + engine knobs. Super-admin only.
          */
         patch: operations["patch_behavior_config_api_v1_behaviors_patch"];
         trace?: never;
@@ -1249,6 +1503,8 @@ export interface components {
             sentry_ram_mb?: number | null;
             /** Sentry Vram Mb */
             sentry_vram_mb?: number | null;
+            /** Cameras */
+            cameras?: components["schemas"]["CameraHealth"][] | null;
         };
         /**
          * AiNodePairRequest
@@ -1320,6 +1576,13 @@ export interface components {
             frame_skip: number;
             /** Created At */
             created_at: string | null;
+            /**
+             * Cameras
+             * @description Per-camera stream health parsed from the latest heartbeat telemetry
+             *     (audit T12 #3). None for old node versions / no telemetry yet — the
+             *     superadmin UI can distinguish "unknown" from "no cameras" ([]).
+             */
+            readonly cameras: components["schemas"]["CameraHealth"][] | null;
             /**
              * Is Online
              * @description Server-computed online status — independent of the viewer's clock.
@@ -1412,6 +1675,10 @@ export interface components {
             person_id?: number | null;
             /** Peak Risk Pct */
             peak_risk_pct?: number | null;
+            /** Triggered Behaviors */
+            triggered_behaviors?: string[] | null;
+            /** Triggered Sequences */
+            triggered_sequences?: string[] | null;
         };
         /**
          * AlertTrigger
@@ -1424,6 +1691,13 @@ export interface components {
             dimensions: components["schemas"]["BehaviorDimension"][];
             /** Thresholds */
             thresholds: {
+                [key: string]: number;
+            };
+            /**
+             * Engine
+             * @default {}
+             */
+            engine: {
                 [key: string]: number;
             };
             /**
@@ -1457,7 +1731,7 @@ export interface components {
         };
         /**
          * BehaviorConfigPatch
-         * @description Back-compat bulk update — weights (existing keys only) and/or thresholds.
+         * @description Bulk update — weights (existing keys only), thresholds, and/or engine knobs.
          */
         BehaviorConfigPatch: {
             /** Weights */
@@ -1466,6 +1740,10 @@ export interface components {
             } | null;
             /** Thresholds */
             thresholds?: {
+                [key: string]: number;
+            } | null;
+            /** Engine */
+            engine?: {
                 [key: string]: number;
             } | null;
         };
@@ -1500,6 +1778,70 @@ export interface components {
             active_in_m1: boolean;
             /** Builtin */
             builtin: boolean;
+            /**
+             * Params
+             * @default {}
+             */
+            params: {
+                [key: string]: number;
+            };
+        };
+        /** BillingAnalytics */
+        BillingAnalytics: {
+            /** By Day */
+            by_day: components["schemas"]["BillingDayPoint"][];
+            totals: components["schemas"]["BillingDayPoint"];
+            /** Suspended Count */
+            suspended_count: number;
+            /** Credit Count */
+            credit_count: number;
+        };
+        /** BillingDayPoint */
+        BillingDayPoint: {
+            /** Day */
+            day: string;
+            /** Usage Mnt */
+            usage_mnt: number;
+            /** Topup Mnt */
+            topup_mnt: number;
+            /** Promo Mnt */
+            promo_mnt: number;
+        };
+        /** BillingOverview */
+        BillingOverview: {
+            /** Orgs */
+            orgs: components["schemas"]["OrgBillingRow"][];
+            /** Total Balance Mnt */
+            total_balance_mnt: number;
+            /** Total Daily Rate Mnt */
+            total_daily_rate_mnt: number;
+            /** Active Count */
+            active_count: number;
+            /** Credit Count */
+            credit_count: number;
+            /** Suspended Count */
+            suspended_count: number;
+        };
+        /**
+         * BillingStatus
+         * @enum {string}
+         */
+        BillingStatus: "active" | "credit" | "suspended";
+        /** BillingSummary */
+        BillingSummary: {
+            /** Balance Mnt */
+            balance_mnt: number;
+            status: components["schemas"]["BillingStatus"];
+            /** Credit Until */
+            credit_until: string | null;
+            /** Promo Free Until */
+            promo_free_until: string | null;
+            /** Daily Rate Mnt */
+            daily_rate_mnt: number;
+            /** Monthly Rate Mnt */
+            monthly_rate_mnt: number;
+            /** Stores */
+            stores: components["schemas"]["StoreBillingLine"][];
         };
         /** Body_upload_clip_api_v1_clips_post */
         Body_upload_clip_api_v1_clips_post: {
@@ -1555,6 +1897,26 @@ export interface components {
              * @default 70
              */
             risk_threshold: number;
+        };
+        /**
+         * CameraHealth
+         * @description Per-camera stream health inside the node heartbeat (audit T12 #3).
+         *
+         *     Lets the cloud tell WHICH camera died instead of only seeing the summed
+         *     FPS dip. status: ok = inferring, stalled = worker alive but 0 FPS,
+         *     error = worker dead or RTSP read/open failure.
+         */
+        CameraHealth: {
+            /** Camera Id */
+            camera_id: string;
+            /** Fps */
+            fps?: number | null;
+            /**
+             * Status
+             * @default ok
+             * @enum {string}
+             */
+            status: "ok" | "stalled" | "error";
         };
         /**
          * CameraPublic
@@ -1653,6 +2015,16 @@ export interface components {
              */
             created_at: string;
         };
+        /** CreditRequest */
+        CreditRequest: {
+            /**
+             * Until
+             * Format: date-time
+             */
+            until: string;
+            /** Note */
+            note?: string | null;
+        };
         /** DimensionCreate */
         DimensionCreate: {
             /** Key */
@@ -1694,6 +2066,10 @@ export interface components {
             category?: string | null;
             /** Level */
             level?: number | null;
+            /** Params */
+            params?: {
+                [key: string]: number;
+            } | null;
         };
         /** FeedbackCreate */
         FeedbackCreate: {
@@ -1779,6 +2155,37 @@ export interface components {
              */
             expires_at: string;
         };
+        /** JournalEntryPublic */
+        JournalEntryPublic: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Posted At
+             * Format: date-time
+             */
+            posted_at: string;
+            kind: components["schemas"]["JournalKind"];
+            dr_account: components["schemas"]["LedgerAccount"];
+            cr_account: components["schemas"]["LedgerAccount"];
+            /** Amount Mnt */
+            amount_mnt: number;
+            /** Description */
+            description: string;
+            /** Charge Date */
+            charge_date?: string | null;
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * JournalKind
+         * @enum {string}
+         */
+        JournalKind: "topup" | "usage_charge" | "promo_credit" | "adjustment";
         /**
          * LeadCreate
          * @description Public landing-page submission.
@@ -1855,6 +2262,11 @@ export interface components {
             notes?: string | null;
         };
         /**
+         * LedgerAccount
+         * @enum {string}
+         */
+        LedgerAccount: "cash" | "org_wallet" | "revenue" | "promo_expense";
+        /**
          * LiveFrame
          * @description Per-analyzed-frame metadata from the sentry-ai live worker
          *     (REV.1 — mirrors sentry-ai's FrameMetadata).
@@ -1930,6 +2342,32 @@ export interface components {
              * @enum {string}
              */
             color: "green" | "yellow" | "red";
+            /**
+             * Level
+             * @default LOW
+             */
+            level: string;
+            /**
+             * State
+             * @default IDLE
+             */
+            state: string;
+            /** Sequences */
+            sequences?: string[];
+            /** Behaviors */
+            behaviors?: string[];
+            /** Behavior Scores */
+            behavior_scores?: {
+                [key: string]: number;
+            };
+            /** Reasons */
+            reasons?: string[];
+            /** Episode Started Ms */
+            episode_started_ms?: number | null;
+            /** Store Person Id */
+            store_person_id?: number | null;
+            /** Store Risk Pct */
+            store_risk_pct?: number | null;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -1976,6 +2414,52 @@ export interface components {
              * @default
              */
             query: string;
+        };
+        /**
+         * MemberUpdate
+         * @description Org admin toggles a member's access (lock = is_active False).
+         */
+        MemberUpdate: {
+            /** Is Active */
+            is_active: boolean;
+        };
+        /** OrgBillingRow */
+        OrgBillingRow: {
+            /**
+             * Org Id
+             * Format: uuid
+             */
+            org_id: string;
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+            /** Balance Mnt */
+            balance_mnt: number;
+            status: components["schemas"]["BillingStatus"];
+            /** Daily Rate Mnt */
+            daily_rate_mnt: number;
+            /** Stores Count */
+            stores_count: number;
+            /** Cameras Count */
+            cameras_count: number;
+            /** Credit Until */
+            credit_until?: string | null;
+            /** Promo Free Until */
+            promo_free_until?: string | null;
+            /** Last Topup At */
+            last_topup_at?: string | null;
+        };
+        /**
+         * OrgDeleteConfirm
+         * @description Owner deletes their own org — must retype the org slug to confirm.
+         *
+         *     Guards against an accidental DELETE (fat-finger, replayed request) wiping a
+         *     whole tenant: the slug is something only a deliberate caller types in.
+         */
+        OrgDeleteConfirm: {
+            /** Confirm Slug */
+            confirm_slug: string;
         };
         /**
          * OrgMemberPublic
@@ -2054,6 +2538,89 @@ export interface components {
             created_at: string;
         };
         /**
+         * PromoCodeCreate
+         * @description code omitted/blank → auto-generated (8 chars A-Z0-9).
+         */
+        PromoCodeCreate: {
+            /** Code */
+            code?: string | null;
+            kind: components["schemas"]["PromoKind"];
+            /** Amount Mnt */
+            amount_mnt?: number | null;
+            /** Free Days */
+            free_days?: number | null;
+            /** Valid Until */
+            valid_until?: string | null;
+            /**
+             * Max Redemptions
+             * @default 1
+             */
+            max_redemptions: number;
+            /** Note */
+            note?: string | null;
+        };
+        /** PromoCodePublic */
+        PromoCodePublic: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Code */
+            code: string;
+            kind: components["schemas"]["PromoKind"];
+            /** Amount Mnt */
+            amount_mnt: number | null;
+            /** Free Days */
+            free_days: number | null;
+            /** Valid Until */
+            valid_until: string | null;
+            /** Max Redemptions */
+            max_redemptions: number;
+            /** Redeemed Count */
+            redeemed_count: number;
+            /** Active */
+            active: boolean;
+            /** Note */
+            note: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** PromoCodeUpdate */
+        PromoCodeUpdate: {
+            /** Active */
+            active?: boolean | null;
+            /** Note */
+            note?: string | null;
+        };
+        /**
+         * PromoKind
+         * @enum {string}
+         */
+        PromoKind: "bonus_amount" | "free_days";
+        /** PromoRedeemRequest */
+        PromoRedeemRequest: {
+            /** Code */
+            code: string;
+        };
+        /** PromoRedeemResponse */
+        PromoRedeemResponse: {
+            /** Code */
+            code: string;
+            kind: components["schemas"]["PromoKind"];
+            /** Amount Mnt */
+            amount_mnt?: number | null;
+            /** Free Days */
+            free_days?: number | null;
+            /** Balance Mnt */
+            balance_mnt: number;
+            /** Promo Free Until */
+            promo_free_until?: string | null;
+        };
+        /**
          * RagCaseCreate
          * @description Store a verified event the AI node has embedded.
          */
@@ -2103,6 +2670,29 @@ export interface components {
             pattern: string[];
             /** Bonus */
             bonus: number;
+        };
+        /**
+         * StoreBillingLine
+         * @description Per-store breakdown shown on the customer billing page.
+         */
+        StoreBillingLine: {
+            /**
+             * Store Id
+             * Format: uuid
+             */
+            store_id: string;
+            /** Name */
+            name: string;
+            /** Active Cameras */
+            active_cameras: number;
+            /** Tier */
+            tier: string | null;
+            /** Platform Fee Mnt */
+            platform_fee_mnt: number;
+            /** Camera Fee Mnt */
+            camera_fee_mnt: number;
+            /** Monthly Mnt */
+            monthly_mnt: number;
         };
         /** StoreCreate */
         StoreCreate: {
@@ -2164,6 +2754,13 @@ export interface components {
             token: string;
             /** Expires In */
             expires_in: number;
+        };
+        /** TopupRequest */
+        TopupRequest: {
+            /** Amount Mnt */
+            amount_mnt: number;
+            /** Note */
+            note?: string | null;
         };
         /**
          * UserAdminUpdate
@@ -2296,9 +2893,13 @@ export interface operations {
     logout_api_v1_auth_logout_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path?: never;
-            cookie?: never;
+            cookie?: {
+                sentry_access?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -2308,6 +2909,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };
@@ -3494,6 +4104,39 @@ export interface operations {
             };
         };
     };
+    delete_org_api_v1_admin_orgs__org_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_org_members_api_v1_admin_orgs__org_id__members_get: {
         parameters: {
             query?: never;
@@ -3891,6 +4534,439 @@ export interface operations {
             };
         };
     };
+    get_billing_api_v1_billing_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Org-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_journal_api_v1_billing_journal_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: {
+                "X-Org-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JournalEntryPublic"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    redeem_promo_api_v1_billing_promo_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Org-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromoRedeemRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromoRedeemResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    billing_overview_api_v1_admin_billing_overview_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingOverview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    org_journal_api_v1_admin_billing_orgs__org_id__journal_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JournalEntryPublic"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    topup_api_v1_admin_billing_orgs__org_id__topup_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TopupRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JournalEntryPublic"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    grant_credit_api_v1_admin_billing_orgs__org_id__credit_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreditRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_credit_api_v1_admin_billing_orgs__org_id__credit_delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_promo_codes_api_v1_admin_billing_promo_codes_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromoCodePublic"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_promo_code_api_v1_admin_billing_promo_codes_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromoCodeCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromoCodePublic"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_promo_code_api_v1_admin_billing_promo_codes__promo_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                promo_id: string;
+            };
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromoCodeUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromoCodePublic"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    billing_analytics_api_v1_admin_billing_analytics_get: {
+        parameters: {
+            query?: {
+                range?: string;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingAnalytics"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_members_api_v1_org_members_get: {
         parameters: {
             query?: never;
@@ -3913,6 +4989,42 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["OrgMemberPublic"][];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_my_org_api_v1_org_delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Org-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrgDeleteConfirm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -3997,6 +5109,40 @@ export interface operations {
             };
         };
     };
+    cancel_invitation_api_v1_org_invitations__invitation_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Org-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                invitation_id: string;
+            };
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     remove_member_api_v1_org_members__user_id__delete: {
         parameters: {
             query?: never;
@@ -4019,6 +5165,46 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_member_api_v1_org_members__user_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Org-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgMemberPublic"];
+                };
             };
             /** @description Validation Error */
             422: {

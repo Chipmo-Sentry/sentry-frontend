@@ -18,6 +18,15 @@ export type Track = {
   // (e.g. an older AI node) → the overlay falls back to the per-camera person_id.
   store_person_id?: number | null;
   store_risk_pct?: number | null;
+  // v2 behavior engine episode context (REV.2). All optional — an older AI
+  // node / backend simply doesn't send them, so default with ?? everywhere.
+  level?: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  state?: string; // IDLE | SUSPICIOUS | PRODUCT_INTERACTION | CONCEALMENT | ALERT
+  sequences?: string[]; // completed sequence rule keys this episode
+  behaviors?: string[]; // fired criteria keys this episode, first-fired order
+  behavior_scores?: Record<string, number>; // accumulated score per criterion
+  reasons?: string[]; // Mongolian display strings (latest non-empty frame)
+  episode_started_ms?: number | null; // node epoch ms of the episode's first firing
 };
 
 export type FrameMetadata = {
