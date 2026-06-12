@@ -6,13 +6,13 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Field,
   Input,
   Logo,
 } from "@chipmo-sentry/ui-kit";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 
-import { Field } from "@/components/Field";
 import { org, ApiError } from "@/lib/api";
 
 export default function AcceptInvitePage() {

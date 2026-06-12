@@ -10,6 +10,7 @@ import {
   CardTitle,
   EmptyState,
   ErrorState,
+  Field,
   Input,
   Modal,
   ModalContent,
@@ -17,12 +18,12 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  Select,
   Spinner,
 } from "@chipmo-sentry/ui-kit";
 import { Lock, Trash2, Unlock, UserPlus, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { Field } from "@/components/Field";
 import { useToast } from "@/components/Toaster";
 import { auth, org, ApiError, type OrgMember, type PendingInvite } from "@/lib/api";
 import type { OrgRole } from "@/lib/types";
@@ -381,9 +382,6 @@ function InviteModal({
     }
   }
 
-  const selectClass =
-    "h-10 w-full rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-background)] px-3 text-sm disabled:opacity-50";
-
   return (
     <Modal open={open} onOpenChange={(o) => !o && onClose()}>
       <ModalContent>
@@ -427,18 +425,17 @@ function InviteModal({
               />
             </Field>
             <Field label="Эрх" required>
-              <select
+              <Select
                 value={role}
                 onChange={(e) => setRole(e.target.value as OrgRole)}
                 disabled={saving}
-                className={selectClass}
               >
                 {INVITE_ROLES.map((r) => (
                   <option key={r.value} value={r.value}>
                     {r.label}
                   </option>
                 ))}
-              </select>
+              </Select>
             </Field>
             <ModalFooter>
               <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>

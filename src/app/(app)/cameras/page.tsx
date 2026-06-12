@@ -7,6 +7,7 @@ import {
   CardContent,
   EmptyState,
   ErrorState,
+  Field,
   Input,
   Modal,
   ModalContent,
@@ -14,12 +15,12 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  Select,
   Spinner,
 } from "@chipmo-sentry/ui-kit";
 import { Cctv, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { Field } from "@/components/Field";
 import { useToast } from "@/components/Toaster";
 import { cameras, stores, type CameraInput } from "@/lib/api";
 import type { CameraPublic, StorePublic } from "@/lib/types";
@@ -272,9 +273,6 @@ function CameraFormModal({
     }
   }
 
-  const selectClass =
-    "h-10 w-full rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-background)] px-3 text-sm disabled:opacity-50";
-
   return (
     <Modal open={open} onOpenChange={(o) => !o && onClose()}>
       <ModalContent className="max-h-[90vh] overflow-y-auto">
@@ -283,19 +281,18 @@ function CameraFormModal({
         </ModalHeader>
         <form className="space-y-4" onSubmit={onSubmit}>
           <Field label="Дэлгүүр" required>
-            <select
+            <Select
               value={storeId}
               onChange={(e) => setStoreId(e.target.value)}
               required
               disabled={saving || camera !== null}
-              className={selectClass}
             >
               {storeList.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </Field>
           <Field label="Нэр" required>
             <Input

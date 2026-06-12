@@ -10,18 +10,19 @@ import {
   CardTitle,
   EmptyState,
   ErrorState,
+  Field,
   Input,
   Modal,
   ModalContent,
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  Select,
   Spinner,
 } from "@chipmo-sentry/ui-kit";
 import { Building2, Plus, ShieldAlert, UserPlus } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { Field } from "@/components/Field";
 import { useToast } from "@/components/Toaster";
 import { admin, ApiError } from "@/lib/api";
 import type { OrganizationPublic, OrgRole } from "@/lib/types";
@@ -307,9 +308,6 @@ function InviteUserModal({
     }
   }
 
-  const selectClass =
-    "h-10 w-full rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-background)] px-3 text-sm disabled:opacity-50";
-
   return (
     <Modal open={open} onOpenChange={(o) => !o && onClose()}>
       <ModalContent>
@@ -340,33 +338,31 @@ function InviteUserModal({
             />
           </Field>
           <Field label="Байгууллага" required>
-            <select
+            <Select
               value={orgId}
               onChange={(e) => setOrgId(e.target.value)}
               required
               disabled={saving}
-              className={selectClass}
             >
               {orgs.map((o) => (
                 <option key={o.id} value={o.id}>
                   {o.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </Field>
           <Field label="Эрх" required>
-            <select
+            <Select
               value={role}
               onChange={(e) => setRole(e.target.value as OrgRole)}
               disabled={saving}
-              className={selectClass}
             >
               {ROLES.map((r) => (
                 <option key={r.value} value={r.value}>
                   {r.label}
                 </option>
               ))}
-            </select>
+            </Select>
           </Field>
           <label className="flex items-center gap-2 text-sm">
             <input
