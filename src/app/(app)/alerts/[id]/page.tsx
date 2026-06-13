@@ -38,6 +38,10 @@ export default function AlertDetailPage() {
 
   const [alert, setAlert] = useState<AlertPublic | null>(null);
   const [clip, setClip] = useState<ClipPublic | null>(null);
+  // The clip ROW can exist while its FILE is gone (retention, or wiped from
+  // ephemeral disk before a Volume was attached) → the <video> 410s. Show a
+  // clear message instead of a black player.
+  const [clipUnavailable, setClipUnavailable] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<FeedbackVerdict | null>(null);
   const [feedbackSent, setFeedbackSent] = useState<FeedbackVerdict | null>(null);
@@ -146,15 +150,27 @@ export default function AlertDetailPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {clip ? (
-            <video
-              controls
-              preload="metadata"
-              className="w-full rounded-[var(--radius)] border border-[var(--color-border)] bg-black"
-              src={`${BASE}/api/v1/clips/${clip.id}/download`}
-            >
-              <track kind="captions" />
-              Хөтөч таны видеог дэмжихгүй.
-            </video>
+            clipUnavailable ? (
+              <div className="flex min-h-32 flex-col items-center justify-center gap-1 rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-muted)] p-6 text-center">
+                <p className="text-sm font-medium">Бичлэг боломжгүй</p>
+                <p className="text-xs text-[var(--color-muted-foreground)]">
+                  Энэ бичлэг серверт байхгүй болсон (хадгалалтын Volume
+                  тохируулагдаагүй эсвэл хугацаа дууссан). Шинэ бичлэгүүд
+                  хадгалалт тохируулсны дараа хадгалагдана.
+                </p>
+              </div>
+            ) : (
+              <video
+                controls
+                preload="metadata"
+                className="w-full rounded-[var(--radius)] border border-[var(--color-border)] bg-black"
+                src={`${BASE}/api/v1/clips/${clip.id}/download`}
+                onError={() => setClipUnavailable(true)}
+              >
+                <track kind="captions" />
+                Хөтөч таны видеог дэмжихгүй.
+              </video>
+            )
           ) : (
             <Spinner label="Клип уншиж байна…" />
           )}
