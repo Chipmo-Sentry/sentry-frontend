@@ -231,10 +231,14 @@ export function LiveCameraTile({
 
         // Prefer the store-global re-ID number so the SAME person shows the SAME
         // id across the store's cameras (ADR-0023); fall back to the per-camera
-        // ByteTrack id when re-ID is off. Risk likewise prefers the cross-camera
-        // accumulated value when present.
+        // ByteTrack id when re-ID is off.
         const pid = t.store_person_id ?? t.person_id;
-        const risk = t.store_risk_pct ?? t.risk_pct;
+        // Risk % MUST be the per-camera risk_pct — the SAME score that drives
+        // `color` — so the number and the colour always agree. (We deliberately
+        // do NOT use store_risk_pct here: the cross-camera accumulated score
+        // ratchets toward a saturated 100% while the box stays green, which read
+        // as "everyone is 100% but green". store_risk_pct lives in the panel.)
+        const risk = t.risk_pct;
         const label =
           risk > 0 ? `#${pid} · ${risk.toFixed(0)}%` : `#${pid}`;
         ctx.font = "600 13px ui-sans-serif, system-ui, sans-serif";
@@ -245,6 +249,25 @@ export function LiveCameraTile({
         ctx.fillRect(rx, labelY, labelW, labelH);
         ctx.fillStyle = "#000";
         ctx.fillText(label, rx + 4, labelY + 13);
+
+        // Accumulated episode score ("how many points banked"), in a neutral
+        // pill right after the risk label so it reads as a DIFFERENT number from
+        // the colour-coded current risk. Sum of the per-criterion scores; the
+        // per-criterion breakdown lives in the side panel. Unlike the decaying
+        // risk %, this is the episode total, so it's the "оноо цуглуулсан" view.
+        const points = t.behavior_scores
+          ? Object.values(t.behavior_scores).reduce((a, b) => a + b, 0)
+          : 0;
+        if (points > 0) {
+          const pts = `${points.toFixed(0)} оноо`;
+          ctx.font = "600 11px ui-sans-serif, system-ui, sans-serif";
+          const pw = ctx.measureText(pts).width + 8;
+          const px = rx + labelW + 3;
+          ctx.fillStyle = "rgba(0,0,0,0.72)";
+          ctx.fillRect(px, labelY, pw, labelH);
+          ctx.fillStyle = "#fff";
+          ctx.fillText(pts, px + 4, labelY + 13);
+        }
 
         // REV.2 — active criteria under the box: the engine's Mongolian reason
         // strings (e.g. "Орчноо харах", "Халаас руу"). Max 2 lines + "+n" so a
