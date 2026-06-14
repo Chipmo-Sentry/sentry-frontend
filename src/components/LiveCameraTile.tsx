@@ -256,7 +256,7 @@ export function LiveCameraTile({
         // per-criterion breakdown lives in the side panel. Unlike the decaying
         // risk %, this is the episode total, so it's the "оноо цуглуулсан" view.
         const points = t.behavior_scores
-          ? Object.values(t.behavior_scores).reduce((a, b) => a + b, 0)
+          ? Object.values(t.behavior_scores).reduce((a, b) => a + (Number(b) || 0), 0)
           : 0;
         if (points > 0) {
           const pts = `${points.toFixed(0)} оноо`;

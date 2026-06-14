@@ -92,10 +92,15 @@ export function NotificationBell() {
   );
 
   function markSeen() {
-    const now = Date.now();
-    setLastSeen(now);
+    // Mark seen up to the NEWEST alert's own (server) timestamp, not Date.now():
+    // unread compares against alert.created_at (server clock), so using the
+    // client clock here leaves the badge stuck whenever the server runs ahead.
+    const newest = items.length
+      ? Math.max(...items.map((a) => new Date(a.created_at).getTime()))
+      : Date.now();
+    setLastSeen(newest);
     try {
-      window.localStorage.setItem(LAST_SEEN_KEY, String(now));
+      window.localStorage.setItem(LAST_SEEN_KEY, String(newest));
     } catch {
       /* private mode — unread just won't persist */
     }
