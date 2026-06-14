@@ -239,9 +239,13 @@ export default function AlertDetailPage() {
 
           <section>
             <h3 className="mb-2 text-sm font-semibold">Дүгнэлт</h3>
-            {feedbackSent ? (
+            {/* Settled verdict = this session's submit OR the persisted server
+                value, so re-opening a reviewed alert shows the answer instead of
+                re-asking. */}
+            {(feedbackSent ?? alert.feedback_verdict) ? (
               <Badge tone="success">
-                ✓ Хадгалсан: {VERDICT_LABEL[feedbackSent]}
+                ✓ Хадгалсан:{" "}
+                {VERDICT_LABEL[(feedbackSent ?? alert.feedback_verdict)!]}
               </Badge>
             ) : (
               <div className="flex gap-2">

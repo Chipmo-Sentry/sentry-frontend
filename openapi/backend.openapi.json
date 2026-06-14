@@ -5801,6 +5801,74 @@
       }
     },
     "/api/v1/agent/cameras/{camera_id}": {
+      "patch": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Agent Update Camera",
+        "description": "Edit a camera's connection (rtsp_url), display name, or risk threshold.\n\nUsed by the desktop agent's 'Засах' (edit) flow when a camera's IP or\ncredentials change — so the user can fix the connection without delete +\nre-add (which would churn the UUID + mediamtx_path). When the rtsp_url\nchanges we re-provision the live worker so the AI pulls the new source.",
+        "operationId": "agent_update_camera_api_v1_agent_cameras__camera_id__patch",
+        "parameters": [
+          {
+            "name": "camera_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Camera Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentCameraUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CameraPublic"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
       "delete": {
         "tags": [
           "agents"
@@ -6527,7 +6595,7 @@
           "risk_threshold": {
             "type": "number",
             "title": "Risk Threshold",
-            "default": 70.0
+            "default": 70
           }
         },
         "type": "object",
@@ -6537,6 +6605,51 @@
         ],
         "title": "AgentCameraCreate",
         "description": "Camera registration payload from a paired agent (store comes from the\nagent's token, not the body)."
+      },
+      "AgentCameraUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "rtsp_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rtsp Url"
+          },
+          "risk_threshold": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100,
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Threshold"
+          }
+        },
+        "type": "object",
+        "title": "AgentCameraUpdate",
+        "description": "Partial camera update from a paired agent (edit connection / settings).\n\nAll fields optional — only the provided ones change. mediamtx_path is NOT\neditable here: it is the stream identity the live pipeline keys on, so the\nagent edits the connection (rtsp_url) and name, never the path."
       },
       "AgentPairRequest": {
         "properties": {
@@ -6747,7 +6860,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0.0
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -6796,8 +6909,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 100.0,
-                "minimum": 0.0
+                "maximum": 100,
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -6809,7 +6922,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0.0
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -6821,7 +6934,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0.0
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -6833,8 +6946,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 100.0,
-                "minimum": 0.0
+                "maximum": 100,
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -6846,7 +6959,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0.0
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -6858,7 +6971,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0.0
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -6881,8 +6994,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 100.0,
-                "minimum": 0.0
+                "maximum": 100,
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -6894,7 +7007,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0.0
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -6906,7 +7019,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0.0
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -6928,6 +7041,41 @@
               }
             ],
             "title": "Cameras"
+          },
+          "provider_effective": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Effective"
+          },
+          "provider_ready": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Ready"
+          },
+          "provider_error": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Error"
           }
         },
         "type": "object",
@@ -7179,6 +7327,44 @@
             "description": "Per-camera stream health parsed from the latest heartbeat telemetry\n(audit T12 #3). None for old node versions / no telemetry yet — the\nsuperadmin UI can distinguish \"unknown\" from \"no cameras\" ([]).",
             "readOnly": true
           },
+          "provider_effective": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Effective",
+            "description": "VLM provider the node actually runs (from its last heartbeat). The UI\ncompares this to `provider` (desired) to show applied vs applying.",
+            "readOnly": true
+          },
+          "provider_ready": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Ready",
+            "readOnly": true
+          },
+          "provider_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Error",
+            "description": "Why the effective provider isn't ready (e.g. model not pulled), or None.",
+            "readOnly": true
+          },
           "is_online": {
             "type": "boolean",
             "title": "Is Online",
@@ -7202,6 +7388,9 @@
           "frame_skip",
           "created_at",
           "cameras",
+          "provider_effective",
+          "provider_ready",
+          "provider_error",
           "is_online"
         ],
         "title": "AiNodePublic"
@@ -7247,8 +7436,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 30.0,
-                "minimum": 0.0
+                "maximum": 30,
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -7283,8 +7472,8 @@
           },
           "confidence": {
             "type": "number",
-            "maximum": 1.0,
-            "minimum": 0.0,
+            "maximum": 1,
+            "minimum": 0,
             "title": "Confidence"
           },
           "reasoning": {
@@ -7301,7 +7490,7 @@
           },
           "inference_latency_ms": {
             "type": "integer",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Inference Latency Ms"
           }
         },
@@ -7448,6 +7637,16 @@
               }
             ],
             "title": "Triggered Sequences"
+          },
+          "feedback_verdict": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FeedbackVerdict"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -7863,7 +8062,7 @@
           "duration_sec": {
             "type": "number",
             "title": "Duration Sec",
-            "default": 0.0
+            "default": 0
           }
         },
         "type": "object",
@@ -7912,8 +8111,8 @@
           },
           "stage2_threshold": {
             "type": "number",
-            "maximum": 1.0,
-            "minimum": 0.0,
+            "maximum": 1,
+            "minimum": 0,
             "title": "Stage2 Threshold",
             "default": 0.5
           },
@@ -7936,9 +8135,10 @@
           },
           "risk_threshold": {
             "type": "number",
-            "minimum": 0.0,
+            "maximum": 100,
+            "minimum": 0,
             "title": "Risk Threshold",
-            "default": 70.0
+            "default": 50
           }
         },
         "type": "object",
@@ -7960,7 +8160,7 @@
             "anyOf": [
               {
                 "type": "number",
-                "minimum": 0.0
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -8045,7 +8245,7 @@
           "risk_threshold": {
             "type": "number",
             "title": "Risk Threshold",
-            "default": 70.0
+            "default": 50
           }
         },
         "type": "object",
@@ -8105,8 +8305,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 1.0,
-                "minimum": 0.0
+                "maximum": 1,
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -8141,7 +8341,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "minimum": 0.0
+                "maximum": 100,
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -8215,6 +8416,18 @@
             "type": "string",
             "format": "date-time",
             "title": "Created At"
+          },
+          "file_deleted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Deleted At"
           }
         },
         "type": "object",
@@ -8280,9 +8493,9 @@
           },
           "weight": {
             "type": "number",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Weight",
-            "default": 1.0
+            "default": 1
           },
           "category": {
             "type": "string",
@@ -8291,8 +8504,8 @@
           },
           "level": {
             "type": "integer",
-            "maximum": 4.0,
-            "minimum": 1.0,
+            "maximum": 4,
+            "minimum": 1,
             "title": "Level",
             "default": 1
           }
@@ -8335,7 +8548,7 @@
             "anyOf": [
               {
                 "type": "number",
-                "minimum": 0.0
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -8369,8 +8582,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 4.0,
-                "minimum": 1.0
+                "maximum": 4,
+                "minimum": 1
               },
               {
                 "type": "null"
@@ -8690,8 +8903,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 100000.0,
-                "minimum": 0.0
+                "maximum": 100000,
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -8911,7 +9124,7 @@
           "fps_inference": {
             "type": "number",
             "title": "Fps Inference",
-            "default": 0.0
+            "default": 0
           },
           "tracks": {
             "items": {
@@ -8976,13 +9189,13 @@
           "det_confidence": {
             "type": "number",
             "title": "Det Confidence",
-            "default": 0.0
+            "default": 0
           },
           "risk_pct": {
             "type": "number",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Risk Pct",
-            "default": 0.0
+            "default": 0
           },
           "color": {
             "type": "string",
@@ -9414,7 +9627,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "exclusiveMinimum": 0.0
+                "exclusiveMinimum": 0
               },
               {
                 "type": "null"
@@ -9426,7 +9639,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "exclusiveMinimum": 0.0
+                "exclusiveMinimum": 0
               },
               {
                 "type": "null"
@@ -9448,7 +9661,7 @@
           },
           "max_redemptions": {
             "type": "integer",
-            "exclusiveMinimum": 0.0,
+            "exclusiveMinimum": 0,
             "title": "Max Redemptions",
             "default": 1
           },
@@ -9789,8 +10002,8 @@
           },
           "k": {
             "type": "integer",
-            "maximum": 10.0,
-            "minimum": 1.0,
+            "maximum": 10,
+            "minimum": 1,
             "title": "K",
             "default": 3
           }
@@ -10063,7 +10276,7 @@
         "properties": {
           "amount_mnt": {
             "type": "integer",
-            "exclusiveMinimum": 0.0,
+            "exclusiveMinimum": 0,
             "title": "Amount Mnt"
           },
           "note": {

@@ -1156,7 +1156,16 @@ export interface paths {
         delete: operations["agent_delete_camera_api_v1_agent_cameras__camera_id__delete"];
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Agent Update Camera
+         * @description Edit a camera's connection (rtsp_url), display name, or risk threshold.
+         *
+         *     Used by the desktop agent's 'Засах' (edit) flow when a camera's IP or
+         *     credentials change — so the user can fix the connection without delete +
+         *     re-add (which would churn the UUID + mediamtx_path). When the rtsp_url
+         *     changes we re-provision the live worker so the AI pulls the new source.
+         */
+        patch: operations["agent_update_camera_api_v1_agent_cameras__camera_id__patch"];
         trace?: never;
     };
     "/api/v1/agent/stream-config": {
@@ -1378,6 +1387,22 @@ export interface components {
              */
             risk_threshold: number;
         };
+        /**
+         * AgentCameraUpdate
+         * @description Partial camera update from a paired agent (edit connection / settings).
+         *
+         *     All fields optional — only the provided ones change. mediamtx_path is NOT
+         *     editable here: it is the stream identity the live pipeline keys on, so the
+         *     agent edits the connection (rtsp_url) and name, never the path.
+         */
+        AgentCameraUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Rtsp Url */
+            rtsp_url?: string | null;
+            /** Risk Threshold */
+            risk_threshold?: number | null;
+        };
         /** AgentPairRequest */
         AgentPairRequest: {
             /** Code */
@@ -1505,6 +1530,12 @@ export interface components {
             sentry_vram_mb?: number | null;
             /** Cameras */
             cameras?: components["schemas"]["CameraHealth"][] | null;
+            /** Provider Effective */
+            provider_effective?: string | null;
+            /** Provider Ready */
+            provider_ready?: boolean | null;
+            /** Provider Error */
+            provider_error?: string | null;
         };
         /**
          * AiNodePairRequest
@@ -1583,6 +1614,19 @@ export interface components {
              *     superadmin UI can distinguish "unknown" from "no cameras" ([]).
              */
             readonly cameras: components["schemas"]["CameraHealth"][] | null;
+            /**
+             * Provider Effective
+             * @description VLM provider the node actually runs (from its last heartbeat). The UI
+             *     compares this to `provider` (desired) to show applied vs applying.
+             */
+            readonly provider_effective: string | null;
+            /** Provider Ready */
+            readonly provider_ready: boolean | null;
+            /**
+             * Provider Error
+             * @description Why the effective provider isn't ready (e.g. model not pulled), or None.
+             */
+            readonly provider_error: string | null;
             /**
              * Is Online
              * @description Server-computed online status — independent of the viewer's clock.
@@ -1679,6 +1723,7 @@ export interface components {
             triggered_behaviors?: string[] | null;
             /** Triggered Sequences */
             triggered_sequences?: string[] | null;
+            feedback_verdict?: components["schemas"]["FeedbackVerdict"] | null;
         };
         /**
          * AlertTrigger
@@ -1894,7 +1939,7 @@ export interface components {
             mediamtx_path?: string | null;
             /**
              * Risk Threshold
-             * @default 70
+             * @default 50
              */
             risk_threshold: number;
         };
@@ -1954,7 +1999,7 @@ export interface components {
             mediamtx_path?: string | null;
             /**
              * Risk Threshold
-             * @default 70
+             * @default 50
              */
             risk_threshold: number;
         };
@@ -2014,6 +2059,8 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** File Deleted At */
+            file_deleted_at?: string | null;
         };
         /** CreditRequest */
         CreditRequest: {
@@ -5471,6 +5518,43 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    agent_update_camera_api_v1_agent_cameras__camera_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                camera_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentCameraUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CameraPublic"];
+                };
             };
             /** @description Validation Error */
             422: {

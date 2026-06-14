@@ -215,7 +215,7 @@ function CameraFormModal({
   const [name, setName] = useState("");
   const [rtsp, setRtsp] = useState("");
   const [threshold, setThreshold] = useState("0.5");
-  const [risk, setRisk] = useState("70");
+  const [risk, setRisk] = useState("50");
   const [mediamtxPath, setMediamtxPath] = useState("");
   const [enabled, setEnabled] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -226,7 +226,7 @@ function CameraFormModal({
     setName(camera?.name ?? "");
     setRtsp(""); // never prefilled — write-only
     setThreshold(String(camera?.stage2_threshold ?? 0.5));
-    setRisk(String(camera?.risk_threshold ?? 70));
+    setRisk(String(camera?.risk_threshold ?? 50));
     setMediamtxPath(camera?.mediamtx_path ?? "");
     setEnabled(camera?.enabled ?? true);
   }, [open, camera, storeList]);
@@ -234,6 +234,9 @@ function CameraFormModal({
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
+    // Allow a legitimate 0 (always-alert); only fall back to 50 when blank/NaN.
+    const riskNum =
+      risk.trim() === "" || Number.isNaN(Number(risk)) ? 50 : Number(risk);
     try {
       if (camera) {
         // PATCH — backend treats null/omitted as "no change", so only send
@@ -241,7 +244,7 @@ function CameraFormModal({
         const body: Partial<Omit<CameraInput, "store_id">> = {
           name: name.trim(),
           stage2_threshold: Number(threshold) || 0.5,
-          risk_threshold: Number(risk) || 70,
+          risk_threshold: riskNum,
           enabled,
           mediamtx_path: mediamtxPath.trim() || undefined,
         };
@@ -254,7 +257,7 @@ function CameraFormModal({
           name: name.trim(),
           rtsp_url: rtsp.trim() || null,
           stage2_threshold: Number(threshold) || 0.5,
-          risk_threshold: Number(risk) || 70,
+          risk_threshold: riskNum,
           enabled,
           mediamtx_path: mediamtxPath.trim() || undefined,
         };
@@ -332,7 +335,10 @@ function CameraFormModal({
                 disabled={saving}
               />
             </Field>
-            <Field label="Risk босго (%)" hint="Клип таслах хувь">
+            <Field
+              label="Сэрэмжлүүлэх босго (%)"
+              hint="Эрсдэл энэ хувийг давбал клип таслаж, AI шалгаад сэрэмжлүүлэг өгнө. Бага = илүү мэдрэг (50 санал болгоно)."
+            >
               <Input
                 type="number"
                 step="5"

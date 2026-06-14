@@ -295,7 +295,10 @@ export default function AlertsPage() {
         <>
           <div className="space-y-3">
             {visible.map((a) => {
-              const verdict = verdicts[a.id];
+              // Server verdict is the source of truth (persisted feedback); the
+              // local map only holds this session's optimistic clicks. Without
+              // the server value, a reload dropped the answer and re-asked.
+              const verdict = verdicts[a.id] ?? a.feedback_verdict ?? undefined;
               const isPending = pending[a.id];
               return (
                 <Card key={a.id}>
