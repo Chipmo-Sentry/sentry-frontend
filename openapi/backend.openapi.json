@@ -6594,8 +6594,10 @@
           },
           "risk_threshold": {
             "type": "number",
+            "maximum": 100,
+            "minimum": 0,
             "title": "Risk Threshold",
-            "default": 70
+            "default": 50
           }
         },
         "type": "object",

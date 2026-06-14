@@ -1383,7 +1383,7 @@ export interface components {
             mediamtx_path?: string | null;
             /**
              * Risk Threshold
-             * @default 70
+             * @default 50
              */
             risk_threshold: number;
         };
