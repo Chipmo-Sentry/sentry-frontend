@@ -7638,6 +7638,20 @@
             ],
             "title": "Triggered Sequences"
           },
+          "triggered_behavior_detail": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/BehaviorDetailItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Triggered Behavior Detail"
+          },
           "feedback_verdict": {
             "anyOf": [
               {
@@ -7787,6 +7801,30 @@
         "type": "object",
         "title": "BehaviorConfigPatch",
         "description": "Bulk update — weights (existing keys only), thresholds, and/or engine knobs."
+      },
+      "BehaviorDetailItem": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "offset_sec": {
+            "type": "number",
+            "title": "Offset Sec"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "offset_sec",
+          "score"
+        ],
+        "title": "BehaviorDetailItem",
+        "description": "One row of the alert's behaviour timeline (first-fired order)."
       },
       "BehaviorDimension": {
         "properties": {
@@ -9237,6 +9275,13 @@
             },
             "type": "object",
             "title": "Behavior Scores"
+          },
+          "behavior_offsets": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Behavior Offsets"
           },
           "reasons": {
             "items": {

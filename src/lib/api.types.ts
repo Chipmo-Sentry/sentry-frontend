@@ -1723,6 +1723,8 @@ export interface components {
             triggered_behaviors?: string[] | null;
             /** Triggered Sequences */
             triggered_sequences?: string[] | null;
+            /** Triggered Behavior Detail */
+            triggered_behavior_detail?: components["schemas"]["BehaviorDetailItem"][] | null;
             feedback_verdict?: components["schemas"]["FeedbackVerdict"] | null;
         };
         /**
@@ -1791,6 +1793,18 @@ export interface components {
             engine?: {
                 [key: string]: number;
             } | null;
+        };
+        /**
+         * BehaviorDetailItem
+         * @description One row of the alert's behaviour timeline (first-fired order).
+         */
+        BehaviorDetailItem: {
+            /** Key */
+            key: string;
+            /** Offset Sec */
+            offset_sec: number;
+            /** Score */
+            score: number;
         };
         /** BehaviorDimension */
         BehaviorDimension: {
@@ -2405,6 +2419,10 @@ export interface components {
             behaviors?: string[];
             /** Behavior Scores */
             behavior_scores?: {
+                [key: string]: number;
+            };
+            /** Behavior Offsets */
+            behavior_offsets?: {
                 [key: string]: number;
             };
             /** Reasons */

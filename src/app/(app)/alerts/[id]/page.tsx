@@ -200,20 +200,49 @@ export default function AlertDetailPage() {
             )}
           </section>
 
-          {/* REV.2 — the behavior-engine criteria that triggered this clip:
-              fired criterion keys (first-fired order) + completed sequences. */}
-          {((alert.triggered_behaviors?.length ?? 0) > 0 ||
+          {/* REV.2 timeline — each criterion's seconds-from-episode-start +
+              banked score, in first-fired order. The richest view of what built
+              this breach. */}
+          {(alert.triggered_behavior_detail?.length ?? 0) > 0 && (
+            <section>
+              <h3 className="mb-2 text-sm font-semibold">
+                Сэжиг шалгуурын дараалал
+              </h3>
+              <ol className="space-y-1.5">
+                {alert.triggered_behavior_detail!.map((row, i) => (
+                  <li
+                    key={`${row.key}-${i}`}
+                    className="flex items-center gap-3 text-sm"
+                  >
+                    <span className="w-12 shrink-0 text-right font-mono text-xs text-[var(--color-muted-foreground)]">
+                      {row.offset_sec.toFixed(1)}с
+                    </span>
+                    <span className="flex-1 truncate">
+                      {behaviorLabels[row.key] ?? row.key}
+                    </span>
+                    <Badge tone="warning">+{Math.round(row.score)} оноо</Badge>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
+
+          {/* Fallback chips when there's no detailed timeline (manual uploads /
+              older alerts) + completed sequences (always shown — separate). */}
+          {(((alert.triggered_behaviors?.length ?? 0) > 0 &&
+            (alert.triggered_behavior_detail?.length ?? 0) === 0) ||
             (alert.triggered_sequences?.length ?? 0) > 0) && (
             <section>
               <h3 className="mb-2 text-sm font-semibold">
                 Илэрсэн сэжиг шалгуурууд
               </h3>
               <div className="flex flex-wrap items-center gap-2">
-                {alert.triggered_behaviors?.map((key) => (
-                  <Badge key={key} tone="warning">
-                    {behaviorLabels[key] ?? key}
-                  </Badge>
-                ))}
+                {(alert.triggered_behavior_detail?.length ?? 0) === 0 &&
+                  alert.triggered_behaviors?.map((key) => (
+                    <Badge key={key} tone="warning">
+                      {behaviorLabels[key] ?? key}
+                    </Badge>
+                  ))}
                 {alert.triggered_sequences?.map((key) => (
                   <Badge key={`seq-${key}`} tone="danger">
                     ⛓ {behaviorLabels[key] ?? key}
