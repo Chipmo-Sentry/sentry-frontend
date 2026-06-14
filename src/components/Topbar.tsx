@@ -11,10 +11,11 @@ import {
   DropdownSeparator,
   DropdownTrigger,
 } from "@chipmo-sentry/ui-kit";
-import { Bell, BellOff, LogOut, Menu, ShieldCheck } from "lucide-react";
+import { LogOut, Menu, ShieldCheck, Volume2, VolumeX } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { NotificationBell } from "@/components/NotificationBell";
 import { navTitle } from "@/components/Sidebar";
 import { auth } from "@/lib/api";
 import { isMuted, onMuteChange, setMuted } from "@/lib/notif-prefs";
@@ -74,17 +75,19 @@ export function Topbar({
         {navTitle(pathname)}
       </h1>
 
+      <NotificationBell />
+
       <button
         type="button"
         onClick={toggleMute}
-        aria-label={muted ? "Мэдэгдэл асаах" : "Мэдэгдэл унтраах"}
-        title={muted ? "Мэдэгдэл унтраалттай" : "Мэдэгдэл асаалттай"}
+        aria-label={muted ? "Дуут мэдэгдэл асаах" : "Дуут мэдэгдэл унтраах"}
+        title={muted ? "Дуу/попап унтраалттай" : "Дуу/попап асаалттай"}
         className="rounded-md p-1.5 text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-muted)]"
       >
         {muted ? (
-          <BellOff className="h-5 w-5" />
+          <VolumeX className="h-5 w-5" />
         ) : (
-          <Bell className="h-5 w-5" />
+          <Volume2 className="h-5 w-5" />
         )}
       </button>
 
