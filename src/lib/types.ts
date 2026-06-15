@@ -33,6 +33,11 @@ export type AlertPublic = Schemas["AlertPublic"];
 export type FeedbackVerdict = Schemas["FeedbackVerdict"];
 export type FeedbackPublic = Schemas["FeedbackPublic"];
 
+// === Event / activity log ===
+export type EventLogPublic = Schemas["EventLogPublic"];
+export type EventType = Schemas["EventType"];
+export type EventSeverity = Schemas["EventSeverity"];
+
 // === Org / admin ===
 export type OrgRole = Schemas["OrgRole"];
 export type OrganizationPublic = Schemas["OrganizationPublic"];

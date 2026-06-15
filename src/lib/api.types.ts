@@ -1319,6 +1319,74 @@ export interface paths {
         patch: operations["update_dimension_api_v1_behaviors_dimensions__key__patch"];
         trace?: never;
     };
+    "/api/v1/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Org Events */
+        get: operations["list_org_events_api_v1_events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stream Org Events */
+        get: operations["stream_org_events_api_v1_events_stream_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Admin Events */
+        get: operations["list_admin_events_api_v1_admin_events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/events/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stream Admin Events */
+        get: operations["stream_admin_events_api_v1_admin_events_stream_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1530,6 +1598,9 @@ export interface components {
             sentry_vram_mb?: number | null;
             /** Cameras */
             cameras?: components["schemas"]["CameraHealth"][] | null;
+            /** Components */
+            components?: components["schemas"]["ComponentUsage"][] | null;
+            vlm?: components["schemas"]["VlmStatus"] | null;
             /** Provider Effective */
             provider_effective?: string | null;
             /** Provider Ready */
@@ -2076,6 +2147,19 @@ export interface components {
             /** File Deleted At */
             file_deleted_at?: string | null;
         };
+        /**
+         * ComponentUsage
+         * @description Per-component CPU/RAM (sentry-ai / Ollama / MediaMTX / Tunnel) — the
+         *     resource breakdown shown in the dashboard. Stored in telemetry JSON.
+         */
+        ComponentUsage: {
+            /** Name */
+            name: string;
+            /** Cpu Pct */
+            cpu_pct?: number | null;
+            /** Ram Mb */
+            ram_mb?: number | null;
+        };
         /** CreditRequest */
         CreditRequest: {
             /**
@@ -2132,6 +2216,56 @@ export interface components {
                 [key: string]: number;
             } | null;
         };
+        /** EventLogPublic */
+        EventLogPublic: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Organization Id */
+            organization_id: string | null;
+            event_type: components["schemas"]["EventType"];
+            severity: components["schemas"]["EventSeverity"];
+            /** Message */
+            message: string;
+            /** Actor User Id */
+            actor_user_id?: string | null;
+            /** Actor Label */
+            actor_label?: string | null;
+            /** Store Id */
+            store_id?: string | null;
+            /** Camera Id */
+            camera_id?: string | null;
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Ai Node Id */
+            ai_node_id?: string | null;
+            /** Detail */
+            detail?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Is Heartbeat
+             * @default false
+             */
+            is_heartbeat: boolean;
+        };
+        /**
+         * EventSeverity
+         * @enum {string}
+         */
+        EventSeverity: "info" | "success" | "warning" | "error" | "critical";
+        /**
+         * EventType
+         * @enum {string}
+         */
+        EventType: "user_login" | "user_logout" | "user_invited" | "invite_accepted" | "member_role_changed" | "member_access_changed" | "org_created" | "org_deleted" | "camera_registered" | "camera_updated" | "camera_stream_down" | "camera_stream_recovered" | "agent_paired" | "agent_online" | "agent_offline" | "agent_heartbeat" | "node_paired" | "node_online" | "node_offline" | "node_heartbeat" | "alert_created" | "error";
         /** FeedbackCreate */
         FeedbackCreate: {
             /**
@@ -2890,6 +3024,21 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /**
+         * VlmStatus
+         * @description Whether a VLM model is resident in Ollama + its GPU split, so the dashboard
+         *     can show the VLM's real GPU/VRAM footprint (per-process VRAM isn't on WDDM).
+         */
+        VlmStatus: {
+            /** Loaded */
+            loaded: boolean;
+            /** Model */
+            model?: string | null;
+            /** Vram Mb */
+            vram_mb?: number | null;
+            /** Gpu Pct */
+            gpu_pct?: number | null;
         };
     };
     responses: never;
@@ -5899,6 +6048,155 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BehaviorConfig"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_org_events_api_v1_events_get: {
+        parameters: {
+            query?: {
+                event_type?: components["schemas"]["EventType"][] | null;
+                severity?: components["schemas"]["EventSeverity"][] | null;
+                include_heartbeats?: boolean;
+                before?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: {
+                "X-Org-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventLogPublic"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stream_org_events_api_v1_events_stream_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Org-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_admin_events_api_v1_admin_events_get: {
+        parameters: {
+            query?: {
+                org_id?: string | null;
+                event_type?: components["schemas"]["EventType"][] | null;
+                severity?: components["schemas"]["EventSeverity"][] | null;
+                include_heartbeats?: boolean;
+                before?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventLogPublic"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stream_admin_events_api_v1_admin_events_stream_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

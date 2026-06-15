@@ -20,7 +20,7 @@ import {
   Select,
   Spinner,
 } from "@chipmo-sentry/ui-kit";
-import { Building2, Plus, ShieldAlert, UserPlus } from "lucide-react";
+import { Building2, ShieldAlert, UserPlus } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { useToast } from "@/components/Toaster";
@@ -38,7 +38,6 @@ export default function AdminPage() {
   const [orgs, setOrgs] = useState<OrganizationPublic[] | null>(null);
   const [forbidden, setForbidden] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [orgModal, setOrgModal] = useState(false);
   const [inviteModal, setInviteModal] = useState(false);
 
   async function reload() {
@@ -100,17 +99,13 @@ export default function AdminPage() {
             <CardTitle className="text-base">Байгууллагууд</CardTitle>
             <CardDescription>Нийт {orgs.length}</CardDescription>
           </div>
-          <Button size="sm" onClick={() => setOrgModal(true)}>
-            <Plus className="h-4 w-4" />
-            Шинэ орг
-          </Button>
         </CardHeader>
         <CardContent>
           {orgs.length === 0 ? (
             <EmptyState
               icon={Building2}
               title="Байгууллага алга"
-              description="Эхний байгууллагаа үүсгэнэ үү."
+              description="Байгууллага үүсгэхийг супер админаас хүсэлт гаргана уу."
             />
           ) : (
             <ul className="divide-y divide-[var(--color-border)]">
@@ -148,14 +143,6 @@ export default function AdminPage() {
         </CardHeader>
       </Card>
 
-      <OrgFormModal
-        open={orgModal}
-        onClose={() => setOrgModal(false)}
-        onSaved={() => {
-          setOrgModal(false);
-          reload();
-        }}
-      />
       <InviteUserModal
         open={inviteModal}
         orgs={orgs}
@@ -166,94 +153,6 @@ export default function AdminPage() {
         }}
       />
     </div>
-  );
-}
-
-function OrgFormModal({
-  open,
-  onClose,
-  onSaved,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onSaved: () => void;
-}) {
-  const { toast } = useToast();
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (open) {
-      setName("");
-      setSlug("");
-    }
-  }, [open]);
-
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      await admin.createOrg({ name: name.trim(), slug: slug.trim() });
-      toast({ title: "Байгууллага үүслээ", tone: "success" });
-      onSaved();
-    } catch (e) {
-      toast({
-        title: "Үүсгэж чадсангүй",
-        description: e instanceof Error ? e.message : "Алдаа",
-        tone: "danger",
-      });
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <Modal open={open} onOpenChange={(o) => !o && onClose()}>
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>Шинэ байгууллага</ModalTitle>
-        </ModalHeader>
-        <form className="space-y-4" onSubmit={onSubmit}>
-          <Field label="Нэр" required>
-            <Input
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Жишээ: Номин Холдинг"
-              disabled={saving}
-            />
-          </Field>
-          <Field
-            label="Slug"
-            required
-            hint="Зөвхөн жижиг үсэг, тоо, зураас (a-z, 0-9, -)"
-          >
-            <Input
-              required
-              pattern="[a-z0-9][a-z0-9-]*"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value.toLowerCase())}
-              placeholder="nomin-holding"
-              disabled={saving}
-            />
-          </Field>
-          <ModalFooter>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={onClose}
-              disabled={saving}
-            >
-              Болих
-            </Button>
-            <Button type="submit" disabled={saving || !name.trim() || !slug.trim()}>
-              {saving ? "Хадгалж байна…" : "Үүсгэх"}
-            </Button>
-          </ModalFooter>
-        </form>
-      </ModalContent>
-    </Modal>
   );
 }
 

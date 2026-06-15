@@ -36,3 +36,23 @@ export function absoluteTime(iso: string): string {
   if (Number.isNaN(t)) return iso;
   return ABS_FORMAT.format(t);
 }
+
+const p2 = (n: number) => String(n).padStart(2, "0");
+const p3 = (n: number) => String(n).padStart(3, "0");
+
+/** Clock with millisecond precision for the activity log: "14:30:22.640".
+ * Local time. The event-log requirement asks for HH:MM:SS.ms explicitly. */
+export function clockMs(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return `${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}.${p3(
+    d.getMilliseconds(),
+  )}`;
+}
+
+/** "2026-06-15" local date, for grouping log rows by day. */
+export function dayKey(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
+}
