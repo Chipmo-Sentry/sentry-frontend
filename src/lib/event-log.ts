@@ -24,6 +24,7 @@ export const EVENT_LABEL: Record<EventType, string> = {
   node_offline: "AI node офлайн",
   node_heartbeat: "AI node асаалттай",
   alert_created: "Сэжигтэй үйлдэл",
+  risk_episode: "Объектын эрсдэл",
   error: "Алдаа",
 };
 
@@ -48,7 +49,7 @@ export const SEVERITY_LABEL: Record<EventSeverity, string> = {
 /** Filter groups for the UI — collapses the long EventType list into a few
  * meaningful buckets the user actually thinks in. */
 export const EVENT_GROUPS: { label: string; types: EventType[] }[] = [
-  { label: "Сэжиг", types: ["alert_created"] },
+  { label: "Сэжиг", types: ["alert_created", "risk_episode"] },
   {
     label: "Камер",
     types: ["camera_registered", "camera_updated", "camera_stream_down", "camera_stream_recovered"],
