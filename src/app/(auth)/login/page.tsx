@@ -59,8 +59,9 @@ function LoginForm() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[var(--color-muted)] p-4">
-      <Card className="w-full max-w-sm">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[var(--color-background)] p-4">
+      <div className="sentry-aurora" aria-hidden="true" />
+      <Card className="relative z-10 w-full max-w-sm">
         <CardHeader className="items-center text-center">
           <Logo withWordmark className="h-10" />
           <CardTitle className="mt-2">Нэвтрэх</CardTitle>
