@@ -50,6 +50,13 @@ export function clockMs(iso: string): string {
   )}`;
 }
 
+/** "16:25:02" local wall-clock to the second (no millis), for table rows. */
+export function clock(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return `${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}`;
+}
+
 /** "2026-06-15" local date, for grouping log rows by day. */
 export function dayKey(iso: string): string {
   const d = new Date(iso);
