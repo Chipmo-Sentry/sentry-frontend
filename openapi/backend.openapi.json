@@ -2114,7 +2114,7 @@
           "internal"
         ],
         "summary": "Mediamtx Auth",
-        "description": "MediaMTX authHTTP authorizer (replaces MediaMTX's open `user: any` read).\n\n- read/playback → require a valid per-camera stream token in the query\n- publish       → MediaMTX publish creds\n- api/metrics/pprof → MediaMTX control-API creds\nReturns 204 to allow, 401 to deny. Optionally gated by a shared secret so\nonly the MediaMTX host can call it.",
+        "description": "MediaMTX authHTTP authorizer (replaces MediaMTX's open `user: any` read).\n\n- read/playback \u2192 require a valid per-camera stream token in the query\n- publish       \u2192 MediaMTX publish creds\n- api/metrics/pprof \u2192 MediaMTX control-API creds\nReturns 204 to allow, 401 to deny. Optionally gated by a shared secret so\nonly the MediaMTX host can call it.",
         "operationId": "mediamtx_auth_api_v1_internal_mediamtx_auth_post",
         "parameters": [
           {
@@ -2167,7 +2167,7 @@
           "internal"
         ],
         "summary": "Create Alert From Ai",
-        "description": "sentry-ai POSTs here after VLM verification finishes.\n\nWe derive store/camera/org from the clip — sentry-ai doesn't need to\nknow the tenancy hierarchy.",
+        "description": "sentry-ai POSTs here after VLM verification finishes.\n\nWe derive store/camera/org from the clip \u2014 sentry-ai doesn't need to\nknow the tenancy hierarchy.",
         "operationId": "create_alert_from_ai_api_v1_internal_alerts_post",
         "parameters": [
           {
@@ -2207,6 +2207,119 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/internal/live-alert": {
+      "post": {
+        "tags": [
+          "internal"
+        ],
+        "summary": "Create Live Alert From Node",
+        "description": "Node-push live alert. The AI node detected the breach, cut + VLM-verified\nthe clip locally, and POSTs the finished result here (outbound \u2014 reliable,\nunlike the old cloud\u2192node /v1/cut-verify pull). camera_id = mediamtx_path.\n\nAuth: the paired AI node's own JWT (typ=ai_node) \u2014 the SAME token it uses for\nheartbeat/config. The node never holds a minted service token (pairing sets\nSENTRY_BACKEND_SERVICE_TOKEN to the ai_node JWT), so requiring one here 401'd\nevery node-push alert. Authenticating as the node also binds the post to a\nknown, active node row.",
+        "operationId": "create_live_alert_from_node_api_v1_internal_live_alert_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LiveAlertCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertPublic"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/internal/breach-cleared": {
+      "post": {
+        "tags": [
+          "internal"
+        ],
+        "summary": "Report Breach Cleared",
+        "description": "Observability for breaches the node dropped without alerting (VLM cleared\n/ clip-cut failed). Writes a risk_episode row so the miss is VISIBLE on the\nactivity timeline instead of silently lost. camera_id = mediamtx_path.\n\nAuth: the paired AI node's own JWT (typ=ai_node) \u2014 same as /live-alert.",
+        "operationId": "report_breach_cleared_api_v1_internal_breach_cleared_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BreachClearedCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
@@ -2355,7 +2468,7 @@
           "internal"
         ],
         "summary": "Rag Similar",
-        "description": "Top-k past verified cases most similar to the query embedding — the AI\nnode injects these into the VLM verify prompt as few-shot examples.",
+        "description": "Top-k past verified cases most similar to the query embedding \u2014 the AI\nnode injects these into the VLM verify prompt as few-shot examples.",
         "operationId": "rag_similar_api_v1_internal_rag_similar_post",
         "parameters": [
           {
@@ -2484,7 +2597,7 @@
           "admin"
         ],
         "summary": "Alert Analytics",
-        "description": "Alert breakdown for the observability dashboard (docs/19 Phase 2): how\nmany suspicion alerts fired in `range`, split by VLM category, by review\nlevel, and by day — so you see WHAT the system is catching, over time.",
+        "description": "Alert breakdown for the observability dashboard (docs/19 Phase 2): how\nmany suspicion alerts fired in `range`, split by VLM category, by review\nlevel, and by day \u2014 so you see WHAT the system is catching, over time.",
         "operationId": "alert_analytics_api_v1_admin_analytics_alerts_get",
         "parameters": [
           {
@@ -2562,7 +2675,7 @@
           "admin"
         ],
         "summary": "Feedback Analytics",
-        "description": "Close the feedback loop (docs/19 Phase 3). Joins staff verdicts (Feedback)\nto the alert's VLM category and reports, per category, how many were marked\ntrue_positive / false_positive / unclear + the false-alarm rate — plus\nread-only TUNING SUGGESTIONS for noisy categories (high FP rate). Applying a\nsuggestion (weight/threshold change) stays a human action for now.",
+        "description": "Close the feedback loop (docs/19 Phase 3). Joins staff verdicts (Feedback)\nto the alert's VLM category and reports, per category, how many were marked\ntrue_positive / false_positive / unclear + the false-alarm rate \u2014 plus\nread-only TUNING SUGGESTIONS for noisy categories (high FP rate). Applying a\nsuggestion (weight/threshold change) stays a human action for now.",
         "operationId": "feedback_analytics_api_v1_admin_analytics_feedback_get",
         "parameters": [
           {
@@ -2855,7 +2968,7 @@
           "admin"
         ],
         "summary": "Delete Org",
-        "description": "Delete a tenant entirely (T15 #3 — the privacy policy's deletion promise).\n\nEvery org-scoped row cascades in the DB; the org's clip evidence FILES are\nunlinked from disk first (a cascade can't reach the filesystem).",
+        "description": "Delete a tenant entirely (T15 #3 \u2014 the privacy policy's deletion promise).\n\nEvery org-scoped row cascades in the DB; the org's clip evidence FILES are\nunlinked from disk first (a cascade can't reach the filesystem).",
         "operationId": "delete_org_api_v1_admin_orgs__org_id__delete",
         "parameters": [
           {
@@ -3538,7 +3651,7 @@
           "admin"
         ],
         "summary": "Ai Node Metrics",
-        "description": "Resource time-series (CPU/RAM/GPU) for the observability dashboard.\n\n`range` = 1h | 6h | 24h | 7d | 30d. `bucket` = auto | raw | hour (auto picks\nraw for ≤24h, hourly averages for wider ranges to keep the payload small).",
+        "description": "Resource time-series (CPU/RAM/GPU) for the observability dashboard.\n\n`range` = 1h | 6h | 24h | 7d | 30d. `bucket` = auto | raw | hour (auto picks\nraw for \u226424h, hourly averages for wider ranges to keep the payload small).",
         "operationId": "ai_node_metrics_api_v1_admin_ai_nodes__node_id__metrics_get",
         "parameters": [
           {
@@ -4862,7 +4975,7 @@
           "org"
         ],
         "summary": "Delete My Org",
-        "description": "Owner deletes their own organization (T15 #3 — privacy policy promise).\n\nOwner-only (admins manage the team; only the owner can erase the tenant).\nThe caller must retype the org slug (`confirm_slug`) so a stray DELETE can't\nwipe everything. All org data cascades in the DB; clip evidence files are\nremoved from disk first. Members keep their user accounts but lose all\norg-scoped access the moment the membership rows cascade away.",
+        "description": "Owner deletes their own organization (T15 #3 \u2014 privacy policy promise).\n\nOwner-only (admins manage the team; only the owner can erase the tenant).\nThe caller must retype the org slug (`confirm_slug`) so a stray DELETE can't\nwipe everything. All org data cascades in the DB; clip evidence files are\nremoved from disk first. Members keep their user accounts but lose all\norg-scoped access the moment the membership rows cascade away.",
         "operationId": "delete_my_org_api_v1_org_delete",
         "parameters": [
           {
@@ -5391,7 +5504,7 @@
           "org"
         ],
         "summary": "Accept Invite",
-        "description": "Public — the invitee sets their password to create the account + join.",
+        "description": "Public \u2014 the invitee sets their password to create the account + join.",
         "operationId": "accept_invite_api_v1_org_accept_invite_post",
         "requestBody": {
           "content": {
@@ -5806,7 +5919,7 @@
           "agents"
         ],
         "summary": "Agent Update Camera",
-        "description": "Edit a camera's connection (rtsp_url), display name, or risk threshold.\n\nUsed by the desktop agent's 'Засах' (edit) flow when a camera's IP or\ncredentials change — so the user can fix the connection without delete +\nre-add (which would churn the UUID + mediamtx_path). When the rtsp_url\nchanges we re-provision the live worker so the AI pulls the new source.",
+        "description": "Edit a camera's connection (rtsp_url), display name, or risk threshold.\n\nUsed by the desktop agent's '\u0417\u0430\u0441\u0430\u0445' (edit) flow when a camera's IP or\ncredentials change \u2014 so the user can fix the connection without delete +\nre-add (which would churn the UUID + mediamtx_path). When the rtsp_url\nchanges we re-provision the live worker so the AI pulls the new source.",
         "operationId": "agent_update_camera_api_v1_agent_cameras__camera_id__patch",
         "parameters": [
           {
@@ -5926,7 +6039,7 @@
           "agents"
         ],
         "summary": "Agent Stream Config",
-        "description": "Tell a paired agent where (and whether) to publish its camera streams.\n\npush_enabled=True → cloud topology: the agent runs ffmpeg relays pushing\neach LAN camera to `push_rtsp_base/<mediamtx_path>`. False → MediaMTX pulls\ncameras directly (local/on-LAN) and the agent pushes nothing.",
+        "description": "Tell a paired agent where (and whether) to publish its camera streams.\n\npush_enabled=True \u2192 cloud topology: the agent runs ffmpeg relays pushing\neach LAN camera to `push_rtsp_base/<mediamtx_path>`. False \u2192 MediaMTX pulls\ncameras directly (local/on-LAN) and the agent pushes nothing.",
         "operationId": "agent_stream_config_api_v1_agent_stream_config_get",
         "parameters": [
           {
@@ -7000,7 +7113,7 @@
           "password"
         ],
         "title": "AcceptInvite",
-        "description": "Public — the invitee sets their own password to activate the account."
+        "description": "Public \u2014 the invitee sets their own password to activate the account."
       },
       "AdminStats": {
         "properties": {
@@ -7086,7 +7199,7 @@
             "maximum": 100.0,
             "minimum": 0.0,
             "title": "Risk Threshold",
-            "default": 50.0
+            "default": 11.0
           }
         },
         "type": "object",
@@ -7140,7 +7253,7 @@
         },
         "type": "object",
         "title": "AgentCameraUpdate",
-        "description": "Partial camera update from a paired agent (edit connection / settings).\n\nAll fields optional — only the provided ones change. mediamtx_path is NOT\neditable here: it is the stream identity the live pipeline keys on, so the\nagent edits the connection (rtsp_url) and name, never the path."
+        "description": "Partial camera update from a paired agent (edit connection / settings).\n\nAll fields optional \u2014 only the provided ones change. mediamtx_path is NOT\neditable here: it is the stream identity the live pipeline keys on, so the\nagent edits the connection (rtsp_url) and name, never the path."
       },
       "AgentPairRequest": {
         "properties": {
@@ -7323,6 +7436,11 @@
           "frame_skip": {
             "type": "integer",
             "title": "Frame Skip"
+          },
+          "breach_mode": {
+            "type": "string",
+            "title": "Breach Mode",
+            "default": "node_push"
           }
         },
         "type": "object",
@@ -7381,6 +7499,18 @@
               }
             ],
             "title": "Version"
+          },
+          "yolo_model": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 48
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Yolo Model"
           },
           "health": {
             "anyOf": [
@@ -7558,6 +7688,16 @@
               }
             ]
           },
+          "vlm_activity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VlmActivity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "provider_effective": {
             "anyOf": [
               {
@@ -7592,6 +7732,18 @@
               }
             ],
             "title": "Provider Error"
+          },
+          "breach_mode_effective": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Breach Mode Effective"
           }
         },
         "type": "object",
@@ -7816,6 +7968,10 @@
             "type": "integer",
             "title": "Frame Skip"
           },
+          "breach_mode": {
+            "type": "string",
+            "title": "Breach Mode"
+          },
           "created_at": {
             "anyOf": [
               {
@@ -7840,7 +7996,7 @@
               }
             ],
             "title": "Cameras",
-            "description": "Per-camera stream health parsed from the latest heartbeat telemetry\n(audit T12 #3). None for old node versions / no telemetry yet — the\nsuperadmin UI can distinguish \"unknown\" from \"no cameras\" ([]).",
+            "description": "Per-camera stream health parsed from the latest heartbeat telemetry\n(audit T12 #3). None for old node versions / no telemetry yet \u2014 the\nsuperadmin UI can distinguish \"unknown\" from \"no cameras\" ([]).",
             "readOnly": true
           },
           "provider_effective": {
@@ -7881,10 +8037,23 @@
             "description": "Why the effective provider isn't ready (e.g. model not pulled), or None.",
             "readOnly": true
           },
+          "breach_mode_effective": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Breach Mode Effective",
+            "description": "Live-breach topology the node actually applied (from its last\nheartbeat). The UI compares this to `breach_mode` (desired) to show\napplied vs applying. None for old node versions / no telemetry yet.",
+            "readOnly": true
+          },
           "is_online": {
             "type": "boolean",
             "title": "Is Online",
-            "description": "Server-computed online status — independent of the viewer's clock.",
+            "description": "Server-computed online status \u2014 independent of the viewer's clock.",
             "readOnly": true
           }
         },
@@ -7902,11 +8071,13 @@
           "enabled",
           "provider",
           "frame_skip",
+          "breach_mode",
           "created_at",
           "cameras",
           "provider_effective",
           "provider_ready",
           "provider_error",
+          "breach_mode_effective",
           "is_online"
         ],
         "title": "AiNodePublic"
@@ -7960,6 +8131,21 @@
               }
             ],
             "title": "Frame Skip"
+          },
+          "breach_mode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "node_push",
+                  "off"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Breach Mode"
           }
         },
         "type": "object",
@@ -7972,6 +8158,7 @@
           "browsing",
           "cart_pickup",
           "pocket_conceal",
+          "bag_conceal",
           "other"
         ],
         "title": "AlertCategory"
@@ -8020,7 +8207,7 @@
           "inference_latency_ms"
         ],
         "title": "AlertCreateInternal",
-        "description": "POST /api/v1/internal/alerts — sentry-ai service posts this."
+        "description": "POST /api/v1/internal/alerts \u2014 sentry-ai service posts this."
       },
       "AlertLevel": {
         "type": "string",
@@ -8075,6 +8262,20 @@
           },
           "category": {
             "$ref": "#/components/schemas/AlertCategory"
+          },
+          "actions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actions"
           },
           "confidence": {
             "type": "number",
@@ -8243,9 +8444,9 @@
             "type": "object",
             "title": "Color Labels",
             "default": {
-              "green": "Хэвийн",
-              "yellow": "Анхаар",
-              "red": "Сэжигтэй"
+              "green": "\u0425\u044d\u0432\u0438\u0439\u043d",
+              "yellow": "\u0410\u043d\u0445\u0430\u0430\u0440",
+              "red": "\u0421\u044d\u0436\u0438\u0433\u0442\u044d\u0439"
             }
           },
           "level_labels": {
@@ -8255,10 +8456,10 @@
             "type": "object",
             "title": "Level Labels",
             "default": {
-              "LOW": "Бага",
-              "MEDIUM": "Дунд",
-              "HIGH": "Өндөр",
-              "CRITICAL": "Ноцтой"
+              "LOW": "\u0411\u0430\u0433\u0430",
+              "MEDIUM": "\u0414\u0443\u043d\u0434",
+              "HIGH": "\u04e8\u043d\u0434\u04e9\u0440",
+              "CRITICAL": "\u041d\u043e\u0446\u0442\u043e\u0439"
             }
           }
         },
@@ -8316,7 +8517,7 @@
         },
         "type": "object",
         "title": "BehaviorConfigPatch",
-        "description": "Bulk update — weights (existing keys only), thresholds, and/or engine knobs."
+        "description": "Bulk update \u2014 weights (existing keys only), thresholds, and/or engine knobs."
       },
       "BehaviorDetailItem": {
         "properties": {
@@ -8626,6 +8827,89 @@
         ],
         "title": "Body_upload_clip_api_v1_clips_post"
       },
+      "BreachClearedCreate": {
+        "properties": {
+          "camera_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Camera Id"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Reason"
+          },
+          "peak_risk_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peak Risk Pct"
+          },
+          "person_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Person Id"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AlertCategory"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "triggered_behaviors": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Triggered Behaviors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "camera_id",
+          "reason"
+        ],
+        "title": "BreachClearedCreate",
+        "description": "POST /api/v1/internal/breach-cleared \u2014 observability for breaches the node\ndetected but did NOT turn into an alert (VLM cleared it as browsing / low\nconfidence, or the clip-cut failed). Without this the drop is silent: the\noperator sees nothing and can't tell a miss from \"nothing happened\". We log\nit on the activity timeline so the detection funnel is visible + tunable."
+      },
       "CameraCreate": {
         "properties": {
           "store_id": {
@@ -8692,7 +8976,7 @@
             "maximum": 100.0,
             "minimum": 0.0,
             "title": "Risk Threshold",
-            "default": 50.0
+            "default": 11.0
           }
         },
         "type": "object",
@@ -8799,7 +9083,7 @@
           "risk_threshold": {
             "type": "number",
             "title": "Risk Threshold",
-            "default": 50.0
+            "default": 11.0
           }
         },
         "type": "object",
@@ -8814,7 +9098,7 @@
           "created_at"
         ],
         "title": "CameraPublic",
-        "description": "Public Camera — `rtsp_url` NEVER exposed; only a boolean `has_rtsp_url`."
+        "description": "Public Camera \u2014 `rtsp_url` NEVER exposed; only a boolean `has_rtsp_url`."
       },
       "CameraUpdate": {
         "properties": {
@@ -9036,7 +9320,7 @@
           "name"
         ],
         "title": "ComponentUsage",
-        "description": "Per-component CPU/RAM (sentry-ai / Ollama / MediaMTX / Tunnel) — the\nresource breakdown shown in the dashboard. Stored in telemetry JSON."
+        "description": "Per-component CPU/RAM (sentry-ai / Ollama / MediaMTX / Tunnel) \u2014 the\nresource breakdown shown in the dashboard. Stored in telemetry JSON."
       },
       "CreditRequest": {
         "properties": {
@@ -9703,7 +9987,7 @@
           "email"
         ],
         "title": "LeadCreate",
-        "description": "Public landing-page submission.\n\n`website` is a honeypot — a hidden field real users never fill. Bots that\nblindly fill every input trip it; the endpoint silently drops those."
+        "description": "Public landing-page submission.\n\n`website` is a honeypot \u2014 a hidden field real users never fill. Bots that\nblindly fill every input trip it; the endpoint silently drops those."
       },
       "LeadPublic": {
         "properties": {
@@ -9848,7 +10132,7 @@
         },
         "type": "object",
         "title": "LeadUpdate",
-        "description": "Super-admin triage — change status and/or attach notes."
+        "description": "Super-admin triage \u2014 change status and/or attach notes."
       },
       "LedgerAccount": {
         "type": "string",
@@ -9859,6 +10143,168 @@
           "promo_expense"
         ],
         "title": "LedgerAccount"
+      },
+      "LiveAlertCreate": {
+        "properties": {
+          "camera_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Camera Id"
+          },
+          "category": {
+            "$ref": "#/components/schemas/AlertCategory"
+          },
+          "actions": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/AlertCategory"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actions"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence"
+          },
+          "reasoning": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reasoning"
+          },
+          "model_name": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Model Name"
+          },
+          "inference_latency_ms": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Inference Latency Ms"
+          },
+          "clip_b64": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Clip B64"
+          },
+          "file_size_bytes": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "File Size Bytes"
+          },
+          "duration_sec_clip": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Duration Sec Clip"
+          },
+          "captured_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Captured At"
+          },
+          "embedding": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embedding"
+          },
+          "person_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Person Id"
+          },
+          "peak_risk_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peak Risk Pct"
+          },
+          "triggered_behaviors": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Triggered Behaviors"
+          },
+          "triggered_sequences": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Triggered Sequences"
+          },
+          "triggered_behavior_detail": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/BehaviorDetailItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Triggered Behavior Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "camera_id",
+          "category",
+          "confidence",
+          "reasoning",
+          "model_name",
+          "inference_latency_ms",
+          "clip_b64",
+          "file_size_bytes",
+          "duration_sec_clip",
+          "captured_at"
+        ],
+        "title": "LiveAlertCreate",
+        "description": "POST /api/v1/internal/live-alert \u2014 node-push path (ADR live-alert).\n\nThe AI node detected a sustained risk breach, cut the clip + ran VLM\nLOCALLY, and posts the finished alert here (outbound, reliable). camera_id\nis the Camera.mediamtx_path; the backend resolves org/store. The node only\nposts non-ignore verdicts (it applies the VLM gate itself)."
       },
       "LiveFrame": {
         "properties": {
@@ -9906,7 +10352,7 @@
           "camera_id"
         ],
         "title": "LiveFrame",
-        "description": "Per-analyzed-frame metadata from the sentry-ai live worker\n(REV.1 — mirrors sentry-ai's FrameMetadata)."
+        "description": "Per-analyzed-frame metadata from the sentry-ai live worker\n(REV.1 \u2014 mirrors sentry-ai's FrameMetadata)."
       },
       "LiveMetadataBatch": {
         "properties": {
@@ -10059,7 +10505,7 @@
           "box"
         ],
         "title": "LiveTrack",
-        "description": "One detected person in one frame (REV.1 — mirrors sentry-ai's\nTrackPayload). Lenient: unknown keys ignored, display fields defaulted so a\nschema addition on the AI side never 422s the whole batch."
+        "description": "One detected person in one frame (REV.1 \u2014 mirrors sentry-ai's\nTrackPayload). Lenient: unknown keys ignored, display fields defaulted so a\nschema addition on the AI side never 422s the whole batch."
       },
       "LoginRequest": {
         "properties": {
@@ -10238,7 +10684,7 @@
           "confirm_slug"
         ],
         "title": "OrgDeleteConfirm",
-        "description": "Owner deletes their own org — must retype the org slug to confirm.\n\nGuards against an accidental DELETE (fat-finger, replayed request) wiping a\nwhole tenant: the slug is something only a deliberate caller types in."
+        "description": "Owner deletes their own org \u2014 must retype the org slug to confirm.\n\nGuards against an accidental DELETE (fat-finger, replayed request) wiping a\nwhole tenant: the slug is something only a deliberate caller types in."
       },
       "OrgMemberPublic": {
         "properties": {
@@ -10457,7 +10903,7 @@
           "kind"
         ],
         "title": "PromoCodeCreate",
-        "description": "code omitted/blank → auto-generated (8 chars A-Z0-9)."
+        "description": "code omitted/blank \u2192 auto-generated (8 chars A-Z0-9)."
       },
       "PromoCodePublic": {
         "properties": {
@@ -11044,7 +11490,7 @@
           "expires_in"
         ],
         "title": "StreamTokenResponse",
-        "description": "Short-lived per-camera WHEP/HLS read token (appended as ?jwt=…)."
+        "description": "Short-lived per-camera WHEP/HLS read token (appended as ?jwt=\u2026)."
       },
       "TopupRequest": {
         "properties": {
@@ -11205,6 +11651,43 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "VlmActivity": {
+        "properties": {
+          "count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Count",
+            "default": 0
+          },
+          "last_ago_sec": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Ago Sec"
+          },
+          "last_latency_ms": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Latency Ms"
+          }
+        },
+        "type": "object",
+        "title": "VlmActivity",
+        "description": "VLM verify run history \u2014 proves the VLM HAS run on the GPU even though it's\nevent-driven (breach-only) and idle most of the time."
       },
       "VlmStatus": {
         "properties": {
