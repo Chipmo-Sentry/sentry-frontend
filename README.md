@@ -1,189 +1,126 @@
 # sentry-frontend
 
-Customer dashboard for **Chipmo Sentry** — Next.js 15 App Router + React 19 + [sentry-ui-kit](https://github.com/Chipmo-Sentry/sentry-ui-kit). Talks to [sentry-backend](https://github.com/Chipmo-Sentry/sentry-backend) over cookie-authenticated REST.
+The customer-facing dashboard for **Chipmo Sentry** — where a store owner watches their cameras live,
+sees AI risk overlays in real time, triages alerts, and manages stores, cameras, and team.
 
-Apache 2.0
+Next.js 15 (App Router) · React 19 · TypeScript (strict) · Tailwind v4 · [sentry-ui-kit](https://github.com/Chipmo-Sentry/sentry-ui-kit) · Apache-2.0
 
 ---
 
-## What ships in M1
+## What ships here
 
-- **Login** (`/login`) — email + password → httpOnly cookie from backend
-- **App shell** — `Topbar` (page title, notification bell, user menu) + responsive
-  `Sidebar` (desktop rail + mobile drawer), role-gated nav (super-admin → `/admin`)
-- **Dashboard** (`/dashboard`) — alert counts by level, 7-day trend, recent review list
-- **Live** (`/live`) — HLS camera tiles + Canvas bbox/risk overlay, driven by `/api/v1/cameras`
-- **Clip upload** (`/clips/upload`) — drag-drop mp4, store selector, posts to `/api/v1/clips`
-- **Alerts** (`/alerts`) — level filter + text search + offset pagination, real-time SSE,
-  TP/FP/unclear feedback with confirmation
-- **Alert detail** (`/alerts/[id]`) — clip player + inline feedback
-- **Behaviors** (`/behaviors`) — 6-dim weights + risk thresholds editor (PATCH)
-- **Management** — Stores / Cameras full CRUD; **Admin** orgs + user invite (super-admin)
-- **Real-time** — single shared SSE (`AlertStreamProvider`) + global notification layer
-  (browser notification, beep, tab-title badge, mute toggle)
-- **Type safety** — OpenAPI codegen (`api.types.ts`) keeps types in lockstep with backend
-- **Middleware** — gates all `(app)` routes on presence of the `sentry_access` cookie
+- **Live monitoring** — a grid of camera tiles, each playing video over **WebRTC/WHEP** (sub-second,
+  primary) with an **HLS** fallback, and a transparent `<canvas>` drawing per-person bounding boxes with
+  **🟢🟡🔴 risk %** from a live WebSocket metadata stream.
+- **Alerts** — real-time list driven by a single app-wide **SSE** subscription, with level filter, text
+  search, pagination, a clip player on the detail page, and TP/FP/unclear feedback.
+- **Notifications** — a global listener that fires a browser notification + a Web-Audio beep + a tab-title
+  badge on each new alert, with a mute toggle (still shows an in-app toast when muted).
+- **Management CRUD** — full create/read/update/delete for **stores** and **cameras**; a **Connect-PC**
+  flow that generates a 6-digit pairing code and live-polls until the agent + its cameras appear.
+- **Team** — list members, invite by email (with expiry), and **lock/unlock** a member's access (a
+  "Түгжээтэй" badge marks locked members). Owner/admin only.
+- **Behaviours** — read-only view of the risk-scoring dimensions + thresholds (editing lives in the
+  super-admin panel).
+- **Admin** — super-admin-only org + user management, surfaced in the role-gated sidebar.
+
+---
+
+## Routes
+
+```
+/                  → redirects to /dashboard
+/login             email + password
+/accept-invite     set a password + join an org from an invite link
+/dashboard         alert counts by level + 7-day trend + recent review
+/live              camera grid (WHEP/HLS + canvas overlay)
+/live/[cameraId]   single-camera detailed view
+/clips/upload      drag-drop mp4 upload
+/alerts            SSE-driven list + filter + search + pagination
+/alerts/[id]       clip player + TP/FP/unclear feedback
+/behaviors         risk dimensions + thresholds (read-only)
+/stores            store CRUD
+/cameras           camera CRUD
+/team              members, invites, lock/unlock (owner/admin)
+/admin             org + user management (super-admin)
+```
+
+---
+
+## Architecture notes
+
+- **Same-origin auth.** The browser never calls the backend cross-site. `next.config.mjs` rewrites
+  `/api/*` and `/ws/*` to `BACKEND_ORIGIN` server-side, so the httpOnly `sentry_access` cookie is
+  same-origin and `SameSite=Lax` just works — **no custom DNS or CORS dance needed** ([ADR-0017](../docs/07-DECISIONS.md)).
+  `src/middleware.ts` gates app routes on the cookie's presence.
+- **Type-safe API.** `src/lib/api.types.ts` is generated from `openapi/backend.openapi.json` by
+  `openapi-typescript`; `src/lib/types.ts` re-exports friendly aliases. CI runs `codegen:check` and fails
+  on any drift from the backend contract.
+- **Live transport.** `src/lib/live-video.ts` tries WHEP first and falls back to HLS (`hls.js` low-latency
+  + Safari native), reconnecting with exponential backoff. `whep.ts` / `hls.ts` are the transports;
+  `live-ws.ts` carries the overlay metadata.
+- **Real-time.** `AlertStreamProvider` holds one shared `EventSource` to `/api/v1/alerts/stream` (capped
+  at 200 newest alerts); `NotificationListener` consumes it for notifications.
+
+```
+src/
+├── app/                 — App Router routes (see above)
+├── components/          — AppShell, Topbar, Sidebar, Toaster, NotificationListener, LiveCameraTile, Field
+├── lib/                 — api, api.types (generated), types, sse, alert-stream-context,
+│                          live-ws, whep, hls, live-video, time, notif-prefs
+└── middleware.ts        — cookie gate
+openapi/backend.openapi.json   — contract snapshot
+scripts/                 — fetch-openapi.sh, codegen-check.sh
+```
 
 ---
 
 ## Quick start
 
 ```bash
-# 1. Build sentry-ui-kit first (file: dep)
-cd ../sentry-ui-kit
+# 1. Build the ui-kit (a file: dependency)
+( cd ../sentry-ui-kit && npm install && npm run build )
+
+# 2. Start the backend on :8000 (see sentry-backend/README)
+
+# 3. Run the frontend
 npm install
-npm run build
-
-# 2. Start sentry-backend (localhost:8000) — see ../sentry-backend/README.md
-# 3. Run frontend
-cd ../sentry-frontend
-npm install
-cp .env.example .env.local       # adjust NEXT_PUBLIC_API_BASE_URL if not localhost:8000
-npm run dev                       # → http://localhost:3000
+cp .env.example .env.local      # set BACKEND_ORIGIN=http://localhost:8000
+npm run dev                     # → http://localhost:3000
 ```
+
+Scripts: `dev` · `build` (standalone) · `start` · `lint` · `typecheck` · `fetch-openapi` (pull spec from a
+running backend + regenerate types) · `codegen` · `codegen:check` (CI drift guard).
+
+### Configuration
+
+| Var | Scope | Purpose |
+|---|---|---|
+| `BACKEND_ORIGIN` | server | proxy target for `/api/*` + `/ws/*` (e.g. `http://localhost:8000`, `https://api.sentry.chipmo.mn`) |
+| `NEXT_PUBLIC_API_BASE_URL` | browser | leave **empty** for same-origin — setting it in prod breaks cookie auth |
+| `SENTRY_BACKEND_URL` | server | reserved for future server-only route handlers |
 
 ---
 
-## Project layout
+## Deployment
 
-```
-src/
-├── app/
-│   ├── layout.tsx              — root (loads ui-kit styles)
-│   ├── page.tsx                — redirect → /dashboard
-│   ├── globals.css             — @import "@chipmo-sentry/ui-kit/styles.css"
-│   ├── (auth)/login/page.tsx   — public, Suspense-wrapped form
-│   └── (app)/
-│       ├── layout.tsx          — <Toaster><AppShell> wrapper
-│       ├── dashboard/page.tsx  — 7-day trend + review list
-│       ├── live/page.tsx       — HLS tiles + Canvas overlay (from /api/v1/cameras)
-│       ├── clips/upload/page.tsx
-│       ├── alerts/page.tsx     — filter + search + pagination + feedback
-│       ├── alerts/[id]/page.tsx
-│       ├── behaviors/page.tsx  — weights/thresholds editor (PATCH)
-│       ├── stores/page.tsx     — CRUD
-│       ├── cameras/page.tsx    — CRUD
-│       └── admin/page.tsx      — orgs + user invite (super-admin only)
-├── components/
-│   ├── AppShell.tsx            — shell + AlertStreamProvider + NotificationListener
-│   ├── Topbar.tsx              — page title, notif bell, user menu
-│   ├── Sidebar.tsx             — desktop rail + mobile drawer, role-gated nav
-│   ├── Toaster.tsx             — useToast on ui-kit Radix Toast
-│   ├── NotificationListener.tsx— browser notif + beep + tab-title badge
-│   ├── Field.tsx               — labeled form field
-│   └── LiveCameraTile.tsx      — <video> + <canvas> bbox/risk overlay
-├── lib/
-│   ├── api.ts                  — fetch wrappers, cookies via `credentials: "include"`
-│   ├── api.types.ts            — GENERATED from OpenAPI (do not edit by hand)
-│   ├── types.ts                — re-exports generated schemas (drift-proof)
-│   ├── sse.ts                  — useAlertStream (EventSource)
-│   ├── alert-stream-context.tsx— single shared SSE subscription
-│   ├── live-ws.ts              — useLiveMetadata (WS /ws/live/{cam})
-│   ├── hls.ts                  — attachHls helper
-│   ├── time.ts                 — Mongolian relative-time
-│   └── notif-prefs.ts          — notification mute pref (localStorage)
-├── middleware.ts               — cookie gate, redirect to /login?next=…
-openapi/backend.openapi.json    — committed backend spec snapshot
-scripts/                        — fetch-openapi.sh, codegen-check.sh
-```
+Target: **Railway** (Dockerfile + `railway.toml`), live at `sentry-frontend-production.up.railway.app`.
 
----
+The Dockerfile is a 3-stage monorepo build: it clones + builds `sentry-ui-kit` (pinned to a tag),
+produces a Next.js **standalone** bundle, and ships a minimal Node-Alpine runtime image (~100 MB). The
+healthcheck hits `/login` (200, no auth). `ci.yml` runs codegen-drift + typecheck + build;
+`railway-deploy.yml` redeploys on push to `main`. Set `BACKEND_ORIGIN` in the Railway dashboard; do **not**
+set `NEXT_PUBLIC_API_BASE_URL`.
 
-## Configuration
-
-| Variable | Where it's used |
-|---|---|
-| `NEXT_PUBLIC_API_BASE_URL` | Browser bundle — `lib/api.ts` `fetch` target |
-| `SENTRY_BACKEND_URL` | Reserved for server-side route handlers (unused in M1) |
-
-The `NEXT_PUBLIC_` prefix is required for env vars to reach the browser; secrets must never use it.
-
----
-
-## Tech
-
-- **Next.js 15** App Router, Turbopack dev
-- **React 19**, strict mode
-- **TypeScript 5** strict + `noUncheckedIndexedAccess`
-- **Tailwind v4** via `@tailwindcss/postcss` + `@theme` tokens from ui-kit
-- **lucide-react** icons
-- File-deps: `@chipmo-sentry/ui-kit` via `file:../sentry-ui-kit` (until GitHub Packages publish lands)
-
----
-
-## Build + verify
-
-```bash
-npm run typecheck     # tsc --noEmit (strict)
-npm run build         # production build (all routes prerendered where possible)
-npm run dev           # Turbopack dev server with HMR
-npm run codegen       # regen src/lib/api.types.ts from openapi/backend.openapi.json
-npm run codegen:check # CI drift guard — fail if api.types.ts is stale
-npm run fetch-openapi # pull spec from a running backend, then codegen
-```
-
-Latest build: 11 routes (root, login, dashboard, live, clips/upload, alerts, alerts/[id], behaviors, stores, cameras, admin), 13 build outputs, 102 kB shared JS, middleware 34 kB.
-
-### Type contract (OpenAPI codegen)
-
-`src/lib/api.types.ts` is **generated** from the committed `openapi/backend.openapi.json`
-snapshot; `lib/types.ts` re-exports those schemas so app code never drifts from the
-backend contract. After changing backend Pydantic models: regenerate the snapshot
-(`npm run fetch-openapi` against a running backend) and commit both files. CI runs
-`codegen:check` and fails PRs where the generated types are out of date.
-
----
-
-## Deployment — Railway
-
-Target: **Railway Pro**. Frontend ships as a Docker container with Next.js standalone output (small ~100 MB runtime image, no `node_modules` carried at runtime).
-
-### Why the Dockerfile builds from the parent directory
-
-The Dockerfile is monorepo-aware — it expects to see both `sentry-frontend/` and `sentry-ui-kit/` siblings at the build context root so it can build the ui-kit first and then npm-link it into the frontend. This matches our local workspace layout:
-
-```
-Sentry-v.3/                  ← Docker build context lives here for the parent build
-├── sentry-frontend/
-│   └── Dockerfile           ← uses ../sentry-ui-kit
-└── sentry-ui-kit/
-```
-
-### Railway setup (two options)
-
-**Option A — Per-repo, slim image (recommended once ui-kit is published)**
-
-1. Once `@chipmo-sentry/ui-kit` is published to GitHub Packages (workflow lands in ui-kit Session 2), bump the dep in `package.json` from `file:../sentry-ui-kit` to `^0.1.0`.
-2. Railway points at the `sentry-frontend` repo directly. Dockerfile drops the `sentry-ui-kit` copy/build stage.
-
-**Option B — Monorepo build context (today, while ui-kit is unpublished)**
-
-1. Connect a Railway project to **both** repos via a small wrapper repo OR clone both as submodules.
-2. In Railway service settings, set **Root Directory** to `sentry-frontend` and **Build Context** to the parent so the Dockerfile can `COPY sentry-ui-kit/`.
-3. Set env: `NEXT_PUBLIC_API_BASE_URL=https://api.sentry.chipmo.mn`.
-4. Add a public domain → CNAME `app.sentry.chipmo.mn` to it.
-
-### CORS reminder
-
-The backend's `ALLOWED_ORIGINS` env must include `https://app.sentry.chipmo.mn` (or whatever the frontend's public domain is).
-
-### Local Docker smoke test
-
-```bash
-# From the parent (Sentry-v.3/) directory
-docker build -t sentry-frontend:dev -f sentry-frontend/Dockerfile .
-docker run --rm -p 3000:3000 \
-  -e NEXT_PUBLIC_API_BASE_URL=http://host.docker.internal:8000 \
-  sentry-frontend:dev
-curl http://localhost:3000/login
-```
+Once `@chipmo-sentry/ui-kit` is published to GitHub Packages, the `file:../sentry-ui-kit` dependency can be
+swapped for a versioned range and the Dockerfile slimmed.
 
 ---
 
 ## Related repos
 
-- [sentry-backend](https://github.com/Chipmo-Sentry/sentry-backend) — REST API (auth, multi-tenant, clips, alerts)
-- [sentry-ai](https://github.com/Chipmo-Sentry/sentry-ai) — VLM inference (triggered by backend per clip)
-- [sentry-ui-kit](https://github.com/Chipmo-Sentry/sentry-ui-kit) — shared components
+- [sentry-backend](https://github.com/Chipmo-Sentry/sentry-backend) — REST + SSE + WebSocket contract
+- [sentry-ui-kit](https://github.com/Chipmo-Sentry/sentry-ui-kit) — shared components + tokens
+- [sentry-superadmin](https://github.com/Chipmo-Sentry/sentry-superadmin) — the platform-admin sibling
 
-Platform overview: [Sentry-v.3 README](../README.md) (local workspace)
+Platform overview: [Sentry-v.3 README](../README.md).
