@@ -3,17 +3,26 @@
 import {
   Badge,
   Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
   EmptyState,
   ErrorState,
   Input,
   Spinner,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@chipmo-sentry/ui-kit";
-import { Bell, BellRing, Check, HelpCircle, Search, X } from "lucide-react";
+import {
+  Bell,
+  BellRing,
+  Check,
+  ChevronRight,
+  HelpCircle,
+  Search,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
@@ -293,91 +302,117 @@ export default function AlertsPage() {
         />
       ) : (
         <>
-          <div className="space-y-3">
-            {visible.map((a) => {
-              // Server verdict is the source of truth (persisted feedback); the
-              // local map only holds this session's optimistic clicks. Without
-              // the server value, a reload dropped the answer and re-asked.
-              const verdict = verdicts[a.id] ?? a.feedback_verdict ?? undefined;
-              const isPending = pending[a.id];
-              return (
-                <Card key={a.id}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Badge tone={LEVEL_TONE[a.alert_level]}>
-                            {LEVEL_LABEL[a.alert_level]}
-                          </Badge>
-                          <CardTitle className="text-base">
-                            {CATEGORY_LABEL[a.category]}
-                            <span className="ml-2 text-sm font-normal text-[var(--color-muted-foreground)]">
-                              ({Math.round(a.confidence * 100)}%)
-                            </span>
-                          </CardTitle>
-                        </div>
-                        <CardDescription>
-                          <span
-                            title={new Date(a.created_at).toLocaleString("mn-MN")}
-                          >
-                            {relativeTime(a.created_at)}
-                          </span>{" "}
-                          · {a.model_name} · {a.inference_latency_ms}ms
-                        </CardDescription>
-                      </div>
-                      <Link
-                        href={`/alerts/${a.id}`}
-                        className="text-sm text-[var(--color-primary)] underline-offset-2 hover:underline"
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="whitespace-nowrap">Түвшин</TableHead>
+                <TableHead className="whitespace-nowrap">Ангилал</TableHead>
+                <TableHead className="w-full">Шалтгаан</TableHead>
+                <TableHead className="whitespace-nowrap">Цаг</TableHead>
+                <TableHead className="whitespace-nowrap">AI · хугацаа</TableHead>
+                <TableHead className="whitespace-nowrap">Дүгнэлт</TableHead>
+                <TableHead />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {visible.map((a) => {
+                // Server verdict is the source of truth (persisted feedback); the
+                // local map only holds this session's optimistic clicks. Without
+                // the server value, a reload dropped the answer and re-asked.
+                const verdict = verdicts[a.id] ?? a.feedback_verdict ?? undefined;
+                const isPending = pending[a.id];
+                return (
+                  <TableRow key={a.id}>
+                    <TableCell className="whitespace-nowrap">
+                      <Badge tone={LEVEL_TONE[a.alert_level]}>
+                        {LEVEL_LABEL[a.alert_level]}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      <span className="font-medium">
+                        {CATEGORY_LABEL[a.category]}
+                      </span>{" "}
+                      <span className="text-[var(--color-muted-foreground)]">
+                        {Math.round(a.confidence * 100)}%
+                      </span>
+                    </TableCell>
+                    <TableCell className="w-full max-w-0">
+                      <span
+                        className="block truncate text-[var(--color-muted-foreground)]"
+                        title={a.reasoning}
                       >
-                        Дэлгэрэнгүй
-                      </Link>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm">{a.reasoning}</p>
-                    {verdict ? (
-                      <div className="mt-3">
+                        {a.reasoning}
+                      </span>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-[var(--color-muted-foreground)]">
+                      <span
+                        title={new Date(a.created_at).toLocaleString("mn-MN")}
+                      >
+                        {relativeTime(a.created_at)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-xs text-[var(--color-muted-foreground)]">
+                      {a.model_name}
+                      <br />
+                      {a.inference_latency_ms != null
+                        ? `${(a.inference_latency_ms / 1000).toFixed(1)}с`
+                        : "—"}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {verdict ? (
                         <Badge tone="success">
                           <Check className="h-3 w-3" />
-                          Дүгнэсэн: {VERDICT_LABEL[verdict]}
+                          {VERDICT_LABEL[verdict]}
                         </Badge>
-                      </div>
-                    ) : (
-                      <div className="mt-3 flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={isPending}
-                          onClick={() => mark(a.id, "true_positive")}
-                        >
-                          <Check className="h-3.5 w-3.5" />
-                          Зөв илрүүлэлт
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={isPending}
-                          onClick={() => mark(a.id, "false_positive")}
-                        >
-                          <X className="h-3.5 w-3.5" />
-                          Худал сэрэлт
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          disabled={isPending}
-                          onClick={() => mark(a.id, "unclear")}
-                        >
-                          <HelpCircle className="h-3.5 w-3.5" />
-                          Тодорхойгүй
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                      ) : (
+                        <div className="flex gap-1">
+                          <button
+                            type="button"
+                            title="Зөв илрүүлэлт"
+                            aria-label="Зөв илрүүлэлт"
+                            disabled={isPending}
+                            onClick={() => mark(a.id, "true_positive")}
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[var(--color-border)] text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] disabled:opacity-50"
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            title="Худал сэрэлт"
+                            aria-label="Худал сэрэлт"
+                            disabled={isPending}
+                            onClick={() => mark(a.id, "false_positive")}
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[var(--color-border)] text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] disabled:opacity-50"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            title="Тодорхойгүй"
+                            aria-label="Тодорхойгүй"
+                            disabled={isPending}
+                            onClick={() => mark(a.id, "unclear")}
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[var(--color-border)] text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] disabled:opacity-50"
+                          >
+                            <HelpCircle className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-right">
+                      <Link
+                        href={`/alerts/${a.id}`}
+                        aria-label="Дэлгэрэнгүй"
+                        className="inline-flex text-[var(--color-primary)] hover:underline"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
 
           {/* Pagination — only when not searching (search is client-side over
               loaded pages, so "load more" still fetches older history). */}
