@@ -474,4 +474,67 @@ export const behaviors = {
     }),
 };
 
+// === AI nodes (org-scoped health — Pipeline Canvas / Health) ===
+
+/** VLM run history reported by the node heartbeat (event-driven). */
+export interface NodeVlmActivity {
+  count: number;
+  last_ago_sec: number | null;
+  last_latency_ms: number | null;
+}
+
+/** VLM model GPU residency on the node. */
+export interface NodeVlmStatus {
+  loaded: boolean;
+  model: string | null;
+  vram_mb: number | null;
+  gpu_pct: number | null;
+}
+
+/** Per-camera stream health inside a node (status: ok = inferring, stalled =
+ * worker alive but 0 FPS, error = worker dead / RTSP failure). */
+export interface NodeCameraHealth {
+  camera_id: string;
+  fps: number | null;
+  status: "ok" | "stalled" | "error";
+}
+
+/** Org-scoped, camera-PROJECTED node health. The backend returns only THIS
+ * org's cameras out of a (possibly shared) node and never the raw telemetry
+ * string — see backend schemas.ai_node.build_org_node. */
+export interface OrgNodePublic {
+  id: string;
+  name: string | null;
+  is_online: boolean;
+  last_seen_at: string | null;
+  version: string | null;
+  gpu: string | null;
+  /** Desired provider (DB) vs effective (last heartbeat) → applied/applying. */
+  provider: string;
+  provider_effective: string | null;
+  provider_ready: boolean | null;
+  provider_error: string | null;
+  breach_mode: string;
+  breach_mode_effective: string | null;
+  fps_inference: number | null;
+  active_cameras: number | null;
+  cpu_pct: number | null;
+  ram_used_mb: number | null;
+  ram_total_mb: number | null;
+  gpu_pct: number | null;
+  vram_used_mb: number | null;
+  vram_total_mb: number | null;
+  gpu_temp_c: number | null;
+  vlm_activity: NodeVlmActivity | null;
+  vlm: NodeVlmStatus | null;
+  health: Record<string, boolean> | null;
+  /** Filtered to the caller-org's cameras only. */
+  cameras: NodeCameraHealth[];
+}
+
+export const nodes = {
+  /** AI nodes that serve at least one of this org's cameras. */
+  list: () => request<OrgNodePublic[]>("/api/v1/nodes"),
+};
+
 export { ApiError };
