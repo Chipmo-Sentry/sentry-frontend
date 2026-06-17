@@ -74,6 +74,29 @@ function matchesLevel(level: AlertLevel, f: LevelFilter): boolean {
   return level === f;
 }
 
+// Multi-label action columns (тийм/үгүй per clip). Order = display order.
+const ACTIONS: AlertCategory[] = [
+  "browsing",
+  "cart_pickup",
+  "pocket_conceal",
+  "bag_conceal",
+  "other",
+];
+// Short column headers — full label lives in the cell/header title tooltip.
+const ACTION_SHORT: Record<AlertCategory, string> = {
+  browsing: "Хайв",
+  cart_pickup: "Сагс",
+  pocket_conceal: "Халаас",
+  bag_conceal: "Цүнх",
+  other: "Бусад",
+};
+
+/** Actions detected in a clip — falls back to the primary [category] for older
+ * rows / manual uploads that predate multi-label. */
+function rowActions(a: AlertPublic): AlertCategory[] {
+  return (a.actions as AlertCategory[] | null | undefined) ?? [a.category];
+}
+
 const HEADER_SELECT_CLASS =
   "mt-1 h-7 text-xs font-normal normal-case tracking-normal";
 
@@ -86,7 +109,7 @@ export default function AlertsPage() {
   // Column-header + search filters (all client-side over `merged`).
   const [search, setSearch] = useState("");
   const [levelF, setLevelF] = useState<LevelFilter>("all");
-  const [categoryF, setCategoryF] = useState<CategoryFilter>("all");
+  const [actionF, setActionF] = useState<CategoryFilter>("all");
   const [modelF, setModelF] = useState<string>("all");
   const [verdictF, setVerdictF] = useState<VerdictFilter>("all");
   const [page, setPage] = useState(1);
@@ -168,7 +191,7 @@ export default function AlertsPage() {
     const q = search.trim().toLowerCase();
     return merged.filter((a) => {
       if (!matchesLevel(a.alert_level, levelF)) return false;
-      if (categoryF !== "all" && a.category !== categoryF) return false;
+      if (actionF !== "all" && !rowActions(a).includes(actionF)) return false;
       if (modelF !== "all" && a.model_name !== modelF) return false;
       if (verdictF !== "all") {
         const v = effectiveVerdict(a);
@@ -184,13 +207,13 @@ export default function AlertsPage() {
     });
     // effectiveVerdict depends on `verdicts`; include it so optimistic clicks
     // re-filter immediately.
-  }, [merged, search, levelF, categoryF, modelF, verdictF, verdicts]);
+  }, [merged, search, levelF, actionF, modelF, verdictF, verdicts]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   // Reset to page 1 whenever the filter set changes the result shape.
   useEffect(() => {
     setPage(1);
-  }, [search, levelF, categoryF, modelF, verdictF]);
+  }, [search, levelF, actionF, modelF, verdictF]);
   const safePage = Math.min(page, pageCount);
   const visible = filtered.slice(
     (safePage - 1) * PAGE_SIZE,
@@ -226,7 +249,7 @@ export default function AlertsPage() {
   function resetFilters() {
     setSearch("");
     setLevelF("all");
-    setCategoryF("all");
+    setActionF("all");
     setModelF("all");
     setVerdictF("all");
   }
@@ -272,25 +295,40 @@ export default function AlertsPage() {
         </Badge>
       </div>
 
-      {/* Free-text search (reasoning / category / model) */}
-      <div className="relative mb-4">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-muted-foreground)]" />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Шалтгаан, ангилал, загвараар хайх…"
-          className="pl-9"
-        />
-        {search ? (
-          <button
-            type="button"
-            onClick={() => setSearch("")}
-            aria-label="Хайлт цэвэрлэх"
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)]"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        ) : null}
+      {/* Free-text search + action filter */}
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-muted-foreground)]" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Шалтгаан, ангилал, загвараар хайх…"
+            className="pl-9"
+          />
+          {search ? (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              aria-label="Хайлт цэвэрлэх"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)]"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          ) : null}
+        </div>
+        <Select
+          value={actionF}
+          onChange={(e) => setActionF(e.target.value as CategoryFilter)}
+          className="sm:w-56"
+          aria-label="Үйлдлээр шүүх"
+        >
+          <option value="all">Үйлдэл: бүгд</option>
+          {ACTIONS.map((c) => (
+            <option key={c} value={c}>
+              {CATEGORY_LABEL[c]}
+            </option>
+          ))}
+        </Select>
       </div>
 
       {merged.length === 0 ? (
@@ -324,26 +362,16 @@ export default function AlertsPage() {
                     ))}
                   </Select>
                 </TableHead>
-                <TableHead className="align-top">
-                  Ангилал
-                  <Select
-                    value={categoryF}
-                    onChange={(e) =>
-                      setCategoryF(e.target.value as CategoryFilter)
-                    }
-                    className={HEADER_SELECT_CLASS}
-                    aria-label="Ангилалаар шүүх"
+                {ACTIONS.map((c) => (
+                  <TableHead
+                    key={c}
+                    className="align-top text-center"
+                    title={CATEGORY_LABEL[c]}
                   >
-                    <option value="all">Бүгд</option>
-                    {(
-                      Object.keys(CATEGORY_LABEL) as AlertCategory[]
-                    ).map((c) => (
-                      <option key={c} value={c}>
-                        {CATEGORY_LABEL[c]}
-                      </option>
-                    ))}
-                  </Select>
-                </TableHead>
+                    {ACTION_SHORT[c]}
+                  </TableHead>
+                ))}
+                <TableHead className="align-top text-right">Итгэл</TableHead>
                 <TableHead className="w-full align-top">Шалтгаан</TableHead>
                 <TableHead className="align-top">Огноо</TableHead>
                 <TableHead className="align-top">Цаг</TableHead>
@@ -399,13 +427,31 @@ export default function AlertsPage() {
                         {LEVEL_LABEL[a.alert_level]}
                       </Badge>
                     </TableCell>
-                    <TableCell className={`${tdBase} whitespace-nowrap`}>
-                      <span className="font-medium">
-                        {CATEGORY_LABEL[a.category]}
-                      </span>{" "}
-                      <span className="text-[var(--color-muted-foreground)]">
-                        {Math.round(a.confidence * 100)}%
-                      </span>
+                    {(() => {
+                      const acts = rowActions(a);
+                      return ACTIONS.map((c) => {
+                        const yes = acts.includes(c);
+                        return (
+                          <TableCell
+                            key={c}
+                            className={`${tdBase} text-center`}
+                            title={`${CATEGORY_LABEL[c]}: ${yes ? "тийм" : "үгүй"}`}
+                          >
+                            {yes ? (
+                              <Check className="mx-auto h-3.5 w-3.5 text-[var(--color-success)]" />
+                            ) : (
+                              <span className="text-[var(--color-muted-foreground)]">
+                                —
+                              </span>
+                            )}
+                          </TableCell>
+                        );
+                      });
+                    })()}
+                    <TableCell
+                      className={`${tdBase} whitespace-nowrap text-right tabular-nums text-[var(--color-muted-foreground)]`}
+                    >
+                      {Math.round(a.confidence * 100)}%
                     </TableCell>
                     <TableCell className={`${tdBase} w-full max-w-0`}>
                       <span

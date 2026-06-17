@@ -388,6 +388,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/internal/live-alert": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Live Alert From Node
+         * @description Node-push live alert. The AI node detected the breach, cut + VLM-verified
+         *     the clip locally, and POSTs the finished result here (outbound — reliable,
+         *     unlike the old cloud→node /v1/cut-verify pull). camera_id = mediamtx_path.
+         *
+         *     Auth: the paired AI node's own JWT (typ=ai_node) — the SAME token it uses for
+         *     heartbeat/config. The node never holds a minted service token (pairing sets
+         *     SENTRY_BACKEND_SERVICE_TOKEN to the ai_node JWT), so requiring one here 401'd
+         *     every node-push alert. Authenticating as the node also binds the post to a
+         *     known, active node row.
+         */
+        post: operations["create_live_alert_from_node_api_v1_internal_live_alert_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/internal/breach-cleared": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Report Breach Cleared
+         * @description Observability for breaches the node dropped without alerting (VLM cleared
+         *     / clip-cut failed). Writes a risk_episode row so the miss is VISIBLE on the
+         *     activity timeline instead of silently lost. camera_id = mediamtx_path.
+         *
+         *     Auth: the paired AI node's own JWT (typ=ai_node) — same as /live-alert.
+         */
+        post: operations["report_breach_cleared_api_v1_internal_breach_cleared_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/internal/live-metadata": {
         parameters: {
             query?: never;
@@ -1451,7 +1503,7 @@ export interface components {
             mediamtx_path?: string | null;
             /**
              * Risk Threshold
-             * @default 50
+             * @default 11
              */
             risk_threshold: number;
         };
@@ -1558,6 +1610,11 @@ export interface components {
             provider: string;
             /** Frame Skip */
             frame_skip: number;
+            /**
+             * Breach Mode
+             * @default node_push
+             */
+            breach_mode: string;
         };
         /**
          * AiNodeHeartbeat
@@ -1572,6 +1629,8 @@ export interface components {
             active_cameras?: number | null;
             /** Version */
             version?: string | null;
+            /** Yolo Model */
+            yolo_model?: string | null;
             /** Health */
             health?: {
                 [key: string]: boolean;
@@ -1601,12 +1660,15 @@ export interface components {
             /** Components */
             components?: components["schemas"]["ComponentUsage"][] | null;
             vlm?: components["schemas"]["VlmStatus"] | null;
+            vlm_activity?: components["schemas"]["VlmActivity"] | null;
             /** Provider Effective */
             provider_effective?: string | null;
             /** Provider Ready */
             provider_ready?: boolean | null;
             /** Provider Error */
             provider_error?: string | null;
+            /** Breach Mode Effective */
+            breach_mode_effective?: string | null;
         };
         /**
          * AiNodePairRequest
@@ -1676,6 +1738,8 @@ export interface components {
             provider: string;
             /** Frame Skip */
             frame_skip: number;
+            /** Breach Mode */
+            breach_mode: string;
             /** Created At */
             created_at: string | null;
             /**
@@ -1699,6 +1763,13 @@ export interface components {
              */
             readonly provider_error: string | null;
             /**
+             * Breach Mode Effective
+             * @description Live-breach topology the node actually applied (from its last
+             *     heartbeat). The UI compares this to `breach_mode` (desired) to show
+             *     applied vs applying. None for old node versions / no telemetry yet.
+             */
+            readonly breach_mode_effective: string | null;
+            /**
              * Is Online
              * @description Server-computed online status — independent of the viewer's clock.
              */
@@ -1717,12 +1788,14 @@ export interface components {
             provider?: string | null;
             /** Frame Skip */
             frame_skip?: number | null;
+            /** Breach Mode */
+            breach_mode?: ("node_push" | "off") | null;
         };
         /**
          * AlertCategory
          * @enum {string}
          */
-        AlertCategory: "browsing" | "cart_pickup" | "pocket_conceal" | "other";
+        AlertCategory: "browsing" | "cart_pickup" | "pocket_conceal" | "bag_conceal" | "other";
         /**
          * AlertCreateInternal
          * @description POST /api/v1/internal/alerts — sentry-ai service posts this.
@@ -1770,6 +1843,8 @@ export interface components {
             /** Camera Id */
             camera_id: string | null;
             category: components["schemas"]["AlertCategory"];
+            /** Actions */
+            actions?: string[] | null;
             /** Confidence */
             confidence: number;
             /** Reasoning */
@@ -1995,6 +2070,29 @@ export interface components {
              */
             duration_sec: number;
         };
+        /**
+         * BreachClearedCreate
+         * @description POST /api/v1/internal/breach-cleared — observability for breaches the node
+         *     detected but did NOT turn into an alert (VLM cleared it as browsing / low
+         *     confidence, or the clip-cut failed). Without this the drop is silent: the
+         *     operator sees nothing and can't tell a miss from "nothing happened". We log
+         *     it on the activity timeline so the detection funnel is visible + tunable.
+         */
+        BreachClearedCreate: {
+            /** Camera Id */
+            camera_id: string;
+            /** Reason */
+            reason: string;
+            /** Peak Risk Pct */
+            peak_risk_pct?: number | null;
+            /** Person Id */
+            person_id?: number | null;
+            category?: components["schemas"]["AlertCategory"] | null;
+            /** Confidence */
+            confidence?: number | null;
+            /** Triggered Behaviors */
+            triggered_behaviors?: string[] | null;
+        };
         /** CameraCreate */
         CameraCreate: {
             /**
@@ -2024,7 +2122,7 @@ export interface components {
             mediamtx_path?: string | null;
             /**
              * Risk Threshold
-             * @default 50
+             * @default 11
              */
             risk_threshold: number;
         };
@@ -2084,7 +2182,7 @@ export interface components {
             mediamtx_path?: string | null;
             /**
              * Risk Threshold
-             * @default 50
+             * @default 11
              */
             risk_threshold: number;
         };
@@ -2461,6 +2559,53 @@ export interface components {
          * @enum {string}
          */
         LedgerAccount: "cash" | "org_wallet" | "revenue" | "promo_expense";
+        /**
+         * LiveAlertCreate
+         * @description POST /api/v1/internal/live-alert — node-push path (ADR live-alert).
+         *
+         *     The AI node detected a sustained risk breach, cut the clip + ran VLM
+         *     LOCALLY, and posts the finished alert here (outbound, reliable). camera_id
+         *     is the Camera.mediamtx_path; the backend resolves org/store. The node only
+         *     posts non-ignore verdicts (it applies the VLM gate itself).
+         */
+        LiveAlertCreate: {
+            /** Camera Id */
+            camera_id: string;
+            category: components["schemas"]["AlertCategory"];
+            /** Actions */
+            actions?: components["schemas"]["AlertCategory"][] | null;
+            /** Confidence */
+            confidence: number;
+            /** Reasoning */
+            reasoning: string;
+            /** Model Name */
+            model_name: string;
+            /** Inference Latency Ms */
+            inference_latency_ms: number;
+            /** Clip B64 */
+            clip_b64: string;
+            /** File Size Bytes */
+            file_size_bytes: number;
+            /** Duration Sec Clip */
+            duration_sec_clip: number;
+            /**
+             * Captured At
+             * Format: date-time
+             */
+            captured_at: string;
+            /** Embedding */
+            embedding?: number[] | null;
+            /** Person Id */
+            person_id?: number | null;
+            /** Peak Risk Pct */
+            peak_risk_pct?: number | null;
+            /** Triggered Behaviors */
+            triggered_behaviors?: string[] | null;
+            /** Triggered Sequences */
+            triggered_sequences?: string[] | null;
+            /** Triggered Behavior Detail */
+            triggered_behavior_detail?: components["schemas"]["BehaviorDetailItem"][] | null;
+        };
         /**
          * LiveFrame
          * @description Per-analyzed-frame metadata from the sentry-ai live worker
@@ -3024,6 +3169,22 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /**
+         * VlmActivity
+         * @description VLM verify run history — proves the VLM HAS run on the GPU even though it's
+         *     event-driven (breach-only) and idle most of the time.
+         */
+        VlmActivity: {
+            /**
+             * Count
+             * @default 0
+             */
+            count: number;
+            /** Last Ago Sec */
+            last_ago_sec?: number | null;
+            /** Last Latency Ms */
+            last_latency_ms?: number | null;
         };
         /**
          * VlmStatus
@@ -3985,6 +4146,74 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AlertPublic"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_live_alert_from_node_api_v1_internal_live_alert_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LiveAlertCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertPublic"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    report_breach_cleared_api_v1_internal_breach_cleared_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BreachClearedCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
