@@ -19,7 +19,7 @@ import { CATEGORY_LABEL, LEVEL_LABEL } from "@/lib/labels";
 import { isMuted, onMuteChange } from "@/lib/notif-prefs";
 import type { AlertLevel, AlertPublic } from "@/lib/types";
 
-const BASE_TITLE = "Chipmo Sentry";
+const BASE_TITLE = "Sentry";
 
 function isActionable(level: AlertLevel): boolean {
   return level === "notify" || level === "review";
@@ -135,7 +135,7 @@ export function NotificationListener() {
       Notification.permission === "granted"
     ) {
       const a = last;
-      const n = new Notification(`🔔 ${LEVEL_LABEL[a.alert_level]} — Chipmo Sentry`, {
+      const n = new Notification(`🔔 ${LEVEL_LABEL[a.alert_level]} — Sentry`, {
         body: `${CATEGORY_LABEL[a.category]} · ${Math.round(a.confidence * 100)}%`,
         tag: a.id,
       });

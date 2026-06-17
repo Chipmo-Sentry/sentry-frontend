@@ -20,7 +20,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Chipmo Sentry",
+  title: "Sentry",
   description: "AI-powered shoplifting detection for retail",
 };
 

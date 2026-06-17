@@ -48,7 +48,7 @@ export function navTitle(pathname: string): string {
   const match = NAV.find(
     (n) => pathname === n.href || pathname.startsWith(`${n.href}/`),
   );
-  return match?.label ?? "Chipmo Sentry";
+  return match?.label ?? "Sentry";
 }
 
 /** Inner nav content shared by the desktop rail and the mobile drawer. */
@@ -79,7 +79,7 @@ function SidebarContent({
     <div className="flex h-full flex-col bg-[var(--color-background)]">
       <div className="flex h-14 items-center gap-2 border-b border-[var(--color-border)] px-4">
         <Logo className="h-6 w-6" />
-        <span className="text-sm font-semibold">Chipmo Sentry</span>
+        <span className="text-sm font-semibold">Sentry</span>
       </div>
       <nav className="flex-1 space-y-1 overflow-y-auto p-2">
         {items.map((item) => {
