@@ -62,6 +62,11 @@ function wsBase(): string {
 export function useLiveMetadata(cameraId: string) {
   const [latest, setLatest] = useState<FrameMetadata | null>(null);
   const [state, setState] = useState<LiveConnState>("connecting");
+  // Epoch ms of the last REAL frame (not a keepalive). Lets a consumer tell
+  // "AI alive but idle / camera stalled" (WS connected, frames stopped) apart
+  // from a healthy live feed — the WS sends {_type:"heartbeat"} every 15s idle,
+  // which we still drop from `latest` but record the arrival of here.
+  const [lastFrameAt, setLastFrameAt] = useState<number | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
@@ -88,6 +93,7 @@ export function useLiveMetadata(cameraId: string) {
           if (data && data._type === "heartbeat") return;
           if (data && typeof data.camera_id === "string") {
             setLatest(data as FrameMetadata);
+            setLastFrameAt(Date.now());
           }
         } catch {
           // ignore malformed frames
@@ -116,5 +122,5 @@ export function useLiveMetadata(cameraId: string) {
     };
   }, [cameraId]);
 
-  return { latest, state };
+  return { latest, state, lastFrameAt };
 }

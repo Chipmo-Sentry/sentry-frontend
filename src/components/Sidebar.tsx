@@ -13,6 +13,7 @@ import {
   Users,
   Video,
   Wallet,
+  Workflow,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -29,6 +30,7 @@ type NavItem = {
 };
 
 export const NAV: readonly NavItem[] = [
+  { href: "/pipeline", label: "Урсгал", icon: Workflow },
   { href: "/dashboard", label: "Самбар", icon: Bell },
   { href: "/live", label: "Шууд харах", icon: Radio },
   // ADR-0014 (live-first): clip upload is admin/debug-only — route stays
