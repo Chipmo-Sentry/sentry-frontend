@@ -182,6 +182,24 @@ export default function AlertDetailPage() {
             </p>
           </section>
 
+          {/* Neutral-fallback hint: confidence 0 + "other" is what the VLM
+              returns after it FAILS to parse a verdict (retries exhausted) — it
+              is NOT the same as a genuine "no theft" all-clear. Surface the
+              ambiguity so an operator doesn't read a model failure as innocence. */}
+          {alert.confidence === 0 && alert.category === "other" && (
+            <p
+              className="rounded-[var(--radius)] border px-3 py-2 text-xs"
+              style={{
+                borderColor: "var(--color-warning)",
+                color: "var(--color-warning)",
+                background: "color-mix(in srgb, var(--color-warning) 10%, transparent)",
+              }}
+            >
+              VLM энэ клипийг тодорхой үнэлж чадаагүй байж магадгүй (итгэл 0%). Энэ нь
+              «зөрчилгүй» гэсэн баталгаа БИШ — бичлэгийг өөрөө шалгана уу.
+            </p>
+          )}
+
           {/* FE-L9 — trigger source + (for live breaches) tracked person and
               peak accumulated risk. */}
           <section className="flex flex-wrap items-center gap-2">

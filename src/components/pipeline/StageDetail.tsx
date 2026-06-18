@@ -3,10 +3,12 @@
 import { EmptyState, ErrorState, Spinner } from "@chipmo-sentry/ui-kit";
 import { ArrowLeft, Bell, Brain, Cctv, CloudUpload, Route, ScanEye } from "lucide-react";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import type { OrgNodePublic } from "@/lib/api";
+import { PersonCard } from "@/components/LiveBehaviorPanel";
+import { behaviors as behaviorsApi, type OrgNodePublic } from "@/lib/api";
 import { CATEGORY_LABEL, LEVEL_LABEL } from "@/lib/labels";
+import { useLiveMetadata } from "@/lib/live-ws";
 import {
   computeCameraRows,
   STAGE_LABEL,
@@ -174,6 +176,9 @@ export function StageDetail({
       </section>
 
       {/* Stage-specific deep detail */}
+      {stageKey === "tracker" && (
+        <TrackerLive cams={stageRows.map((s) => ({ path: s.cam.path, name: s.cam.name }))} />
+      )}
       {stageKey === "yolo" && <YoloNodes nodes={relevantNodes} />}
       {stageKey === "vlm" && <VlmNodes nodes={relevantNodes} alerts={alerts} />}
       {stageKey === "ingest" && <IngestPanel ingest={ingest} />}
@@ -356,6 +361,90 @@ function IngestPanel({ ingest }: { ingest: { available: boolean; paths: { path: 
       Үүлэн MediaMTX дээр {ingest.paths.filter((p) => p.ready).length}/{ingest.paths.length} зам идэвхтэй.
       {notReady.length > 0 && ` Publisher хүлээж буй: ${notReady.map((p) => p.name).join(", ")}.`}
     </p>
+  );
+}
+
+function TrackerLive({ cams }: { cams: { path: string; name: string }[] }) {
+  const [labels, setLabels] = useState<Record<string, string>>({});
+  const [levelLabels, setLevelLabels] = useState<Record<string, string>>({});
+  useEffect(() => {
+    let cancelled = false;
+    behaviorsApi.get().then(
+      (cfg) => {
+        if (cancelled) return;
+        const m: Record<string, string> = {};
+        for (const d of cfg.dimensions) m[d.key] = d.label_mn;
+        setLabels(m);
+        setLevelLabels(cfg.level_labels ?? {});
+      },
+      () => {},
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return (
+    <section>
+      <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+        Амьд хүн + state machine
+      </h2>
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        {cams.map((c) => (
+          <TrackerCam
+            key={c.path}
+            path={c.path}
+            name={c.name}
+            labels={labels}
+            levelLabels={levelLabels}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function TrackerCam({
+  path,
+  name,
+  labels,
+  levelLabels,
+}: {
+  path: string;
+  name: string;
+  labels: Record<string, string>;
+  levelLabels: Record<string, string>;
+}) {
+  const { latest, state } = useLiveMetadata(path);
+  const tracks = [...(latest?.tracks ?? [])].sort(
+    (a, b) => (b.store_risk_pct ?? b.risk_pct) - (a.store_risk_pct ?? a.risk_pct),
+  );
+  return (
+    <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+      <div className="mb-2 flex items-center gap-2">
+        <HealthDot status={state === "connected" ? "ok" : "unknown"} />
+        <span className="text-sm font-medium text-[var(--color-foreground)]">{name}</span>
+        <span className="ml-auto text-xs text-[var(--color-muted-foreground)]">
+          {tracks.length} хүн
+        </span>
+      </div>
+      {tracks.length > 0 ? (
+        <div className="space-y-2">
+          {tracks.map((t) => (
+            <PersonCard
+              key={t.person_id}
+              track={t}
+              frameTsMs={latest?.ts_ms ?? Date.now()}
+              labels={labels}
+              levelLabels={levelLabels}
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="py-3 text-center text-xs text-[var(--color-muted-foreground)]">
+          {state === "connected" ? "AI холбогдсон · 0 хүн" : "AI метадата хүлээж байна…"}
+        </p>
+      )}
+    </div>
   );
 }
 
