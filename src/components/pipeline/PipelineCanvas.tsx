@@ -17,7 +17,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   cameras as camerasApi,
+  ingest as ingestApi,
   nodes as nodesApi,
+  type IngestPathsResponse,
   type OrgNodePublic,
 } from "@/lib/api";
 import { useAlertStreamContext } from "@/lib/alert-stream-context";
@@ -47,6 +49,7 @@ export function PipelineCanvas() {
   const [cams, setCams] = useState<LiveCamera[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [nodeList, setNodeList] = useState<OrgNodePublic[]>([]);
+  const [ingest, setIngest] = useState<IngestPathsResponse | null>(null);
   const [signals, setSignals] = useState<Record<string, CameraSig>>({});
   const [now, setNow] = useState(() => Date.now());
   const { alerts, connected: sseConnected } = useAlertStreamContext();
@@ -75,10 +78,10 @@ export function PipelineCanvas() {
   }, []);
   useEffect(() => load(), [load]);
 
-  // --- poll node health (heartbeat-sourced, ~60s cadence; poll every 8s) ---
+  // --- poll node health + cloud-ingest path state (~8s) ---
   useEffect(() => {
     let cancelled = false;
-    const fetchNodes = () =>
+    const fetchAll = () => {
       nodesApi.list().then(
         (list) => {
           if (!cancelled) setNodeList(list);
@@ -87,8 +90,17 @@ export function PipelineCanvas() {
           /* keep last known; node read is best-effort */
         },
       );
-    fetchNodes();
-    const id = setInterval(fetchNodes, NODE_POLL_MS);
+      ingestApi.paths().then(
+        (res) => {
+          if (!cancelled) setIngest(res);
+        },
+        () => {
+          if (!cancelled) setIngest(null); // unreachable → stage 2 "unknown"
+        },
+      );
+    };
+    fetchAll();
+    const id = setInterval(fetchAll, NODE_POLL_MS);
     return () => {
       cancelled = true;
       clearInterval(id);
@@ -106,8 +118,8 @@ export function PipelineCanvas() {
   }, []);
 
   const view = useMemo(
-    () => computeView(cams ?? [], signals, nodeList, alerts, sseConnected, now),
-    [cams, signals, nodeList, alerts, sseConnected, now],
+    () => computeView(cams ?? [], signals, nodeList, ingest, alerts, sseConnected, now),
+    [cams, signals, nodeList, ingest, alerts, sseConnected, now],
   );
 
   if (error) {
@@ -187,6 +199,8 @@ export function PipelineCanvas() {
         <DecisionFeed alerts={alerts} />
         <NodeStrip nodes={nodeList} />
       </div>
+
+      <PipelineTable stages={view.stages} />
     </div>
   );
 }
@@ -202,6 +216,10 @@ type StageView = {
   status: Status;
   provenance: Provenance;
   href?: string;
+  /** What this stage does (table column "Үйл явц"). */
+  process: string;
+  /** This stage's live output (table column "Үр дүн"). */
+  result: string;
 };
 type EdgeState =
   | "flow"
@@ -219,6 +237,7 @@ function computeView(
   cams: LiveCamera[],
   signals: Record<string, CameraSig>,
   nodeList: OrgNodePublic[],
+  ingest: IngestPathsResponse | null,
   alerts: AlertPublic[],
   sseConnected: boolean,
   now: number,
@@ -288,12 +307,30 @@ function computeView(
         : starved
           ? "warn"
           : "ok";
+  // Stage 2 — cloud ingest (MediaMTX runtime path state). available=false ⇒
+  // unknown (honest), never a fake "0 ready".
+  const ingestAvail = ingest?.available ?? false;
+  const readyCount = ingest?.paths.filter((p) => p.ready).length ?? 0;
+  const ingestTotal = ingest?.paths.length ?? total;
+  const s2: Status = !ingestAvail
+    ? "unknown"
+    : ingestTotal === 0
+      ? "unknown"
+      : readyCount === 0
+        ? "down"
+        : readyCount < ingestTotal
+          ? "warn"
+          : "ok";
   // Stage 6 — decision (live SSE)
   const s6: Status = sseConnected ? "ok" : "warn";
 
   const lastHour = alerts.filter(
     (a) => now - new Date(a.created_at).getTime() < 3600_000,
   ).length;
+  const lastAlert = alerts[0] ?? null;
+  const lastVerdict = lastAlert
+    ? `${CATEGORY_LABEL[lastAlert.category]} · ${Math.round(lastAlert.confidence * 100)}%`
+    : null;
 
   const stages: StageView[] = [
     {
@@ -305,15 +342,24 @@ function computeView(
       status: s1,
       provenance: "live",
       href: "/live",
+      process: "Камераас RTSP татаж үүл рүү түлхэх",
+      result: `${flowing}/${total} камер дамжуулж байна`,
     },
     {
       key: "ingest",
       label: "Cloud ingest",
       icon: CloudUpload,
-      metric: "тайлагнаагүй",
-      sub: "эх дохио алга",
-      status: "unknown",
-      provenance: "unknown",
+      metric: ingestAvail ? `${readyCount}/${ingestTotal} ирж байна` : "тайлагнаагүй",
+      sub: ingestAvail
+        ? readyCount < ingestTotal
+          ? `${ingestTotal - readyCount} зам хүлээгдэж`
+          : undefined
+        : "эх дохио алга",
+      status: s2,
+      provenance: ingestAvail ? "live" : "unknown",
+      href: "/live",
+      process: "Үүлэн MediaMTX-д публиш хүлээн авах",
+      result: ingestAvail ? `${readyCount}/${ingestTotal} зам идэвхтэй` : "тайлагнаагүй",
     },
     {
       key: "yolo",
@@ -324,6 +370,8 @@ function computeView(
       status: s3,
       provenance: nodeList.length ? "heartbeat" : "unknown",
       href: "/live",
+      process: "Хүн / объект таних (YOLO)",
+      result: nodeList.length ? `${totalFps.toFixed(1)} fps · ${activeCams} камер` : "тайлагнаагүй",
     },
     {
       key: "rules",
@@ -334,6 +382,8 @@ function computeView(
       status: s4,
       provenance: "live",
       href: "/live",
+      process: "Мөшгих + дүрмээр эрсдэл (0–100)",
+      result: `${persons} хүн${topRisk > 0 ? ` · дээд эрсдэл ${Math.round(topRisk)}%` : ""}`,
     },
     {
       key: "vlm",
@@ -353,6 +403,10 @@ function computeView(
           : providerErr ?? undefined,
       status: s5,
       provenance: nodeList.length ? "heartbeat" : "unknown",
+      process: "Clip-ийг VLM-ээр шинжлэх",
+      result:
+        lastVerdict ??
+        (starved ? "GPU дүүрсэн" : lastAgo != null ? `сүүлд ${lastAgo}с өмнө` : "хүлээгдэж"),
     },
     {
       key: "decision",
@@ -363,13 +417,15 @@ function computeView(
       status: s6,
       provenance: "live",
       href: "/alerts",
+      process: "Сэрэмжлүүлэг / бүртгэл шийдвэр",
+      result: `${lastHour} сэрэмжлүүлэг/цаг${lastAlert ? ` · ${LEVEL_LABEL[lastAlert.alert_level]}` : ""}`,
     },
   ];
 
   // Connectors (5): localize the break.
   const edges: EdgeState[] = [
-    s1 === "down" ? "down" : s1 === "unknown" ? "idle" : "flow", // 1→2 leaving store
-    "unknown", // 2→3 cloud ingest is dark (no endpoint)
+    s1 === "down" ? "down" : s2 === "down" ? "down" : s2 === "unknown" ? "unknown" : "flow", // 1→2
+    s2 === "unknown" ? "unknown" : s2 === "down" ? "down" : s3 === "down" ? "down" : "flow", // 2→3
     s3 === "down" ? "down" : topColor ? riskEdge(topColor) : s3 === "ok" ? "flow" : "idle", // 3→4
     s5 === "down" ? "down" : topColor ? riskEdge(topColor) : "flow", // 4→5
     breachOff ? "off" : starved ? "starve" : s5 === "down" ? "down" : s6 === "ok" ? "flow" : "idle", // 5→6
@@ -393,6 +449,11 @@ function computeView(
     };
   } else if (providerErr || providerNotReady) {
     banner = { tone: "down", text: `VLM бэлэн биш${providerErr ? `: ${providerErr}` : ""}` };
+  } else if (s2 === "down" && s1 !== "down") {
+    banner = {
+      tone: "down",
+      text: `Камер дамжуулж байна ч үүл хүлээж авахгүй байна (${readyCount}/${ingestTotal} зам)`,
+    };
   } else if (s1 === "down") {
     banner = { tone: "down", text: `${total} камер тасарсан — урсгал зогссон` };
   } else if (s1 === "warn") {
@@ -685,5 +746,70 @@ function NodeChip({ node }: { node: OrgNodePublic }) {
         )}
       </div>
     </li>
+  );
+}
+
+const STATUS_LABEL: Record<Status, string> = {
+  ok: "Хэвийн",
+  warn: "Анхаар",
+  down: "Тасарсан",
+  unknown: "Тайлагнаагүй",
+};
+
+/** One row per pipeline stage; columns trace the flow and the last column shows
+ * that stage's live output ("Үр дүн"). */
+function PipelineTable({ stages }: { stages: StageView[] }) {
+  return (
+    <section>
+      <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+        Урсгалын задаргаа
+      </h2>
+      <div className="overflow-x-auto rounded-[var(--radius)] border border-[var(--color-border)]">
+        <table className="w-full min-w-[640px] border-collapse text-sm">
+          <thead>
+            <tr className="border-b border-[var(--color-border)] text-left text-xs text-[var(--color-muted-foreground)]">
+              <th className="px-3 py-2 font-medium">#</th>
+              <th className="px-3 py-2 font-medium">Шат</th>
+              <th className="px-3 py-2 font-medium">Үйл явц</th>
+              <th className="px-3 py-2 font-medium">Эх дохио</th>
+              <th className="px-3 py-2 font-medium">Төлөв</th>
+              <th className="px-3 py-2 font-medium">Үр дүн</th>
+            </tr>
+          </thead>
+          <tbody>
+            {stages.map((s, i) => {
+              const color = STATUS_COLOR[s.status];
+              const Icon = s.icon;
+              return (
+                <tr key={s.key} className="border-b border-[var(--color-border)] last:border-0">
+                  <td className="px-3 py-2.5 align-top text-[var(--color-muted-foreground)]">
+                    {i + 1}
+                  </td>
+                  <td className="px-3 py-2.5 align-top">
+                    <span className="inline-flex items-center gap-2">
+                      <Icon className="h-4 w-4 shrink-0" style={{ color }} aria-hidden />
+                      <span className="font-medium text-[var(--color-foreground)]">{s.label}</span>
+                    </span>
+                  </td>
+                  <td className="px-3 py-2.5 align-top text-[var(--color-muted-foreground)]">
+                    {s.process}
+                  </td>
+                  <td className="px-3 py-2.5 align-top text-[var(--color-muted-foreground)]">
+                    {PROV_LABEL[s.provenance]}
+                  </td>
+                  <td className="px-3 py-2.5 align-top">
+                    <span className="inline-flex items-center gap-1.5" style={{ color }}>
+                      <HealthDot status={s.status} />
+                      <span className="text-xs">{STATUS_LABEL[s.status]}</span>
+                    </span>
+                  </td>
+                  <td className="px-3 py-2.5 align-top text-[var(--color-foreground)]">{s.result}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }

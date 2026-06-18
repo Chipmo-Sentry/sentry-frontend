@@ -537,4 +537,27 @@ export const nodes = {
   list: () => request<OrgNodePublic[]>("/api/v1/nodes"),
 };
 
+// === Cloud ingest (MediaMTX runtime path state — Pipeline Canvas stage 2) ===
+
+/** Runtime publish state of one camera's cloud stream. `ready` = a publisher is
+ * active and video is arriving at the cloud ingest right now. */
+export interface IngestPath {
+  path: string;
+  name: string;
+  ready: boolean;
+  readers: number;
+}
+
+/** `available=false` ⇒ MediaMTX control API not configured/unreachable, so the
+ * canvas shows stage 2 as "unknown" rather than a fake "0 ready". */
+export interface IngestPathsResponse {
+  available: boolean;
+  paths: IngestPath[];
+}
+
+export const ingest = {
+  /** Cloud-ingest publish state for THIS org's camera paths. */
+  paths: () => request<IngestPathsResponse>("/api/v1/ingest/paths"),
+};
+
 export { ApiError };
