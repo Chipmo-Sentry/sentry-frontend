@@ -3,20 +3,9 @@
 import { useEffect, useRef } from "react";
 
 import { useLiveMetadata } from "@/lib/live-ws";
+import type { CameraSig } from "@/lib/pipeline";
 
-/** Live signal one camera contributes to the Pipeline Canvas aggregate. */
-export type CameraSig = {
-  connected: boolean;
-  /** Per-frame YOLO throughput reported by the node (GPU-contended). */
-  fps: number;
-  /** People currently tracked in the latest frame. */
-  trackCount: number;
-  counts: { green: number; yellow: number; red: number };
-  maxRisk: number;
-  maxColor: "green" | "yellow" | "red" | null;
-  /** Epoch ms of the last real frame — null until the first arrives. */
-  lastFrameAt: number | null;
-};
+export type { CameraSig };
 
 const EMPTY: CameraSig = {
   connected: false,

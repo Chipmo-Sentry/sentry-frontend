@@ -13,119 +13,46 @@ import {
   ScanEye,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 
-import {
-  cameras as camerasApi,
-  ingest as ingestApi,
-  nodes as nodesApi,
-  type IngestPathsResponse,
-  type OrgNodePublic,
-} from "@/lib/api";
-import { useAlertStreamContext } from "@/lib/alert-stream-context";
+import type { IngestPathsResponse, OrgNodePublic } from "@/lib/api";
 import { CATEGORY_LABEL, LEVEL_LABEL } from "@/lib/labels";
+import {
+  computeCameraRows,
+  FRESH_MS,
+  RISK_HEX,
+  STARVE_SEC,
+  STATUS_COLOR,
+  type LiveCamera,
+} from "@/lib/pipeline";
 import { relativeTime } from "@/lib/time";
-import type { AlertPublic, CameraPublic } from "@/lib/types";
+import type { AlertPublic } from "@/lib/types";
 
+import { CameraMatrix } from "./CameraMatrix";
 import { CameraSignal, type CameraSig } from "./CameraSignal";
+import { HealthDot } from "./ui";
+import { usePipelineData } from "./usePipelineData";
 
-type LiveCamera = { id: string; path: string; name: string };
 type Status = "ok" | "warn" | "down" | "unknown";
 type Provenance = "live" | "heartbeat" | "unknown";
 
-const FRESH_MS = 6000; // a frame within 6s ⇒ "flowing"
-const STARVE_SEC = 20; // VLM last-run age beyond this (with red people present) ⇒ starved
-const NODE_POLL_MS = 8000;
-
-const STATUS_COLOR: Record<Status, string> = {
-  ok: "var(--color-success)",
-  warn: "var(--color-warning)",
-  down: "var(--color-danger)",
-  unknown: "var(--color-muted-foreground)",
-};
-const RISK_HEX = { green: "#22c55e", yellow: "#eab308", red: "#ef4444" } as const;
-
 export function PipelineCanvas() {
-  const [cams, setCams] = useState<LiveCamera[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [nodeList, setNodeList] = useState<OrgNodePublic[]>([]);
-  const [ingest, setIngest] = useState<IngestPathsResponse | null>(null);
-  const [signals, setSignals] = useState<Record<string, CameraSig>>({});
-  const [now, setNow] = useState(() => Date.now());
-  const { alerts, connected: sseConnected } = useAlertStreamContext();
-
-  // --- load cameras (config) ---
-  const load = useCallback(() => {
-    setError(null);
-    setCams(null);
-    let cancelled = false;
-    camerasApi.list().then(
-      (list: CameraPublic[]) => {
-        if (cancelled) return;
-        setCams(
-          list
-            .filter((c) => c.enabled && c.mediamtx_path)
-            .map((c) => ({ id: c.id, path: c.mediamtx_path as string, name: c.name })),
-        );
-      },
-      (e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Алдаа");
-      },
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-  useEffect(() => load(), [load]);
-
-  // --- poll node health + cloud-ingest path state (~8s) ---
-  useEffect(() => {
-    let cancelled = false;
-    const fetchAll = () => {
-      nodesApi.list().then(
-        (list) => {
-          if (!cancelled) setNodeList(list);
-        },
-        () => {
-          /* keep last known; node read is best-effort */
-        },
-      );
-      ingestApi.paths().then(
-        (res) => {
-          if (!cancelled) setIngest(res);
-        },
-        () => {
-          if (!cancelled) setIngest(null); // unreachable → stage 2 "unknown"
-        },
-      );
-    };
-    fetchAll();
-    const id = setInterval(fetchAll, NODE_POLL_MS);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
-  }, []);
-
-  // --- age frame freshness so "flowing" decays without a new frame ---
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 2000);
-    return () => clearInterval(id);
-  }, []);
-
-  const onReport = useCallback((path: string, sig: CameraSig) => {
-    setSignals((prev) => ({ ...prev, [path]: sig }));
-  }, []);
+  const { cams, error, reload, nodeList, ingest, signals, onReport, alerts, sseConnected, now } =
+    usePipelineData();
 
   const view = useMemo(
     () => computeView(cams ?? [], signals, nodeList, ingest, alerts, sseConnected, now),
     [cams, signals, nodeList, ingest, alerts, sseConnected, now],
   );
+  const cameraRows = useMemo(
+    () => computeCameraRows(cams ?? [], signals, nodeList, ingest, alerts, now),
+    [cams, signals, nodeList, ingest, alerts, now],
+  );
 
   if (error) {
     return (
       <div className="p-8">
-        <ErrorState message={error} onRetry={load} />
+        <ErrorState message={error} onRetry={reload} />
       </div>
     );
   }
@@ -200,7 +127,7 @@ export function PipelineCanvas() {
         <NodeStrip nodes={nodeList} />
       </div>
 
-      <PipelineTable stages={view.stages} />
+      <CameraMatrix rows={cameraRows} />
     </div>
   );
 }
@@ -341,7 +268,7 @@ function computeView(
       sub: connectedCount < total ? `${total - connectedCount} холбогдоогүй` : undefined,
       status: s1,
       provenance: "live",
-      href: "/live",
+      href: "/pipeline/stage/camera",
       process: "Камераас RTSP татаж үүл рүү түлхэх",
       result: `${flowing}/${total} камер дамжуулж байна`,
     },
@@ -357,7 +284,7 @@ function computeView(
         : "эх дохио алга",
       status: s2,
       provenance: ingestAvail ? "live" : "unknown",
-      href: "/live",
+      href: "/pipeline/stage/ingest",
       process: "Үүлэн MediaMTX-д публиш хүлээн авах",
       result: ingestAvail ? `${readyCount}/${ingestTotal} зам идэвхтэй` : "тайлагнаагүй",
     },
@@ -369,7 +296,7 @@ function computeView(
       sub: nodeList.length ? `${activeCams} идэвхтэй` : undefined,
       status: s3,
       provenance: nodeList.length ? "heartbeat" : "unknown",
-      href: "/live",
+      href: "/pipeline/stage/yolo",
       process: "Хүн / объект таних (YOLO)",
       result: nodeList.length ? `${totalFps.toFixed(1)} fps · ${activeCams} камер` : "тайлагнаагүй",
     },
@@ -381,7 +308,7 @@ function computeView(
       sub: red || yellow ? `${red} улаан · ${yellow} шар` : undefined,
       status: s4,
       provenance: "live",
-      href: "/live",
+      href: "/pipeline/stage/tracker",
       process: "Мөшгих + дүрмээр эрсдэл (0–100)",
       result: `${persons} хүн${topRisk > 0 ? ` · дээд эрсдэл ${Math.round(topRisk)}%` : ""}`,
     },
@@ -403,6 +330,7 @@ function computeView(
           : providerErr ?? undefined,
       status: s5,
       provenance: nodeList.length ? "heartbeat" : "unknown",
+      href: "/pipeline/stage/vlm",
       process: "Clip-ийг VLM-ээр шинжлэх",
       result:
         lastVerdict ??
@@ -416,7 +344,7 @@ function computeView(
       sub: breachOff ? "хяналт ассан" : undefined,
       status: s6,
       provenance: "live",
-      href: "/alerts",
+      href: "/pipeline/stage/decision",
       process: "Сэрэмжлүүлэг / бүртгэл шийдвэр",
       result: `${lastHour} сэрэмжлүүлэг/цаг${lastAlert ? ` · ${LEVEL_LABEL[lastAlert.alert_level]}` : ""}`,
     },
@@ -472,26 +400,6 @@ function riskEdge(color: "green" | "yellow" | "red"): EdgeState {
 }
 
 // ============================ presentational ============================
-
-function HealthDot({ status }: { status: Status }) {
-  const color = STATUS_COLOR[status];
-  if (status === "unknown") {
-    return (
-      <span
-        className="inline-block h-2.5 w-2.5 rounded-full border border-dashed"
-        style={{ borderColor: color }}
-        aria-hidden
-      />
-    );
-  }
-  return (
-    <span
-      className="inline-block h-2.5 w-2.5 rounded-full"
-      style={{ background: color }}
-      aria-hidden
-    />
-  );
-}
 
 const PROV_LABEL: Record<Provenance, string> = {
   live: "шууд",
@@ -749,67 +657,3 @@ function NodeChip({ node }: { node: OrgNodePublic }) {
   );
 }
 
-const STATUS_LABEL: Record<Status, string> = {
-  ok: "Хэвийн",
-  warn: "Анхаар",
-  down: "Тасарсан",
-  unknown: "Тайлагнаагүй",
-};
-
-/** One row per pipeline stage; columns trace the flow and the last column shows
- * that stage's live output ("Үр дүн"). */
-function PipelineTable({ stages }: { stages: StageView[] }) {
-  return (
-    <section>
-      <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
-        Урсгалын задаргаа
-      </h2>
-      <div className="overflow-x-auto rounded-[var(--radius)] border border-[var(--color-border)]">
-        <table className="w-full min-w-[640px] border-collapse text-sm">
-          <thead>
-            <tr className="border-b border-[var(--color-border)] text-left text-xs text-[var(--color-muted-foreground)]">
-              <th className="px-3 py-2 font-medium">#</th>
-              <th className="px-3 py-2 font-medium">Шат</th>
-              <th className="px-3 py-2 font-medium">Үйл явц</th>
-              <th className="px-3 py-2 font-medium">Эх дохио</th>
-              <th className="px-3 py-2 font-medium">Төлөв</th>
-              <th className="px-3 py-2 font-medium">Үр дүн</th>
-            </tr>
-          </thead>
-          <tbody>
-            {stages.map((s, i) => {
-              const color = STATUS_COLOR[s.status];
-              const Icon = s.icon;
-              return (
-                <tr key={s.key} className="border-b border-[var(--color-border)] last:border-0">
-                  <td className="px-3 py-2.5 align-top text-[var(--color-muted-foreground)]">
-                    {i + 1}
-                  </td>
-                  <td className="px-3 py-2.5 align-top">
-                    <span className="inline-flex items-center gap-2">
-                      <Icon className="h-4 w-4 shrink-0" style={{ color }} aria-hidden />
-                      <span className="font-medium text-[var(--color-foreground)]">{s.label}</span>
-                    </span>
-                  </td>
-                  <td className="px-3 py-2.5 align-top text-[var(--color-muted-foreground)]">
-                    {s.process}
-                  </td>
-                  <td className="px-3 py-2.5 align-top text-[var(--color-muted-foreground)]">
-                    {PROV_LABEL[s.provenance]}
-                  </td>
-                  <td className="px-3 py-2.5 align-top">
-                    <span className="inline-flex items-center gap-1.5" style={{ color }}>
-                      <HealthDot status={s.status} />
-                      <span className="text-xs">{STATUS_LABEL[s.status]}</span>
-                    </span>
-                  </td>
-                  <td className="px-3 py-2.5 align-top text-[var(--color-foreground)]">{s.result}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  );
-}
