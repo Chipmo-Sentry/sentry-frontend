@@ -37,7 +37,7 @@ export function CameraMatrix({ rows }: { rows: CameraRow[] }) {
               >
                 <td className="px-3 py-2.5 align-top">
                   <Link
-                    href={`/live/${encodeURIComponent(row.cam.path)}`}
+                    href={`/pipeline/camera/${encodeURIComponent(row.cam.path)}`}
                     className="font-medium text-[var(--color-foreground)] hover:underline"
                   >
                     {row.cam.name}

@@ -196,7 +196,10 @@ function Row({
   return (
     <tr className="border-b border-[var(--color-border)] last:border-0">
       <td className="px-3 py-2.5 align-top">
-        <Link href={`/live/${encodeURIComponent(path)}`} className="text-[var(--color-foreground)] hover:underline">
+        <Link
+          href={`/pipeline/camera/${encodeURIComponent(path)}`}
+          className="text-[var(--color-foreground)] hover:underline"
+        >
           {name}
         </Link>
       </td>

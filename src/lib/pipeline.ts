@@ -3,6 +3,7 @@
 
 import type { IngestPathsResponse, NodeCameraHealth, OrgNodePublic } from "./api";
 import { CATEGORY_LABEL, LEVEL_LABEL } from "./labels";
+import type { Track } from "./live-ws";
 import type { AlertPublic } from "./types";
 
 export type StageKey = "camera" | "ingest" | "yolo" | "tracker" | "vlm" | "decision";
@@ -204,6 +205,27 @@ export function computeCameraRows(
       },
     };
   });
+}
+
+/** Reduce a frame's tracks + connection state into one camera's signal. Shared
+ * by the CameraSignal probe (canvas/matrix) and the single-camera lane. */
+export function deriveCameraSig(
+  tracks: Track[],
+  connected: boolean,
+  fps: number,
+  lastFrameAt: number | null,
+): CameraSig {
+  const counts = { green: 0, yellow: 0, red: 0 };
+  let maxRisk = 0;
+  let maxColor: CameraSig["maxColor"] = null;
+  for (const t of tracks) {
+    counts[t.color] += 1;
+    if (t.risk_pct >= maxRisk) {
+      maxRisk = t.risk_pct;
+      maxColor = t.color;
+    }
+  }
+  return { connected, fps, trackCount: tracks.length, counts, maxRisk, maxColor, lastFrameAt };
 }
 
 /** Worst status across a set of cells — for a stage's overall header. */
