@@ -532,9 +532,33 @@ export interface OrgNodePublic {
   cameras: NodeCameraHealth[];
 }
 
+/** One resource-telemetry sample (per heartbeat) for the node history charts. */
+export interface NodeMetricSample {
+  ts: string;
+  cpu_pct: number | null;
+  ram_used_mb: number | null;
+  ram_total_mb: number | null;
+  gpu_pct: number | null;
+  vram_used_mb: number | null;
+  vram_total_mb: number | null;
+  gpu_temp_c: number | null;
+  fps_inference: number | null;
+  active_cameras: number | null;
+  sentry_cpu_pct: number | null;
+  sentry_ram_mb: number | null;
+  sentry_vram_mb: number | null;
+}
+
+export type NodeMetricRange = "1h" | "6h" | "24h" | "7d" | "30d";
+
 export const nodes = {
   /** AI nodes that serve at least one of this org's cameras. */
   list: () => request<OrgNodePublic[]>("/api/v1/nodes"),
+  /** Resource time-series for a node the org owns (404 otherwise). */
+  metrics: (id: string, range: NodeMetricRange = "24h") =>
+    request<NodeMetricSample[]>(
+      `/api/v1/nodes/${encodeURIComponent(id)}/metrics?range=${range}`,
+    ),
 };
 
 // === Cloud ingest (MediaMTX runtime path state — Pipeline Canvas stage 2) ===

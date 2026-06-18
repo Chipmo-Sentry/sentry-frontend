@@ -2,6 +2,7 @@
 
 import { Logo } from "@chipmo-sentry/ui-kit";
 import {
+  Activity,
   Bell,
   Brain,
   Cctv,
@@ -49,6 +50,7 @@ export const NAV: readonly NavItem[] = [
   },
   { href: "/dashboard", label: "Самбар", icon: Bell },
   { href: "/live", label: "Шууд харах", icon: Radio },
+  { href: "/health", label: "Эрүүл мэнд", icon: Activity },
   // ADR-0014 (live-first): clip upload is admin/debug-only — route stays
   // reachable by direct URL but is not part of the customer nav.
   { href: "/alerts", label: "Сэжигтэй үйлдэл", icon: Video },
