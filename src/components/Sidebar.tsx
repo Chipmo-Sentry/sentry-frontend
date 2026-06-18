@@ -2,9 +2,11 @@
 
 import { Logo } from "@chipmo-sentry/ui-kit";
 import {
+  Activity,
   Bell,
   Brain,
   Cctv,
+  ChevronDown,
   LogOut,
   Radio,
   ScrollText,
@@ -19,20 +21,36 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 
 import { auth } from "@/lib/api";
 
+type NavChild = { href: string; label: string };
 type NavItem = {
   href: string;
   label: string;
   icon: LucideIcon;
   superAdmin?: boolean;
+  children?: NavChild[];
 };
 
 export const NAV: readonly NavItem[] = [
-  { href: "/pipeline", label: "Урсгал", icon: Workflow },
+  {
+    href: "/pipeline",
+    label: "Урсгал",
+    icon: Workflow,
+    children: [
+      { href: "/pipeline/stage/camera", label: "Камер" },
+      { href: "/pipeline/stage/ingest", label: "Cloud ingest" },
+      { href: "/pipeline/stage/yolo", label: "YOLO" },
+      { href: "/pipeline/stage/tracker", label: "Tracker + дүрэм" },
+      { href: "/pipeline/stage/vlm", label: "VLM" },
+      { href: "/pipeline/stage/decision", label: "Шийдвэр" },
+    ],
+  },
   { href: "/dashboard", label: "Самбар", icon: Bell },
   { href: "/live", label: "Шууд харах", icon: Radio },
+  { href: "/health", label: "Эрүүл мэнд", icon: Activity },
   // ADR-0014 (live-first): clip upload is admin/debug-only — route stays
   // reachable by direct URL but is not part of the customer nav.
   { href: "/alerts", label: "Сэжигтэй үйлдэл", icon: Video },
@@ -47,6 +65,10 @@ export const NAV: readonly NavItem[] = [
 
 /** Returns the nav label for a given pathname (used by Topbar). */
 export function navTitle(pathname: string): string {
+  for (const n of NAV) {
+    const child = n.children?.find((c) => pathname === c.href);
+    if (child) return child.label;
+  }
   const match = NAV.find(
     (n) => pathname === n.href || pathname.startsWith(`${n.href}/`),
   );
@@ -63,6 +85,7 @@ function SidebarContent({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [open, setOpen] = useState<Record<string, boolean>>({});
 
   async function onLogout() {
     try {
@@ -85,23 +108,67 @@ function SidebarContent({
       </div>
       <nav className="flex-1 space-y-1 overflow-y-auto p-2">
         {items.map((item) => {
-          const active =
+          const sectionActive =
             pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const hasChildren = !!item.children?.length;
           const Icon = item.icon;
+          // Parent highlights on its exact route; children own their own highlight.
+          const linkActive = hasChildren ? pathname === item.href : sectionActive;
+          const expanded = hasChildren ? (open[item.href] ?? sectionActive) : false;
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onNavigate}
-              className={`flex items-center gap-3 rounded-[var(--radius)] px-3 py-2 text-sm transition-colors ${
-                active
-                  ? "bg-[var(--color-primary)] text-[var(--color-primary-foreground)]"
-                  : "text-[var(--color-foreground)] hover:bg-[var(--color-muted)]"
-              }`}
-            >
-              <Icon className="h-4 w-4" aria-hidden />
-              {item.label}
-            </Link>
+            <div key={item.href}>
+              <div className="flex items-center gap-1">
+                <Link
+                  href={item.href}
+                  onClick={onNavigate}
+                  className={`flex flex-1 items-center gap-3 rounded-[var(--radius)] px-3 py-2 text-sm transition-colors ${
+                    linkActive
+                      ? "bg-[var(--color-primary)] text-[var(--color-primary-foreground)]"
+                      : "text-[var(--color-foreground)] hover:bg-[var(--color-muted)]"
+                  }`}
+                >
+                  <Icon className="h-4 w-4" aria-hidden />
+                  {item.label}
+                </Link>
+                {hasChildren && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setOpen((o) => ({ ...o, [item.href]: !(o[item.href] ?? sectionActive) }))
+                    }
+                    aria-label={expanded ? "Хураах" : "Дэлгэх"}
+                    aria-expanded={expanded}
+                    className="rounded-[var(--radius)] p-1.5 text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-muted)]"
+                  >
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform ${expanded ? "" : "-rotate-90"}`}
+                      aria-hidden
+                    />
+                  </button>
+                )}
+              </div>
+              {hasChildren && expanded && (
+                <div className="ml-[18px] mt-0.5 space-y-0.5 border-l border-[var(--color-border)] pl-3">
+                  {item.children!.map((child) => {
+                    const cActive = pathname === child.href;
+                    return (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        onClick={onNavigate}
+                        className={`block rounded-[var(--radius)] px-3 py-1.5 text-sm transition-colors ${
+                          cActive
+                            ? "bg-[var(--color-primary)] text-[var(--color-primary-foreground)]"
+                            : "text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]"
+                        }`}
+                      >
+                        {child.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           );
         })}
       </nav>

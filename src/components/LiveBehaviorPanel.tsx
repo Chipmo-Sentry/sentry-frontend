@@ -7,7 +7,7 @@ import { type Track, useLiveMetadata } from "@/lib/live-ws";
 
 /** Behavior state-machine display labels (engine enum names — not part of the
  * /behaviors catalog, so a local map is the source of truth here). */
-const STATE_LABEL: Record<string, string> = {
+export const STATE_LABEL: Record<string, string> = {
   IDLE: "Идэвхгүй",
   SUSPICIOUS: "Сэжигтэй",
   PRODUCT_INTERACTION: "Бараатай харьцаж байна",
@@ -41,7 +41,9 @@ function fmtDuration(sec: number): string {
   return m > 0 ? `${m}мин ${s}с` : `${s}с`;
 }
 
-function PersonCard({
+/** Per-person criteria breakdown card. Exported so the single-camera pipeline
+ * lane can render the same breakdown inline (not just the slide-in panel). */
+export function PersonCard({
   track,
   frameTsMs,
   labels,

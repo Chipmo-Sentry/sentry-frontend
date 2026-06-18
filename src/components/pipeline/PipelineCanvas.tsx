@@ -13,107 +13,46 @@ import {
   ScanEye,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 
-import {
-  cameras as camerasApi,
-  nodes as nodesApi,
-  type OrgNodePublic,
-} from "@/lib/api";
-import { useAlertStreamContext } from "@/lib/alert-stream-context";
+import type { IngestPathsResponse, OrgNodePublic } from "@/lib/api";
 import { CATEGORY_LABEL, LEVEL_LABEL } from "@/lib/labels";
+import {
+  computeCameraRows,
+  FRESH_MS,
+  RISK_HEX,
+  STARVE_SEC,
+  STATUS_COLOR,
+  type LiveCamera,
+} from "@/lib/pipeline";
 import { relativeTime } from "@/lib/time";
-import type { AlertPublic, CameraPublic } from "@/lib/types";
+import type { AlertPublic } from "@/lib/types";
 
+import { CameraMatrix } from "./CameraMatrix";
 import { CameraSignal, type CameraSig } from "./CameraSignal";
+import { HealthDot } from "./ui";
+import { usePipelineData } from "./usePipelineData";
 
-type LiveCamera = { id: string; path: string; name: string };
 type Status = "ok" | "warn" | "down" | "unknown";
 type Provenance = "live" | "heartbeat" | "unknown";
 
-const FRESH_MS = 6000; // a frame within 6s ⇒ "flowing"
-const STARVE_SEC = 20; // VLM last-run age beyond this (with red people present) ⇒ starved
-const NODE_POLL_MS = 8000;
-
-const STATUS_COLOR: Record<Status, string> = {
-  ok: "var(--color-success)",
-  warn: "var(--color-warning)",
-  down: "var(--color-danger)",
-  unknown: "var(--color-muted-foreground)",
-};
-const RISK_HEX = { green: "#22c55e", yellow: "#eab308", red: "#ef4444" } as const;
-
 export function PipelineCanvas() {
-  const [cams, setCams] = useState<LiveCamera[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [nodeList, setNodeList] = useState<OrgNodePublic[]>([]);
-  const [signals, setSignals] = useState<Record<string, CameraSig>>({});
-  const [now, setNow] = useState(() => Date.now());
-  const { alerts, connected: sseConnected } = useAlertStreamContext();
-
-  // --- load cameras (config) ---
-  const load = useCallback(() => {
-    setError(null);
-    setCams(null);
-    let cancelled = false;
-    camerasApi.list().then(
-      (list: CameraPublic[]) => {
-        if (cancelled) return;
-        setCams(
-          list
-            .filter((c) => c.enabled && c.mediamtx_path)
-            .map((c) => ({ id: c.id, path: c.mediamtx_path as string, name: c.name })),
-        );
-      },
-      (e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Алдаа");
-      },
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-  useEffect(() => load(), [load]);
-
-  // --- poll node health (heartbeat-sourced, ~60s cadence; poll every 8s) ---
-  useEffect(() => {
-    let cancelled = false;
-    const fetchNodes = () =>
-      nodesApi.list().then(
-        (list) => {
-          if (!cancelled) setNodeList(list);
-        },
-        () => {
-          /* keep last known; node read is best-effort */
-        },
-      );
-    fetchNodes();
-    const id = setInterval(fetchNodes, NODE_POLL_MS);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
-  }, []);
-
-  // --- age frame freshness so "flowing" decays without a new frame ---
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 2000);
-    return () => clearInterval(id);
-  }, []);
-
-  const onReport = useCallback((path: string, sig: CameraSig) => {
-    setSignals((prev) => ({ ...prev, [path]: sig }));
-  }, []);
+  const { cams, error, reload, nodeList, ingest, signals, onReport, alerts, sseConnected, now } =
+    usePipelineData();
 
   const view = useMemo(
-    () => computeView(cams ?? [], signals, nodeList, alerts, sseConnected, now),
-    [cams, signals, nodeList, alerts, sseConnected, now],
+    () => computeView(cams ?? [], signals, nodeList, ingest, alerts, sseConnected, now),
+    [cams, signals, nodeList, ingest, alerts, sseConnected, now],
+  );
+  const cameraRows = useMemo(
+    () => computeCameraRows(cams ?? [], signals, nodeList, ingest, alerts, now),
+    [cams, signals, nodeList, ingest, alerts, now],
   );
 
   if (error) {
     return (
       <div className="p-8">
-        <ErrorState message={error} onRetry={load} />
+        <ErrorState message={error} onRetry={reload} />
       </div>
     );
   }
@@ -187,6 +126,8 @@ export function PipelineCanvas() {
         <DecisionFeed alerts={alerts} />
         <NodeStrip nodes={nodeList} />
       </div>
+
+      <CameraMatrix rows={cameraRows} />
     </div>
   );
 }
@@ -202,6 +143,10 @@ type StageView = {
   status: Status;
   provenance: Provenance;
   href?: string;
+  /** What this stage does (table column "Үйл явц"). */
+  process: string;
+  /** This stage's live output (table column "Үр дүн"). */
+  result: string;
 };
 type EdgeState =
   | "flow"
@@ -219,6 +164,7 @@ function computeView(
   cams: LiveCamera[],
   signals: Record<string, CameraSig>,
   nodeList: OrgNodePublic[],
+  ingest: IngestPathsResponse | null,
   alerts: AlertPublic[],
   sseConnected: boolean,
   now: number,
@@ -288,12 +234,30 @@ function computeView(
         : starved
           ? "warn"
           : "ok";
+  // Stage 2 — cloud ingest (MediaMTX runtime path state). available=false ⇒
+  // unknown (honest), never a fake "0 ready".
+  const ingestAvail = ingest?.available ?? false;
+  const readyCount = ingest?.paths.filter((p) => p.ready).length ?? 0;
+  const ingestTotal = ingest?.paths.length ?? total;
+  const s2: Status = !ingestAvail
+    ? "unknown"
+    : ingestTotal === 0
+      ? "unknown"
+      : readyCount === 0
+        ? "down"
+        : readyCount < ingestTotal
+          ? "warn"
+          : "ok";
   // Stage 6 — decision (live SSE)
   const s6: Status = sseConnected ? "ok" : "warn";
 
   const lastHour = alerts.filter(
     (a) => now - new Date(a.created_at).getTime() < 3600_000,
   ).length;
+  const lastAlert = alerts[0] ?? null;
+  const lastVerdict = lastAlert
+    ? `${CATEGORY_LABEL[lastAlert.category]} · ${Math.round(lastAlert.confidence * 100)}%`
+    : null;
 
   const stages: StageView[] = [
     {
@@ -304,16 +268,25 @@ function computeView(
       sub: connectedCount < total ? `${total - connectedCount} холбогдоогүй` : undefined,
       status: s1,
       provenance: "live",
-      href: "/live",
+      href: "/pipeline/stage/camera",
+      process: "Камераас RTSP татаж үүл рүү түлхэх",
+      result: `${flowing}/${total} камер дамжуулж байна`,
     },
     {
       key: "ingest",
       label: "Cloud ingest",
       icon: CloudUpload,
-      metric: "тайлагнаагүй",
-      sub: "эх дохио алга",
-      status: "unknown",
-      provenance: "unknown",
+      metric: ingestAvail ? `${readyCount}/${ingestTotal} ирж байна` : "тайлагнаагүй",
+      sub: ingestAvail
+        ? readyCount < ingestTotal
+          ? `${ingestTotal - readyCount} зам хүлээгдэж`
+          : undefined
+        : "эх дохио алга",
+      status: s2,
+      provenance: ingestAvail ? "live" : "unknown",
+      href: "/pipeline/stage/ingest",
+      process: "Үүлэн MediaMTX-д публиш хүлээн авах",
+      result: ingestAvail ? `${readyCount}/${ingestTotal} зам идэвхтэй` : "тайлагнаагүй",
     },
     {
       key: "yolo",
@@ -323,7 +296,9 @@ function computeView(
       sub: nodeList.length ? `${activeCams} идэвхтэй` : undefined,
       status: s3,
       provenance: nodeList.length ? "heartbeat" : "unknown",
-      href: "/live",
+      href: "/pipeline/stage/yolo",
+      process: "Хүн / объект таних (YOLO)",
+      result: nodeList.length ? `${totalFps.toFixed(1)} fps · ${activeCams} камер` : "тайлагнаагүй",
     },
     {
       key: "rules",
@@ -333,7 +308,9 @@ function computeView(
       sub: red || yellow ? `${red} улаан · ${yellow} шар` : undefined,
       status: s4,
       provenance: "live",
-      href: "/live",
+      href: "/pipeline/stage/tracker",
+      process: "Мөшгих + дүрмээр эрсдэл (0–100)",
+      result: `${persons} хүн${topRisk > 0 ? ` · дээд эрсдэл ${Math.round(topRisk)}%` : ""}`,
     },
     {
       key: "vlm",
@@ -353,6 +330,11 @@ function computeView(
           : providerErr ?? undefined,
       status: s5,
       provenance: nodeList.length ? "heartbeat" : "unknown",
+      href: "/pipeline/stage/vlm",
+      process: "Clip-ийг VLM-ээр шинжлэх",
+      result:
+        lastVerdict ??
+        (starved ? "GPU дүүрсэн" : lastAgo != null ? `сүүлд ${lastAgo}с өмнө` : "хүлээгдэж"),
     },
     {
       key: "decision",
@@ -362,14 +344,16 @@ function computeView(
       sub: breachOff ? "хяналт ассан" : undefined,
       status: s6,
       provenance: "live",
-      href: "/alerts",
+      href: "/pipeline/stage/decision",
+      process: "Сэрэмжлүүлэг / бүртгэл шийдвэр",
+      result: `${lastHour} сэрэмжлүүлэг/цаг${lastAlert ? ` · ${LEVEL_LABEL[lastAlert.alert_level]}` : ""}`,
     },
   ];
 
   // Connectors (5): localize the break.
   const edges: EdgeState[] = [
-    s1 === "down" ? "down" : s1 === "unknown" ? "idle" : "flow", // 1→2 leaving store
-    "unknown", // 2→3 cloud ingest is dark (no endpoint)
+    s1 === "down" ? "down" : s2 === "down" ? "down" : s2 === "unknown" ? "unknown" : "flow", // 1→2
+    s2 === "unknown" ? "unknown" : s2 === "down" ? "down" : s3 === "down" ? "down" : "flow", // 2→3
     s3 === "down" ? "down" : topColor ? riskEdge(topColor) : s3 === "ok" ? "flow" : "idle", // 3→4
     s5 === "down" ? "down" : topColor ? riskEdge(topColor) : "flow", // 4→5
     breachOff ? "off" : starved ? "starve" : s5 === "down" ? "down" : s6 === "ok" ? "flow" : "idle", // 5→6
@@ -393,6 +377,11 @@ function computeView(
     };
   } else if (providerErr || providerNotReady) {
     banner = { tone: "down", text: `VLM бэлэн биш${providerErr ? `: ${providerErr}` : ""}` };
+  } else if (s2 === "down" && s1 !== "down") {
+    banner = {
+      tone: "down",
+      text: `Камер дамжуулж байна ч үүл хүлээж авахгүй байна (${readyCount}/${ingestTotal} зам)`,
+    };
   } else if (s1 === "down") {
     banner = { tone: "down", text: `${total} камер тасарсан — урсгал зогссон` };
   } else if (s1 === "warn") {
@@ -411,26 +400,6 @@ function riskEdge(color: "green" | "yellow" | "red"): EdgeState {
 }
 
 // ============================ presentational ============================
-
-function HealthDot({ status }: { status: Status }) {
-  const color = STATUS_COLOR[status];
-  if (status === "unknown") {
-    return (
-      <span
-        className="inline-block h-2.5 w-2.5 rounded-full border border-dashed"
-        style={{ borderColor: color }}
-        aria-hidden
-      />
-    );
-  }
-  return (
-    <span
-      className="inline-block h-2.5 w-2.5 rounded-full"
-      style={{ background: color }}
-      aria-hidden
-    />
-  );
-}
 
 const PROV_LABEL: Record<Provenance, string> = {
   live: "шууд",
@@ -687,3 +656,4 @@ function NodeChip({ node }: { node: OrgNodePublic }) {
     </li>
   );
 }
+
