@@ -3,10 +3,15 @@
 import { EmptyState, ErrorState, Spinner } from "@chipmo-sentry/ui-kit";
 import { ArrowLeft, Bell, Brain, Cctv, CloudUpload, Route, ScanEye } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { PersonCard } from "@/components/LiveBehaviorPanel";
-import { behaviors as behaviorsApi, type OrgNodePublic } from "@/lib/api";
+import {
+  behaviors as behaviorsApi,
+  nodes as nodesApi,
+  type NodeDiagResponse,
+  type OrgNodePublic,
+} from "@/lib/api";
 import { CATEGORY_LABEL, LEVEL_LABEL } from "@/lib/labels";
 import { useLiveMetadata } from "@/lib/live-ws";
 import {
@@ -178,6 +183,9 @@ export function StageDetail({
       {/* Stage-specific deep detail */}
       {stageKey === "tracker" && (
         <TrackerLive cams={stageRows.map((s) => ({ path: s.cam.path, name: s.cam.name }))} />
+      )}
+      {(stageKey === "vlm" || stageKey === "yolo" || stageKey === "camera") && (
+        <StageDiag nodes={relevantNodes} stageKey={stageKey} />
       )}
       {stageKey === "yolo" && <YoloNodes nodes={relevantNodes} />}
       {stageKey === "vlm" && <VlmNodes nodes={relevantNodes} alerts={alerts} />}
@@ -445,6 +453,213 @@ function TrackerCam({
         </p>
       )}
     </div>
+  );
+}
+
+function StageDiag({ nodes, stageKey }: { nodes: OrgNodePublic[]; stageKey: StageKey }) {
+  const [diags, setDiags] = useState<Record<string, NodeDiagResponse>>({});
+  const ids = nodes.map((n) => n.id).join(",");
+  useEffect(() => {
+    if (!nodes.length) return;
+    let cancelled = false;
+    const fetchAll = () => {
+      for (const n of nodes) {
+        nodesApi.diag(n.id).then(
+          (r) => {
+            if (!cancelled) setDiags((p) => ({ ...p, [n.id]: r }));
+          },
+          () => {},
+        );
+      }
+    };
+    fetchAll();
+    const t = setInterval(fetchAll, 10000);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ids]);
+
+  if (!nodes.length) return null;
+  return (
+    <section>
+      <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+        Node оношлогоо — дэлгэрэнгүй лог
+      </h2>
+      <div className="space-y-3">
+        {nodes.map((n) => {
+          const res = diags[n.id];
+          const label = n.name ?? "AI node";
+          if (!res) {
+            return (
+              <p
+                key={n.id}
+                className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-3 text-sm text-[var(--color-muted-foreground)]"
+              >
+                {label}: уншиж байна…
+              </p>
+            );
+          }
+          if (!res.available || !res.diag) {
+            return (
+              <p
+                key={n.id}
+                className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-3 text-sm text-[var(--color-muted-foreground)]"
+              >
+                {label}: diag тайлагнаагүй (хуучин build эсвэл push хүлээж байна — node-д шинэ
+                хувилбар deploy хийх шаардлагатай).
+              </p>
+            );
+          }
+          return (
+            <NodeDiagCard
+              key={n.id}
+              name={label}
+              ageSec={res.age_sec}
+              diag={res.diag}
+              stageKey={stageKey}
+            />
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function NodeDiagCard({
+  name,
+  ageSec,
+  diag,
+  stageKey,
+}: {
+  name: string;
+  ageSec: number | null;
+  diag: NonNullable<NodeDiagResponse["diag"]>;
+  stageKey: StageKey;
+}) {
+  const v = diag.vlm;
+  return (
+    <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+      <div className="mb-2 flex items-center gap-2 text-xs text-[var(--color-muted-foreground)]">
+        <span className="font-medium text-[var(--color-foreground)]">{name}</span>
+        <span>· v{diag.version}</span>
+        <span className="ml-auto">{ageSec != null ? `${ageSec}с өмнө` : ""}</span>
+      </div>
+
+      {stageKey === "vlm" ? (
+        <>
+          <div className="mb-2 flex flex-wrap items-center gap-1.5 text-[11px] text-[var(--color-muted-foreground)]">
+            <Chip>num_predict {v.config.num_predict}</Chip>
+            <Chip>num_ctx {v.config.num_ctx}</Chip>
+            <Chip>frames {v.config.frames_per_clip}</Chip>
+            <Chip>max_dim {v.config.frame_max_dim}</Chip>
+            <Chip>retry {v.config.retry_on_parse_error}</Chip>
+            {v.parse_fail_pct != null && (
+              <span
+                className="rounded px-1.5 py-0.5 font-medium"
+                style={{
+                  color: v.parse_fail_pct > 30 ? "var(--color-danger)" : "var(--color-success)",
+                  background:
+                    "color-mix(in srgb, " +
+                    (v.parse_fail_pct > 30 ? "var(--color-danger)" : "var(--color-success)") +
+                    " 14%, transparent)",
+                }}
+              >
+                parse-fail {v.parse_fail_pct}%
+              </span>
+            )}
+          </div>
+          {v.provider_error && (
+            <p className="mb-2 text-xs text-[var(--color-danger)]">{v.provider_error}</p>
+          )}
+          {v.verdicts.length === 0 ? (
+            <p className="text-xs text-[var(--color-muted-foreground)]">
+              VLM verdict алга (breach хүлээж байна).
+            </p>
+          ) : (
+            <ul className="space-y-1.5">
+              {[...v.verdicts].reverse().map((vd, i) => (
+                <li
+                  key={i}
+                  className="rounded-[var(--radius)] border-l-2 px-2.5 py-1.5 text-xs"
+                  style={{
+                    borderLeftColor: vd.parsed ? "var(--color-success)" : "var(--color-danger)",
+                    background: "var(--color-muted)",
+                  }}
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="tabular-nums text-[var(--color-muted-foreground)]">
+                      {new Date(vd.ts * 1000).toLocaleTimeString("mn-MN")}
+                    </span>
+                    <span className="text-[var(--color-foreground)]">{vd.category}</span>
+                    <span className="text-[var(--color-muted-foreground)]">
+                      conf {vd.confidence}
+                    </span>
+                    <span className="text-[var(--color-muted-foreground)]">
+                      {(vd.latency_ms / 1000).toFixed(1)}с · {vd.frames_used} frame
+                    </span>
+                    <span
+                      className="ml-auto"
+                      style={{
+                        color: vd.parsed ? "var(--color-success)" : "var(--color-danger)",
+                      }}
+                    >
+                      {vd.parsed ? "✓ parse OK" : "✗ parse-fail"}
+                    </span>
+                  </div>
+                  {!vd.parsed && vd.raw && (
+                    <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded bg-[var(--color-background)] p-2 font-mono text-[10px] text-[var(--color-muted-foreground)]">
+                      {vd.raw}
+                    </pre>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[480px] border-collapse text-xs">
+            <thead>
+              <tr className="border-b border-[var(--color-border)] text-left text-[var(--color-muted-foreground)]">
+                <th className="px-2 py-1 font-medium">Камер</th>
+                <th className="px-2 py-1 font-medium">fps (cap/inf)</th>
+                <th className="px-2 py-1 font-medium">Frame</th>
+                <th className="px-2 py-1 font-medium">Det</th>
+                <th className="px-2 py-1 font-medium">Алдаа</th>
+              </tr>
+            </thead>
+            <tbody>
+              {diag.workers.map((w) => (
+                <tr key={w.camera_id} className="border-b border-[var(--color-border)] last:border-0">
+                  <td className="px-2 py-1 text-[var(--color-foreground)]">{w.camera_id}</td>
+                  <td className="px-2 py-1 tabular-nums">
+                    {w.fps_capture}/{w.fps_inference}
+                  </td>
+                  <td className="px-2 py-1 tabular-nums">{w.frames_total}</td>
+                  <td className="px-2 py-1 tabular-nums">{w.detections_total}</td>
+                  <td
+                    className="px-2 py-1"
+                    style={{ color: w.last_error ? "var(--color-danger)" : "var(--color-success)" }}
+                  >
+                    {w.last_error ?? "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Chip({ children }: { children: ReactNode }) {
+  return (
+    <span className="rounded bg-[var(--color-muted)] px-1.5 py-0.5 text-[var(--color-muted-foreground)]">
+      {children}
+    </span>
   );
 }
 
