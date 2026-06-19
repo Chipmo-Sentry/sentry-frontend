@@ -107,11 +107,17 @@ export function NotificationBell() {
   }
 
   return (
-    <Dropdown>
+    // Mark seen on OPEN via the menu's own lifecycle — not the trigger button's
+    // onClick. Radix opens the menu on pointerdown and can swallow the click, so
+    // an onClick handler on the trigger fires unreliably and the badge stays.
+    <Dropdown
+      onOpenChange={(open) => {
+        if (open) markSeen();
+      }}
+    >
       <DropdownTrigger asChild>
         <button
           type="button"
-          onClick={markSeen}
           aria-label={
             unread > 0 ? `Мэдэгдлүүд (${unread} шинэ)` : "Мэдэгдлүүд"
           }
