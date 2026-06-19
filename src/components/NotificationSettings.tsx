@@ -1,12 +1,14 @@
 "use client";
 
-/** Topbar notification-settings menu.
+/** Sidebar notification-settings menu.
  *
- * Replaces the old binary mute toggle with granular control over how live
- * actionable alerts reach the user: sound on/off, browser popup on/off, the
- * minimum level worth interrupting for, and a temporary snooze. Reads/writes
- * the shared `notif-prefs` store so NotificationListener picks up changes
- * instantly (and across tabs). */
+ * Granular control over how live actionable alerts reach the user: sound
+ * on/off, browser popup on/off, the minimum level worth interrupting for, and
+ * a temporary snooze. Reads/writes the shared `notif-prefs` store so
+ * NotificationListener picks up changes instantly (and across tabs).
+ *
+ * Rendered as a full-width row in the sidebar footer; the menu opens upward
+ * (side="top") so it clears the footer. */
 
 import {
   Dropdown,
@@ -100,13 +102,16 @@ export function NotificationSettings() {
         <button
           type="button"
           aria-label={label}
-          title={label}
-          className="rounded-md p-1.5 text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-muted)]"
+          className="flex w-full items-center gap-3 rounded-[var(--radius)] px-3 py-2 text-sm text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]"
         >
-          <TriggerIcon className="h-5 w-5" />
+          <TriggerIcon className="h-4 w-4" aria-hidden />
+          <span className="flex-1 text-left">Мэдэгдлийн тохиргоо</span>
+          {snoozed ? (
+            <span className="shrink-0 text-xs">{snoozeRemaining}м</span>
+          ) : null}
         </button>
       </DropdownTrigger>
-      <DropdownContent align="end" className="w-64">
+      <DropdownContent side="top" align="start" className="w-64">
         <DropdownLabel>Мэдэгдлийн тохиргоо</DropdownLabel>
         <DropdownSeparator />
 
