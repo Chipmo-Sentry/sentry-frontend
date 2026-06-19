@@ -16,7 +16,13 @@ import { useEffect, useRef, useState } from "react";
 import { useToast } from "@/components/Toaster";
 import { useAlertStreamContext } from "@/lib/alert-stream-context";
 import { CATEGORY_LABEL, LEVEL_LABEL } from "@/lib/labels";
-import { isMuted, onMuteChange } from "@/lib/notif-prefs";
+import {
+  DEFAULT_PREFS,
+  getPrefs,
+  onPrefsChange,
+  shouldNotify,
+  type NotifPrefs,
+} from "@/lib/notif-prefs";
 import type { AlertLevel, AlertPublic } from "@/lib/types";
 
 const BASE_TITLE = "Sentry";
@@ -29,7 +35,31 @@ function isActionable(level: AlertLevel): boolean {
 // burst of alerts must not new one up per beep.
 let sharedAudioCtx: AudioContext | null = null;
 
-function playBeep() {
+/** Schedule one short tone on the shared context at `startOffset` seconds. */
+function tone(
+  ctx: AudioContext,
+  startOffset: number,
+  freq: number,
+  dur: number,
+  peak: number,
+) {
+  const t0 = ctx.currentTime + startOffset;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = "sine";
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.0001, t0);
+  gain.gain.exponentialRampToValueAtTime(peak, t0 + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(t0);
+  osc.stop(t0 + dur + 0.02);
+}
+
+/** Play the alert chime. `urgent` (review level) gets a louder, repeated
+ * triple-tone so staff can tell it apart from a routine `notify` ping. */
+function playBeep(urgent: boolean) {
   try {
     const Ctor =
       window.AudioContext ||
@@ -39,17 +69,14 @@ function playBeep() {
     if (!sharedAudioCtx) sharedAudioCtx = new Ctor();
     const ctx = sharedAudioCtx;
     if (ctx.state === "suspended") void ctx.resume();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "sine";
-    osc.frequency.value = 880;
-    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.36);
+    if (urgent) {
+      // Three rising urgent beeps.
+      tone(ctx, 0, 1047, 0.16, 0.28);
+      tone(ctx, 0.2, 1175, 0.16, 0.28);
+      tone(ctx, 0.4, 1319, 0.22, 0.3);
+    } else {
+      tone(ctx, 0, 880, 0.34, 0.2);
+    }
   } catch {
     // Audio blocked — non-fatal.
   }
@@ -60,15 +87,15 @@ export function NotificationListener() {
   const { toast } = useToast();
   const seenRef = useRef<Set<string>>(new Set());
   const initializedRef = useRef(false);
-  const mutedRef = useRef(false);
+  const prefsRef = useRef<NotifPrefs>(DEFAULT_PREFS);
   const [unread, setUnread] = useState(0);
 
-  // Track the mute preference (kept in a ref so the alert effect stays
+  // Track notification preferences (kept in a ref so the alert effect stays
   // dependency-light and always reads the latest value).
   useEffect(() => {
-    mutedRef.current = isMuted();
-    return onMuteChange(() => {
-      mutedRef.current = isMuted();
+    prefsRef.current = getPrefs();
+    return onPrefsChange(() => {
+      prefsRef.current = getPrefs();
     });
   }, []);
 
@@ -122,31 +149,34 @@ export function NotificationListener() {
       });
     }
 
-    // Muted: still keep the passive tab badge, but no sound/popup.
-    if (mutedRef.current) {
-      if (document.hidden) setUnread((u) => u + newActionable);
-      return;
-    }
+    // Passive tab badge always counts when hidden, regardless of sound/popup.
+    if (document.hidden) setUnread((u) => u + newActionable);
 
-    playBeep();
+    // Active notification (sound/popup) is gated by prefs: snooze window, the
+    // minimum-level threshold, and each channel's own toggle.
+    const prefs = prefsRef.current;
+    if (!shouldNotify(last.alert_level, prefs)) return;
+    const urgent = last.alert_level === "review";
+
+    if (prefs.sound) playBeep(urgent);
 
     if (
+      prefs.popup &&
       "Notification" in window &&
       Notification.permission === "granted"
     ) {
       const a = last;
-      const n = new Notification(`🔔 ${LEVEL_LABEL[a.alert_level]} — Sentry`, {
-        body: `${CATEGORY_LABEL[a.category]} · ${Math.round(a.confidence * 100)}%`,
-        tag: a.id,
-      });
+      const n = new Notification(
+        `${urgent ? "🚨" : "🔔"} ${LEVEL_LABEL[a.alert_level]} — Sentry`,
+        {
+          body: `${CATEGORY_LABEL[a.category]} · ${Math.round(a.confidence * 100)}%`,
+          tag: a.id,
+        },
+      );
       n.onclick = () => {
         window.focus();
         window.location.href = `/alerts/${a.id}`;
       };
-    }
-
-    if (document.hidden) {
-      setUnread((u) => u + newActionable);
     }
   }, [alerts, toast]);
 

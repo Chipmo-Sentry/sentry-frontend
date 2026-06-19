@@ -11,14 +11,13 @@ import {
   DropdownSeparator,
   DropdownTrigger,
 } from "@chipmo-sentry/ui-kit";
-import { LogOut, Menu, ShieldCheck, Volume2, VolumeX } from "lucide-react";
+import { LogOut, Menu, ShieldCheck } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 
 import { NotificationBell } from "@/components/NotificationBell";
+import { NotificationSettings } from "@/components/NotificationSettings";
 import { navTitle } from "@/components/Sidebar";
 import { auth } from "@/lib/api";
-import { isMuted, onMuteChange, setMuted } from "@/lib/notif-prefs";
 import type { UserPublic } from "@/lib/types";
 
 export function Topbar({
@@ -30,23 +29,6 @@ export function Topbar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [muted, setMutedState] = useState(false);
-
-  // Sync mute state on mount + across tabs (avoids SSR hydration mismatch by
-  // reading localStorage only after mount).
-  useEffect(() => {
-    setMutedState(isMuted());
-    return onMuteChange(() => setMutedState(isMuted()));
-  }, []);
-
-  function toggleMute() {
-    const next = !muted;
-    setMuted(next);
-    // Turning notifications ON: request browser permission if not decided yet.
-    if (!next && "Notification" in window && Notification.permission === "default") {
-      void Notification.requestPermission();
-    }
-  }
 
   async function onLogout() {
     try {
@@ -77,19 +59,7 @@ export function Topbar({
 
       <NotificationBell />
 
-      <button
-        type="button"
-        onClick={toggleMute}
-        aria-label={muted ? "Дуут мэдэгдэл асаах" : "Дуут мэдэгдэл унтраах"}
-        title={muted ? "Дуу/попап унтраалттай" : "Дуу/попап асаалттай"}
-        className="rounded-md p-1.5 text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-muted)]"
-      >
-        {muted ? (
-          <VolumeX className="h-5 w-5" />
-        ) : (
-          <Volume2 className="h-5 w-5" />
-        )}
-      </button>
+      <NotificationSettings />
 
       {user ? (
         <Dropdown>
