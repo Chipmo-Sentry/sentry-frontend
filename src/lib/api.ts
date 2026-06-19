@@ -551,6 +551,61 @@ export interface NodeMetricSample {
 
 export type NodeMetricRange = "1h" | "6h" | "24h" | "7d" | "30d";
 
+// --- Node diagnostics (stage-detail console — docs/26) ---
+
+export interface NodeDiagWorker {
+  camera_id: string;
+  running: boolean;
+  fps_capture: number;
+  fps_inference: number;
+  frames_total: number;
+  detections_total: number;
+  last_error: string | null;
+}
+
+/** One VLM run. `parsed=false` + `raw` = the model returned unparseable output
+ * (the neutral-fallback case) — `raw` is the truncated text showing WHY. */
+export interface NodeDiagVerdict {
+  ts: number;
+  category: string;
+  confidence: number;
+  latency_ms: number;
+  frames_used: number;
+  parsed: boolean;
+  raw: string | null;
+}
+
+export interface NodeDiagVlm {
+  provider_effective: string | null;
+  provider_ready: boolean | null;
+  provider_error: string | null;
+  breach_mode: string;
+  activity: { count: number; last_ago_sec: number | null; last_latency_ms: number | null };
+  config: {
+    num_predict: number;
+    num_ctx: number;
+    frames_per_clip: number;
+    frame_max_dim: number;
+    retry_on_parse_error: number;
+  };
+  parse_fail_pct: number | null;
+  verdicts: NodeDiagVerdict[];
+}
+
+export interface NodeDiag {
+  ts: number;
+  version: string;
+  yolo_model: string;
+  workers: NodeDiagWorker[];
+  vlm: NodeDiagVlm;
+}
+
+export interface NodeDiagResponse {
+  available: boolean;
+  age_sec: number | null;
+  diag: NodeDiag | null;
+}
+
 export const nodes = {
   /** AI nodes that serve at least one of this org's cameras. */
   list: () => request<OrgNodePublic[]>("/api/v1/nodes"),
@@ -559,6 +614,10 @@ export const nodes = {
     request<NodeMetricSample[]>(
       `/api/v1/nodes/${encodeURIComponent(id)}/metrics?range=${range}`,
     ),
+  /** Latest rich per-stage diagnostics the node pushed (worker errors, VLM
+   * verdicts + raw-on-failure). 404 for an unowned node. */
+  diag: (id: string) =>
+    request<NodeDiagResponse>(`/api/v1/nodes/${encodeURIComponent(id)}/diag`),
 };
 
 // === Cloud ingest (MediaMTX runtime path state — Pipeline Canvas stage 2) ===
