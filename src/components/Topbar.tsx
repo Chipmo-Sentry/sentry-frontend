@@ -15,7 +15,6 @@ import { LogOut, Menu, ShieldCheck } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 
 import { NotificationBell } from "@/components/NotificationBell";
-import { NotificationSettings } from "@/components/NotificationSettings";
 import { navTitle } from "@/components/Sidebar";
 import { auth } from "@/lib/api";
 import type { UserPublic } from "@/lib/types";
@@ -58,8 +57,6 @@ export function Topbar({
       </h1>
 
       <NotificationBell />
-
-      <NotificationSettings />
 
       {user ? (
         <Dropdown>

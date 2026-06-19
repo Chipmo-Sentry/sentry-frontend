@@ -23,6 +23,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { NotificationSettings } from "@/components/NotificationSettings";
 import { auth } from "@/lib/api";
 
 type NavChild = { href: string; label: string };
@@ -172,14 +173,17 @@ function SidebarContent({
           );
         })}
       </nav>
-      <button
-        type="button"
-        onClick={onLogout}
-        className="m-2 flex items-center gap-3 rounded-[var(--radius)] px-3 py-2 text-sm text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-muted)]"
-      >
-        <LogOut className="h-4 w-4" aria-hidden />
-        Гарах
-      </button>
+      <div className="space-y-1 border-t border-[var(--color-border)] p-2">
+        <NotificationSettings />
+        <button
+          type="button"
+          onClick={onLogout}
+          className="flex w-full items-center gap-3 rounded-[var(--radius)] px-3 py-2 text-sm text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]"
+        >
+          <LogOut className="h-4 w-4" aria-hidden />
+          Гарах
+        </button>
+      </div>
     </div>
   );
 }
