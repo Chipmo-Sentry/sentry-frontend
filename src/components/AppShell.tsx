@@ -41,7 +41,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <AlertStreamProvider>
       <NotificationListener />
-      <div className="flex min-h-screen">
+      <div className="flex h-screen overflow-hidden">
         <Sidebar isSuperAdmin={isSuperAdmin} />
         <MobileSidebar
           open={mobileOpen}
@@ -50,7 +50,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         />
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar user={user} onMenuClick={() => setMobileOpen(true)} />
-          <main className="flex-1 overflow-auto bg-[var(--color-muted)]">
+          <main className="flex flex-1 flex-col overflow-auto bg-[var(--color-muted)]">
             {children}
           </main>
         </div>
