@@ -24,6 +24,9 @@ export type LoginResponse = Schemas["LoginResponse"];
 // === Domain ===
 export type StorePublic = Schemas["StorePublic"];
 export type CameraPublic = Schemas["CameraPublic"];
+// Per-camera detection zone (docs/29) — a normalized 0-1 polygon drawn on the
+// agent + consumed by the behavior engine; read-only overlay on /live.
+export type Zone = Schemas["Zone"];
 export type ClipPublic = Schemas["ClipPublic"];
 
 export type AlertCategory = Schemas["AlertCategory"];

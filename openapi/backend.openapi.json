@@ -9084,6 +9084,20 @@
             "type": "number",
             "title": "Risk Threshold",
             "default": 11.0
+          },
+          "zones": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Zone"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zones"
           }
         },
         "type": "object",
@@ -11739,6 +11753,55 @@
         ],
         "title": "VlmStatus",
         "description": "Whether a VLM model is resident in Ollama + its GPU split, so the dashboard\ncan show the VLM's real GPU/VRAM footprint (per-process VRAM isn't on WDDM)."
+      },
+      "Zone": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "exit",
+              "shelf",
+              "checkout",
+              "entrance"
+            ],
+            "title": "Type"
+          },
+          "points": {
+            "items": {
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array",
+              "maxItems": 2,
+              "minItems": 2
+            },
+            "type": "array",
+            "title": "Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "points"
+        ],
+        "title": "Zone",
+        "description": "A per-camera detection zone (docs/29): a polygon in NORMALIZED image space (every coord in 0-1), consumed by the behavior engine. Distinct from the deprecated single-bbox shelf_zone_json."
       }
     }
   }

@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState } from "react";
 import { LiveBehaviorPanel } from "@/components/LiveBehaviorPanel";
 import { LiveCameraTile } from "@/components/LiveCameraTile";
 import { behaviors as behaviorsApi, cameras as camerasApi } from "@/lib/api";
-import type { CameraPublic } from "@/lib/types";
+import type { CameraPublic, Zone } from "@/lib/types";
 
 /**
  * M1-LIVE Phase L2 — camera list now comes from /api/v1/cameras.
@@ -22,7 +22,7 @@ const MEDIAMTX_HLS_BASE =
 const MEDIAMTX_WHEP_BASE =
   process.env.NEXT_PUBLIC_MEDIAMTX_WHEP_BASE ?? "http://localhost:8889";
 
-type LiveCamera = { id: string; path: string; name: string };
+type LiveCamera = { id: string; path: string; name: string; zones: Zone[] };
 
 export default function LivePage() {
   const [cams, setCams] = useState<LiveCamera[] | null>(null);
@@ -67,6 +67,7 @@ export default function LivePage() {
             id: c.id,
             path: c.mediamtx_path as string,
             name: c.name,
+            zones: c.zones ?? [],
           }));
         setCams(streamable);
       },
@@ -136,6 +137,7 @@ export default function LivePage() {
                 cameraId={c.path}
                 streamCameraId={c.id}
                 name={c.name}
+                zones={c.zones}
                 whepUrl={whepUrl(c.path)}
                 hlsUrl={hlsUrl(c.path)}
                 detailHref={`/live/${encodeURIComponent(c.path)}`}

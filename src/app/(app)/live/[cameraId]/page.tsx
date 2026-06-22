@@ -100,6 +100,7 @@ export default function LiveCameraPage() {
           cameraId={path}
           streamCameraId={cam.id}
           name={cam.name}
+          zones={cam.zones ?? []}
           whepUrl={`${MEDIAMTX_WHEP_BASE}/${path}/whep`}
           hlsUrl={`${MEDIAMTX_HLS_BASE}/${path}/index.m3u8`}
         />

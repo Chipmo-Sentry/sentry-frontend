@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { ApiError, cameras as camerasApi } from "@/lib/api";
 import { attachLiveVideo, type LiveTransport } from "@/lib/live-video";
 import { useLiveMetadata } from "@/lib/live-ws";
+import type { Zone } from "@/lib/types";
 
 export type LiveCameraTileProps = {
   cameraId: string;
@@ -16,11 +17,29 @@ export type LiveCameraTileProps = {
   /** Camera DB id. When set, the tile fetches a short-lived read token and
    * appends `?jwt=…` to the stream URLs (authenticated WHEP/HLS). */
   streamCameraId?: string;
+  /** Read-only detection zones (docs/29) — normalized 0-1 polygons drawn on the
+   * agent + scored by the behavior engine. Overlaid (non-interactive) on video. */
+  zones?: Zone[];
   /** When set, render a link to the dedicated single-camera page (FE-L6). */
   detailHref?: string;
   /** When set, render a 📋 button that opens the behavior-criteria side panel
    * for this camera (REV.2 — live criteria display). */
   onShowPanel?: () => void;
+};
+
+// Zone type → colour. exit = danger (the high-stakes "left after concealing"
+// boundary), shelf = warning, checkout = success, entrance = primary blue.
+const ZONE_COLORS: Record<string, string> = {
+  exit: "#ef4444",
+  shelf: "#eab308",
+  checkout: "#22c55e",
+  entrance: "#3b82f6",
+};
+const ZONE_LABELS: Record<string, string> = {
+  exit: "Гарц",
+  shelf: "Тавиур",
+  checkout: "Касс",
+  entrance: "Орц",
 };
 
 type Status = "loading" | "playing" | "stalled" | "error";
@@ -48,6 +67,7 @@ export function LiveCameraTile({
   whepUrl,
   hlsUrl,
   streamCameraId,
+  zones,
   detailHref,
   onShowPanel,
 }: LiveCameraTileProps) {
@@ -178,7 +198,7 @@ export function LiveCameraTile({
     let raf = 0;
     function draw() {
       raf = 0;
-      if (!canvas || !video || !latest) return;
+      if (!canvas || !video) return;
 
       // Match canvas backing-store to displayed size (CSS) so 1 logical px = 1 device px*
       const rect = video.getBoundingClientRect();
@@ -201,8 +221,11 @@ export function LiveCameraTile({
       // Scale source coords → displayed coords. The <video> is object-cover:
       // it scales to FILL the tile (scale = max) and crops the overflow, so the
       // displayed area is >= the tile and centered (negative offsets).
-      const srcW = latest.width;
-      const srcH = latest.height;
+      // Source frame size: prefer the AI metadata (exact stream size); fall back
+      // to the video's own intrinsic size so zones render before metadata flows.
+      const srcW = latest?.width || video.videoWidth;
+      const srcH = latest?.height || video.videoHeight;
+      if (!srcW || !srcH) return;
       const scale = Math.max(cssW / srcW, cssH / srcH);
       const drawW = srcW * scale;
       const drawH = srcH * scale;
@@ -211,7 +234,44 @@ export function LiveCameraTile({
       const sx = scale;
       const sy = scale;
 
-      for (const t of latest.tracks) {
+      // Detection zones (read-only, docs/29) — drawn UNDER the AI boxes. Points
+      // are normalized 0-1 in image space → denormalize by the source frame.
+      for (const z of zones ?? []) {
+        if (!z.points || z.points.length < 2) continue;
+        // Canvas can't resolve CSS vars, so use a hex fallback (zone.type is a
+        // fixed enum, all covered by ZONE_COLORS — the fallback is belt-and-braces).
+        const color = ZONE_COLORS[z.type] ?? "#2563eb";
+        ctx.beginPath();
+        z.points.forEach(([nx, ny], i) => {
+          const px = offX + nx * srcW * sx;
+          const py = offY + ny * srcH * sy;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        });
+        ctx.closePath();
+        ctx.globalAlpha = 0.12;
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([6, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        // Type label at the polygon's top-most point.
+        const top = z.points.reduce((a, b) => (b[1] < a[1] ? b : a));
+        const lx = offX + top[0] * srcW * sx;
+        const ly = offY + top[1] * srcH * sy;
+        const text = ZONE_LABELS[z.type] ?? z.type;
+        ctx.font = "600 10px ui-sans-serif, system-ui, sans-serif";
+        const tw = ctx.measureText(text).width + 8;
+        ctx.fillStyle = color;
+        ctx.fillRect(lx, Math.max(0, ly - 15), tw, 14);
+        ctx.fillStyle = "#000";
+        ctx.fillText(text, lx + 4, Math.max(0, ly - 15) + 11);
+      }
+
+      for (const t of latest?.tracks ?? []) {
         const [x1, y1, x2, y2] = t.box;
         const rx = offX + x1 * sx;
         const ry = offY + y1 * sy;
@@ -301,11 +361,15 @@ export function LiveCameraTile({
     schedule();
     const ro = new ResizeObserver(schedule);
     ro.observe(video);
+    // Redraw once the video's intrinsic size is known so zones (which only need
+    // the frame size, not AI metadata) appear as soon as the stream is ready.
+    video.addEventListener("loadedmetadata", schedule);
     return () => {
       ro.disconnect();
+      video.removeEventListener("loadedmetadata", schedule);
       if (raf) cancelAnimationFrame(raf);
     };
-  }, [latest]);
+  }, [latest, zones]);
 
   return (
     <div
