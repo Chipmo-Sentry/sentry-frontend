@@ -2,8 +2,9 @@
 
 import { Badge, Button, EmptyState, ErrorState, Spinner } from "@chipmo-sentry/ui-kit";
 import type { CellStyle, ColDef, ICellRendererParams } from "ag-grid-community";
-import { Bell, BellRing, Check, ChevronRight, HelpCircle, X } from "lucide-react";
+import { Bell, BellRing, Check, HelpCircle, X } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { DataGrid } from "@/components/datagrid/DataGrid";
@@ -116,33 +117,29 @@ function VerdictCell(p: ICellRendererParams<AlertRow>) {
     );
   }
   const mark = (p.context as GridCtx).mark;
+  // stopPropagation so a feedback click doesn't also fire the row → detail nav.
+  const hit = (v: FeedbackVerdict) => (e: React.MouseEvent) => {
+    e.stopPropagation();
+    mark(row.id, v);
+  };
   return (
     <div className="flex gap-1">
-      <button type="button" title="Зөв илрүүлэлт" aria-label="Зөв илрүүлэлт" className={ICON_BTN} onClick={() => mark(row.id, "true_positive")}>
+      <button type="button" title="Зөв илрүүлэлт" aria-label="Зөв илрүүлэлт" className={ICON_BTN} onClick={hit("true_positive")}>
         <Check className="h-3.5 w-3.5" />
       </button>
-      <button type="button" title="Худал сэрэлт" aria-label="Худал сэрэлт" className={ICON_BTN} onClick={() => mark(row.id, "false_positive")}>
+      <button type="button" title="Худал сэрэлт" aria-label="Худал сэрэлт" className={ICON_BTN} onClick={hit("false_positive")}>
         <X className="h-3.5 w-3.5" />
       </button>
-      <button type="button" title="Тодорхойгүй" aria-label="Тодорхойгүй" className={ICON_BTN} onClick={() => mark(row.id, "unclear")}>
+      <button type="button" title="Тодорхойгүй" aria-label="Тодорхойгүй" className={ICON_BTN} onClick={hit("unclear")}>
         <HelpCircle className="h-3.5 w-3.5" />
       </button>
     </div>
   );
 }
 
-function DetailCell(p: ICellRendererParams<AlertRow>) {
-  const id = p.data?.id;
-  if (!id) return null;
-  return (
-    <Link href={`/alerts/${id}`} aria-label="Дэлгэрэнгүй" className="inline-flex text-[var(--color-primary)] hover:underline">
-      <ChevronRight className="h-4 w-4" />
-    </Link>
-  );
-}
-
 export default function AlertsPage() {
   const { toast } = useToast();
+  const router = useRouter();
   const [all, setAll] = useState<AlertPublic[] | null>(null);
   const [seedError, setSeedError] = useState<string | null>(null);
   const [verdicts, setVerdicts] = useState<Record<string, FeedbackVerdict>>({});
@@ -280,7 +277,6 @@ export default function AlertsPage() {
       { field: "model", headerName: "AI", width: 150, flex: 0, cellStyle: MUTED },
       { field: "latency", headerName: "Хугацаа", width: 110, flex: 0, cellStyle: MUTED },
       { field: "verdict", headerName: "Дүгнэлт", width: 170, flex: 0, cellRenderer: VerdictCell },
-      { headerName: "", width: 56, flex: 0, sortable: false, filter: false, cellRenderer: DetailCell, cellStyle: CENTER },
     ];
   }, []);
 
@@ -341,6 +337,10 @@ export default function AlertsPage() {
               getRowId: (p) => p.data.id,
               pagination: false,
               suppressCellFocus: true,
+              rowStyle: { cursor: "pointer" },
+              onRowClicked: (e) => {
+                if (e.data) router.push(`/alerts/${e.data.id}`);
+              },
               rowSelection: {
                 mode: "singleRow",
                 checkboxes: false,
