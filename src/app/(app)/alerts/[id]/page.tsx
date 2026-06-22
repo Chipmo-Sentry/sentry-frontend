@@ -224,22 +224,16 @@ export default function AlertDetailPage() {
           {(alert.triggered_behavior_detail?.length ?? 0) > 0 &&
             (() => {
               const detail = alert.triggered_behavior_detail!;
-              const byKey = new Map<string, { count: number; score: number }>();
-              for (const r of detail) {
-                const e = byKey.get(r.key) ?? { count: 0, score: 0 };
-                e.count += 1;
-                e.score += r.score;
-                byKey.set(r.key, e);
-              }
-              const rows = Array.from(byKey, ([key, v]) => ({ key, ...v })).sort(
-                (a, b) => b.score - a.score,
-              );
               const total = detail.reduce((s, r) => s + r.score, 0);
               return (
                 <section>
                   <h3 className="mb-2 text-sm font-semibold">
                     Сэжиг шалгуурын задаргаа
                   </h3>
+                  <p className="mb-2 text-xs text-[var(--color-muted-foreground)]">
+                    Оноо нэмэгдсэн тохиолдол бүр — хэзээ, ямар хөдөлгөөн, хэдэн
+                    оноо.
+                  </p>
                   <div className="overflow-hidden rounded-[var(--radius)] border border-[var(--color-border)]">
                     <table className="w-full text-sm">
                       <thead className="border-b border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase tracking-wider text-[var(--color-muted-foreground)]">
@@ -247,23 +241,21 @@ export default function AlertDetailPage() {
                           <th className="px-3 py-2 text-left font-medium">
                             Сэжиг шалгуур
                           </th>
-                          <th className="px-3 py-2 text-right font-medium">Удаа</th>
-                          <th className="px-3 py-2 text-right font-medium">
-                            Цугларсан оноо
-                          </th>
+                          <th className="px-3 py-2 text-right font-medium">Цаг</th>
+                          <th className="px-3 py-2 text-right font-medium">Оноо</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {rows.map((r) => (
+                        {detail.map((r, i) => (
                           <tr
-                            key={r.key}
+                            key={`${r.key}-${i}`}
                             className="border-t border-[var(--color-border)]"
                           >
                             <td className="px-3 py-2">
                               {behaviorLabels[r.key] ?? r.key}
                             </td>
-                            <td className="px-3 py-2 text-right tabular-nums text-[var(--color-muted-foreground)]">
-                              {r.count}
+                            <td className="px-3 py-2 text-right font-mono text-xs tabular-nums text-[var(--color-muted-foreground)]">
+                              {r.offset_sec.toFixed(1)}с
                             </td>
                             <td className="px-3 py-2 text-right font-medium tabular-nums">
                               +{Math.round(r.score)}
@@ -273,10 +265,8 @@ export default function AlertDetailPage() {
                       </tbody>
                       <tfoot>
                         <tr className="border-t-2 border-[var(--color-border)] font-semibold">
-                          <td className="px-3 py-2">Нийт</td>
-                          <td className="px-3 py-2 text-right tabular-nums">
-                            {detail.length}
-                          </td>
+                          <td className="px-3 py-2">Нийт ({detail.length})</td>
+                          <td className="px-3 py-2" />
                           <td className="px-3 py-2 text-right tabular-nums">
                             +{Math.round(total)}
                           </td>
