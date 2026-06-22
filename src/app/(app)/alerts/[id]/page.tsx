@@ -218,32 +218,108 @@ export default function AlertDetailPage() {
             )}
           </section>
 
-          {/* REV.2 timeline — each criterion's seconds-from-episode-start +
-              banked score, in first-fired order. The richest view of what built
-              this breach. */}
-          {(alert.triggered_behavior_detail?.length ?? 0) > 0 && (
-            <section>
-              <h3 className="mb-2 text-sm font-semibold">
-                Сэжиг шалгуурын дараалал
-              </h3>
-              <ol className="space-y-1.5">
-                {alert.triggered_behavior_detail!.map((row, i) => (
-                  <li
-                    key={`${row.key}-${i}`}
-                    className="flex items-center gap-3 text-sm"
-                  >
-                    <span className="w-12 shrink-0 text-right font-mono text-xs text-[var(--color-muted-foreground)]">
-                      {row.offset_sec.toFixed(1)}с
-                    </span>
-                    <span className="flex-1 truncate">
-                      {behaviorLabels[row.key] ?? row.key}
-                    </span>
-                    <Badge tone="warning">+{Math.round(row.score)} оноо</Badge>
-                  </li>
-                ))}
-              </ol>
-            </section>
-          )}
+          {/* Itemized breakdown — each criterion's accumulated score (grouped),
+              the grand total banked, and the engine's peak risk score. The
+              richest view of what built this breach. */}
+          {(alert.triggered_behavior_detail?.length ?? 0) > 0 &&
+            (() => {
+              const detail = alert.triggered_behavior_detail!;
+              const byKey = new Map<string, { count: number; score: number }>();
+              for (const r of detail) {
+                const e = byKey.get(r.key) ?? { count: 0, score: 0 };
+                e.count += 1;
+                e.score += r.score;
+                byKey.set(r.key, e);
+              }
+              const rows = Array.from(byKey, ([key, v]) => ({ key, ...v })).sort(
+                (a, b) => b.score - a.score,
+              );
+              const total = detail.reduce((s, r) => s + r.score, 0);
+              return (
+                <section>
+                  <h3 className="mb-2 text-sm font-semibold">
+                    Сэжиг шалгуурын задаргаа
+                  </h3>
+                  <div className="overflow-hidden rounded-[var(--radius)] border border-[var(--color-border)]">
+                    <table className="w-full text-sm">
+                      <thead className="border-b border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase tracking-wider text-[var(--color-muted-foreground)]">
+                        <tr>
+                          <th className="px-3 py-2 text-left font-medium">
+                            Сэжиг шалгуур
+                          </th>
+                          <th className="px-3 py-2 text-right font-medium">Удаа</th>
+                          <th className="px-3 py-2 text-right font-medium">
+                            Цугларсан оноо
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map((r) => (
+                          <tr
+                            key={r.key}
+                            className="border-t border-[var(--color-border)]"
+                          >
+                            <td className="px-3 py-2">
+                              {behaviorLabels[r.key] ?? r.key}
+                            </td>
+                            <td className="px-3 py-2 text-right tabular-nums text-[var(--color-muted-foreground)]">
+                              {r.count}
+                            </td>
+                            <td className="px-3 py-2 text-right font-medium tabular-nums">
+                              +{Math.round(r.score)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="border-t-2 border-[var(--color-border)] font-semibold">
+                          <td className="px-3 py-2">Нийт</td>
+                          <td className="px-3 py-2 text-right tabular-nums">
+                            {detail.length}
+                          </td>
+                          <td className="px-3 py-2 text-right tabular-nums">
+                            +{Math.round(total)}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    <div className="rounded-[var(--radius)] border border-[var(--color-border)] p-3">
+                      <div className="text-xs text-[var(--color-muted-foreground)]">
+                        Нийт цугларсан оноо
+                      </div>
+                      <div className="mt-0.5 text-xl font-semibold">
+                        +{Math.round(total)}
+                      </div>
+                    </div>
+                    {alert.peak_risk_pct != null && (
+                      <div className="rounded-[var(--radius)] border border-[var(--color-border)] p-3">
+                        <div className="text-xs text-[var(--color-muted-foreground)]">
+                          Эрсдэлийн оноо (0–100)
+                        </div>
+                        <div
+                          className="mt-0.5 text-xl font-semibold"
+                          style={{ color: "var(--color-warning)" }}
+                        >
+                          {alert.peak_risk_pct.toFixed(0)}
+                        </div>
+                      </div>
+                    )}
+                    <div className="rounded-[var(--radius)] border border-[var(--color-border)] p-3">
+                      <div className="text-xs text-[var(--color-muted-foreground)]">
+                        Түвшин
+                      </div>
+                      <div className="mt-1">
+                        <Badge tone={LEVEL_TONE[alert.alert_level]}>
+                          {LEVEL_LABEL[alert.alert_level]}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              );
+            })()}
 
           {/* Fallback chips when there's no detailed timeline (manual uploads /
               older alerts) + completed sequences (always shown — separate). */}
