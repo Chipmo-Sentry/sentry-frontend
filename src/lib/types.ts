@@ -25,6 +25,8 @@ export type LoginResponse = Schemas["LoginResponse"];
 export type StorePublic = Schemas["StorePublic"];
 export type CameraPublic = Schemas["CameraPublic"];
 export type ClipPublic = Schemas["ClipPublic"];
+/** A per-camera detection zone (docs/29) — normalized 0-1 polygon. */
+export type Zone = Schemas["Zone"];
 
 export type AlertCategory = Schemas["AlertCategory"];
 export type AlertLevel = Schemas["AlertLevel"];

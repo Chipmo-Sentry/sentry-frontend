@@ -7200,6 +7200,21 @@
             "minimum": 0.0,
             "title": "Risk Threshold",
             "default": 11.0
+          },
+          "zones": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Zone"
+                },
+                "type": "array",
+                "maxItems": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zones"
           }
         },
         "type": "object",
@@ -7249,6 +7264,21 @@
               }
             ],
             "title": "Risk Threshold"
+          },
+          "zones": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Zone"
+                },
+                "type": "array",
+                "maxItems": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zones"
           }
         },
         "type": "object",
@@ -8977,6 +9007,21 @@
             "minimum": 0.0,
             "title": "Risk Threshold",
             "default": 11.0
+          },
+          "zones": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Zone"
+                },
+                "type": "array",
+                "maxItems": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zones"
           }
         },
         "type": "object",
@@ -9084,6 +9129,20 @@
             "type": "number",
             "title": "Risk Threshold",
             "default": 11.0
+          },
+          "zones": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Zone"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zones"
           }
         },
         "type": "object",
@@ -9187,6 +9246,21 @@
               }
             ],
             "title": "Risk Threshold"
+          },
+          "zones": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Zone"
+                },
+                "type": "array",
+                "maxItems": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zones"
           }
         },
         "type": "object",
@@ -11739,6 +11813,55 @@
         ],
         "title": "VlmStatus",
         "description": "Whether a VLM model is resident in Ollama + its GPU split, so the dashboard\ncan show the VLM's real GPU/VRAM footprint (per-process VRAM isn't on WDDM)."
+      },
+      "Zone": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "exit",
+              "shelf",
+              "checkout",
+              "entrance"
+            ],
+            "title": "Type"
+          },
+          "points": {
+            "items": {
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array",
+              "maxItems": 2,
+              "minItems": 2
+            },
+            "type": "array",
+            "title": "Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "points"
+        ],
+        "title": "Zone",
+        "description": "A per-camera detection zone (docs/29) \u2014 a polygon in NORMALIZED image space\n(every coord in 0-1), drawn on the agent-pc and consumed by the behavior\nengine (exit_after_concealment / repeated_shelf_visit). Normalized so one\ndefinition works across the agent's draw resolution and the cloud worker's\nstream size. Distinct from the deprecated single-bbox `shelf_zone_json`."
       }
     }
   }

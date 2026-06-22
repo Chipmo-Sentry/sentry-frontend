@@ -102,6 +102,7 @@ export default function LiveCameraPage() {
           name={cam.name}
           whepUrl={`${MEDIAMTX_WHEP_BASE}/${path}/whep`}
           hlsUrl={`${MEDIAMTX_HLS_BASE}/${path}/index.m3u8`}
+          zones={cam.zones}
         />
       </div>
     </div>
