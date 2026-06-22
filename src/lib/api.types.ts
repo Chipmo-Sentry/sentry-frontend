@@ -1506,6 +1506,8 @@ export interface components {
              * @default 11
              */
             risk_threshold: number;
+            /** Zones */
+            zones?: components["schemas"]["Zone"][] | null;
         };
         /**
          * AgentCameraUpdate
@@ -1522,6 +1524,8 @@ export interface components {
             rtsp_url?: string | null;
             /** Risk Threshold */
             risk_threshold?: number | null;
+            /** Zones */
+            zones?: components["schemas"]["Zone"][] | null;
         };
         /** AgentPairRequest */
         AgentPairRequest: {
@@ -2125,6 +2129,8 @@ export interface components {
              * @default 11
              */
             risk_threshold: number;
+            /** Zones */
+            zones?: components["schemas"]["Zone"][] | null;
         };
         /**
          * CameraHealth
@@ -2185,6 +2191,8 @@ export interface components {
              * @default 11
              */
             risk_threshold: number;
+            /** Zones */
+            zones?: components["schemas"]["Zone"][] | null;
         };
         /** CameraUpdate */
         CameraUpdate: {
@@ -2204,6 +2212,8 @@ export interface components {
             mediamtx_path?: string | null;
             /** Risk Threshold */
             risk_threshold?: number | null;
+            /** Zones */
+            zones?: components["schemas"]["Zone"][] | null;
         };
         /** ClipPublic */
         ClipPublic: {
@@ -3200,6 +3210,28 @@ export interface components {
             vram_mb?: number | null;
             /** Gpu Pct */
             gpu_pct?: number | null;
+        };
+        /**
+         * Zone
+         * @description A per-camera detection zone (docs/29) — a polygon in NORMALIZED image space
+         *     (every coord in 0-1), drawn on the agent-pc and consumed by the behavior
+         *     engine (exit_after_concealment / repeated_shelf_visit). Normalized so one
+         *     definition works across the agent's draw resolution and the cloud worker's
+         *     stream size. Distinct from the deprecated single-bbox `shelf_zone_json`.
+         */
+        Zone: {
+            /** Id */
+            id?: string | null;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "exit" | "shelf" | "checkout" | "entrance";
+            /** Points */
+            points: [
+                number,
+                number
+            ][];
         };
     };
     responses: never;

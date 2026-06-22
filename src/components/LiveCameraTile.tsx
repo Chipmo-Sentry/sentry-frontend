@@ -7,6 +7,8 @@ import { useEffect, useRef, useState } from "react";
 import { ApiError, cameras as camerasApi } from "@/lib/api";
 import { attachLiveVideo, type LiveTransport } from "@/lib/live-video";
 import { useLiveMetadata } from "@/lib/live-ws";
+import type { Zone } from "@/lib/types";
+import { coverRect, projectPoint, zoneColor, zoneLabel } from "@/lib/zone-overlay";
 
 export type LiveCameraTileProps = {
   cameraId: string;
@@ -21,6 +23,9 @@ export type LiveCameraTileProps = {
   /** When set, render a 📋 button that opens the behavior-criteria side panel
    * for this camera (REV.2 — live criteria display). */
   onShowPanel?: () => void;
+  /** docs/29 P1d — the camera's detection zones (normalized 0-1 polygons),
+   * drawn read-only over the video so the operator sees what the engine uses. */
+  zones?: Zone[] | null;
 };
 
 type Status = "loading" | "playing" | "stalled" | "error";
@@ -50,10 +55,12 @@ export function LiveCameraTile({
   streamCameraId,
   detailHref,
   onShowPanel,
+  zones,
 }: LiveCameraTileProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const zonesCanvasRef = useRef<HTMLCanvasElement>(null);
   const [status, setStatus] = useState<Status>("loading");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -307,6 +314,83 @@ export function LiveCameraTile({
     };
   }, [latest]);
 
+  // docs/29 P1d — read-only zone overlay. Drawn on its OWN canvas (under the AI
+  // boxes) and keyed to the video's intrinsic size, so zones project correctly
+  // even before any AI metadata frame arrives (and stay put when AI is off).
+  useEffect(() => {
+    const canvas = zonesCanvasRef.current;
+    const video = videoRef.current;
+    if (!canvas || !video) return;
+
+    let raf = 0;
+    function draw() {
+      raf = 0;
+      if (!canvas || !video) return;
+      const rect = video.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const cssW = Math.floor(rect.width);
+      const cssH = Math.floor(rect.height);
+      if (cssW <= 0 || cssH <= 0) return;
+      if (canvas.width !== cssW * dpr || canvas.height !== cssH * dpr) {
+        canvas.width = cssW * dpr;
+        canvas.height = cssH * dpr;
+        canvas.style.width = `${cssW}px`;
+        canvas.style.height = `${cssH}px`;
+      }
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, cssW, cssH);
+
+      const r = coverRect(video.videoWidth, video.videoHeight, cssW, cssH);
+      if (!r || !zones) return;
+      for (const z of zones) {
+        if (!z.points || z.points.length < 3) continue;
+        const color = zoneColor(z.type);
+        ctx.beginPath();
+        z.points.forEach(([nx, ny], i) => {
+          const [px, py] = projectPoint(nx, ny, r);
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        });
+        ctx.closePath();
+        ctx.fillStyle = `${color}1f`; // ~12% translucent fill
+        ctx.fill();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 4]); // dashed → reads as an annotation, not a detection
+        ctx.stroke();
+        ctx.setLineDash([]);
+        // Type label at the polygon's top-most vertex.
+        const top = z.points.reduce((a, b) => (b[1] < a[1] ? b : a));
+        const [lx, ly] = projectPoint(top[0], top[1], r);
+        const label = zoneLabel(z.type);
+        ctx.font = "600 11px ui-sans-serif, system-ui, sans-serif";
+        const lw = ctx.measureText(label).width + 8;
+        ctx.fillStyle = color;
+        ctx.fillRect(lx, Math.max(0, ly - 16), lw, 15);
+        ctx.fillStyle = "#000";
+        ctx.fillText(label, lx + 4, Math.max(11, ly - 5));
+      }
+    }
+
+    function schedule() {
+      if (raf) return;
+      raf = requestAnimationFrame(draw);
+    }
+
+    schedule();
+    const ro = new ResizeObserver(schedule);
+    ro.observe(video);
+    // videoWidth becomes known at loadedmetadata — redraw then.
+    video.addEventListener("loadedmetadata", schedule);
+    return () => {
+      ro.disconnect();
+      video.removeEventListener("loadedmetadata", schedule);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [zones]);
+
   return (
     <div
       ref={wrapRef}
@@ -317,6 +401,12 @@ export function LiveCameraTile({
         onDoubleClick={toggleFullscreen}
         className="h-full w-full cursor-pointer object-cover"
         data-camera-id={cameraId}
+      />
+      {/* docs/29 P1d — read-only detection-zone overlay (under the AI boxes) */}
+      <canvas
+        ref={zonesCanvasRef}
+        className="pointer-events-none absolute inset-0 h-full w-full"
+        aria-hidden
       />
       {/* AI overlay — bounding boxes from /ws/live/{cam} metadata */}
       <canvas
