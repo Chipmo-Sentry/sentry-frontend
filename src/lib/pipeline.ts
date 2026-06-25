@@ -1,7 +1,12 @@
 /** Pure per-camera pipeline status derivation, shared by the Pipeline Canvas
  * matrix and the per-stage detail pages. No React, no JSX. */
 
-import type { IngestPathsResponse, NodeCameraHealth, OrgNodePublic } from "./api";
+import type {
+  AgentPushPath,
+  IngestPathsResponse,
+  NodeCameraHealth,
+  OrgNodePublic,
+} from "./api";
 import { CATEGORY_LABEL, LEVEL_LABEL } from "./labels";
 import type { Track } from "./live-ws";
 import type { AlertPublic } from "./types";
@@ -96,8 +101,33 @@ export function cameraNode(
   return null;
 }
 
-function cameraCell(sig: CameraSig | undefined, now: number): StageCell {
-  if (!sig) return { status: "unknown", short: "—" };
+function cameraCell(
+  sig: CameraSig | undefined,
+  push: AgentPushPath | undefined,
+  now: number,
+): StageCell {
+  // The 'Камер' stage IS "pull RTSP from the camera → push to the cloud", which is
+  // the store agent's job. When the agent reports this relay, it's the source of
+  // truth for WHY the stage is down (the real ffmpeg error), so it wins over the
+  // downstream WS frame signal. Cameras with no agent push (pull/on-LAN topology,
+  // older agent) fall back to the WS-based freshness check below.
+  if (push) {
+    if (!push.agent_online)
+      return {
+        status: "down",
+        short: "агент офлайн",
+        reason: "Камерын агент (Store PC) холбогдохгүй байна",
+      };
+    if (!push.running)
+      return {
+        status: "down",
+        short: "push тасарсан",
+        reason: push.last_error
+          ? `Агент push тасарсан — ${push.last_error}`
+          : "Агент үүл рүү push хийхгүй байна (камер дамжуулахгүй)",
+      };
+  }
+  if (!sig) return push ? { status: "ok", short: "push OK" } : { status: "unknown", short: "—" };
   if (!sig.connected) return { status: "down", short: "холбогдоогүй", reason: "WS холболт алга" };
   const fresh = sig.lastFrameAt != null && now - sig.lastFrameAt < FRESH_MS;
   if (!fresh)
@@ -185,6 +215,7 @@ export function computeCameraRows(
   ingest: IngestPathsResponse | null,
   alerts: AlertPublic[],
   now: number,
+  push: Record<string, AgentPushPath> = {},
 ): CameraRow[] {
   return cams.map((cam) => {
     const sig = signals[cam.path];
@@ -196,7 +227,7 @@ export function computeCameraRows(
       node,
       health,
       cells: {
-        camera: cameraCell(sig, now),
+        camera: cameraCell(sig, push[cam.path], now),
         ingest: ingestCell(cam.path, ingest),
         yolo: yoloCell(node, health),
         tracker: trackerCell(sig),

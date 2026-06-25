@@ -6,6 +6,7 @@ import {
   cameras as camerasApi,
   ingest as ingestApi,
   nodes as nodesApi,
+  type AgentPushPath,
   type IngestPathsResponse,
   type OrgNodePublic,
 } from "@/lib/api";
@@ -26,6 +27,7 @@ export function usePipelineData() {
   const [error, setError] = useState<string | null>(null);
   const [nodeList, setNodeList] = useState<OrgNodePublic[]>([]);
   const [ingest, setIngest] = useState<IngestPathsResponse | null>(null);
+  const [push, setPush] = useState<Record<string, AgentPushPath>>({});
   const [signals, setSignals] = useState<Record<string, CameraSig>>({});
   const [now, setNow] = useState(() => Date.now());
   const { alerts, connected: sseConnected } = useAlertStreamContext();
@@ -70,6 +72,17 @@ export function usePipelineData() {
           if (!cancelled) setIngest(null);
         },
       );
+      nodesApi.agentPush().then(
+        (res) => {
+          if (cancelled) return;
+          const byPath: Record<string, AgentPushPath> = {};
+          for (const p of res.paths) byPath[p.path] = p;
+          setPush(byPath);
+        },
+        () => {
+          if (!cancelled) setPush({});
+        },
+      );
     };
     fetchAll();
     const id = setInterval(fetchAll, POLL_MS);
@@ -88,5 +101,17 @@ export function usePipelineData() {
     setSignals((prev) => ({ ...prev, [path]: sig }));
   }, []);
 
-  return { cams, error, reload, nodeList, ingest, signals, onReport, alerts, sseConnected, now };
+  return {
+    cams,
+    error,
+    reload,
+    nodeList,
+    ingest,
+    push,
+    signals,
+    onReport,
+    alerts,
+    sseConnected,
+    now,
+  };
 }

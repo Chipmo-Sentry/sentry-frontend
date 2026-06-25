@@ -48,12 +48,12 @@ export function StageDetail({
   cameraFilter: string | null;
 }) {
   const valid = STAGE_ORDER.includes(stageKey);
-  const { cams, error, reload, nodeList, ingest, signals, onReport, alerts, now } =
+  const { cams, error, reload, nodeList, ingest, push, signals, onReport, alerts, now } =
     usePipelineData();
 
   const rows = useMemo(
-    () => computeCameraRows(cams ?? [], signals, nodeList, ingest, alerts, now),
-    [cams, signals, nodeList, ingest, alerts, now],
+    () => computeCameraRows(cams ?? [], signals, nodeList, ingest, alerts, now, push),
+    [cams, signals, nodeList, ingest, alerts, now, push],
   );
   const stageRows = useMemo(() => {
     const r = rows.map((row) => ({ cam: row.cam, node: row.node, cell: row.cells[stageKey] }));

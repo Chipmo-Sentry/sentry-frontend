@@ -606,9 +606,27 @@ export interface NodeDiagResponse {
   diag: NodeDiag | null;
 }
 
+/** One camera's ffmpeg push-relay state, reported by its store agent. Drives the
+ * 'Камер' pipeline stage — a down relay surfaces the real reason (last_error). */
+export interface AgentPushPath {
+  path: string;
+  running: boolean;
+  restarts: number;
+  last_error: string | null;
+  agent_id: string;
+  agent_name: string | null;
+  agent_online: boolean;
+}
+
+export interface AgentPushStatusResponse {
+  paths: AgentPushPath[];
+}
+
 export const nodes = {
   /** AI nodes that serve at least one of this org's cameras. */
   list: () => request<OrgNodePublic[]>("/api/v1/nodes"),
+  /** Per-camera agent push-relay state (by mediamtx_path) across the org. */
+  agentPush: () => request<AgentPushStatusResponse>("/api/v1/nodes/agent-push"),
   /** Resource time-series for a node the org owns (404 otherwise). */
   metrics: (id: string, range: NodeMetricRange = "24h") =>
     request<NodeMetricSample[]>(

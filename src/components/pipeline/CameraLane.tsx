@@ -40,7 +40,7 @@ const RISK_HEX = { green: "#22c55e", yellow: "#eab308", red: "#ef4444" } as cons
  * stages as a vertical lane, the per-person behavior breakdown, and a per-track
  * table — so an operator confirms exactly which hop is broken while watching it. */
 export function CameraLane({ path }: { path: string }) {
-  const { cams, error, reload, nodeList, ingest, alerts, now } = usePipelineData();
+  const { cams, error, reload, nodeList, ingest, push, alerts, now } = usePipelineData();
   const { latest, state, lastFrameAt } = useLiveMetadata(path);
   const [labels, setLabels] = useState<Record<string, string>>({});
   const [levelLabels, setLevelLabels] = useState<Record<string, string>>({});
@@ -72,8 +72,10 @@ export function CameraLane({ path }: { path: string }) {
       lastFrameAt,
     );
     const entry = cam ?? { id: path, path, name: path };
-    return computeCameraRows([entry], { [path]: sig }, nodeList, ingest, alerts, now)[0] ?? null;
-  }, [cam, path, latest, state, lastFrameAt, nodeList, ingest, alerts, now]);
+    return (
+      computeCameraRows([entry], { [path]: sig }, nodeList, ingest, alerts, now, push)[0] ?? null
+    );
+  }, [cam, path, latest, state, lastFrameAt, nodeList, ingest, push, alerts, now]);
 
   const tracks = useMemo(
     () =>

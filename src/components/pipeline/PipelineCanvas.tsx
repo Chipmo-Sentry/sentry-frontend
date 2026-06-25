@@ -37,16 +37,27 @@ type Status = "ok" | "warn" | "down" | "unknown";
 type Provenance = "live" | "heartbeat" | "unknown";
 
 export function PipelineCanvas() {
-  const { cams, error, reload, nodeList, ingest, signals, onReport, alerts, sseConnected, now } =
-    usePipelineData();
+  const {
+    cams,
+    error,
+    reload,
+    nodeList,
+    ingest,
+    push,
+    signals,
+    onReport,
+    alerts,
+    sseConnected,
+    now,
+  } = usePipelineData();
 
   const view = useMemo(
     () => computeView(cams ?? [], signals, nodeList, ingest, alerts, sseConnected, now),
     [cams, signals, nodeList, ingest, alerts, sseConnected, now],
   );
   const cameraRows = useMemo(
-    () => computeCameraRows(cams ?? [], signals, nodeList, ingest, alerts, now),
-    [cams, signals, nodeList, ingest, alerts, now],
+    () => computeCameraRows(cams ?? [], signals, nodeList, ingest, alerts, now, push),
+    [cams, signals, nodeList, ingest, alerts, now, push],
   );
 
   if (error) {
