@@ -19,6 +19,9 @@ export type AttachCallbacks = {
 export type LiveVideoSource = {
   whepUrl: string;
   hlsUrl: string;
+  /** Skip the WebRTC attempt and go straight to HLS. Set for the cloud HTTPS HLS
+   * proxy, where WebRTC (UDP/ICE) can't traverse and only adds a 4s dead wait. */
+  hlsOnly?: boolean;
 };
 
 /**
@@ -117,6 +120,12 @@ export function attachLiveVideo(
         stopWatchdog();
         giveUp(UNSUPPORTED_MSG);
       }
+    }
+
+    // Cloud HTTPS HLS proxy → WebRTC can't traverse it, so don't waste a 4s probe.
+    if (src.hlsOnly) {
+      startHls();
+      return;
     }
 
     // WebRTC first.

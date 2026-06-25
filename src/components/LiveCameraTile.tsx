@@ -4,7 +4,7 @@ import { ExternalLink, ListChecks, Maximize2, Minimize2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
-import { ApiError, cameras as camerasApi } from "@/lib/api";
+import { ApiError, API_BASE_URL, cameras as camerasApi } from "@/lib/api";
 import { attachLiveVideo, type LiveTransport } from "@/lib/live-video";
 import { useLiveMetadata } from "@/lib/live-ws";
 import type { Zone } from "@/lib/types";
@@ -85,8 +85,15 @@ export function LiveCameraTile({
     let cancelled = false;
     setPaymentRequired(false);
     camerasApi.streamToken(streamCameraId).then(
-      ({ token }) => {
+      ({ token, hls_url }) => {
         if (cancelled) return;
+        // Prefer the backend's same-origin HTTPS HLS proxy (no mixed-content, no
+        // hardcoded ephemeral node port). whep="" makes attachLiveVideo go straight
+        // to HLS — WebRTC can't traverse the proxy.
+        if (hls_url) {
+          setAuthUrls({ whep: "", hls: API_BASE_URL + hls_url });
+          return;
+        }
         const q = `?jwt=${encodeURIComponent(token)}`;
         setAuthUrls({ whep: whepUrl + q, hls: hlsUrl + q });
       },
@@ -139,7 +146,7 @@ export function LiveCameraTile({
 
     detach = attachLiveVideo(
       video,
-      { whepUrl: authUrls.whep, hlsUrl: authUrls.hls },
+      { whepUrl: authUrls.whep, hlsUrl: authUrls.hls, hlsOnly: !authUrls.whep },
       {
         onTransport: setTransport,
         onError: (e) => {
