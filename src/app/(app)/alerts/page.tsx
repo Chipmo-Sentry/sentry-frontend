@@ -56,6 +56,7 @@ function rowActions(a: AlertPublic): AlertCategory[] {
 
 interface AlertRow {
   id: string;
+  edge_id: string;
   level: string;
   browsing: string;
   cart_pickup: string;
@@ -91,6 +92,17 @@ function CheckCell(p: ICellRendererParams<AlertRow>) {
     <Check className="h-3.5 w-3.5 text-[var(--color-success)]" />
   ) : (
     <span className="text-[var(--color-muted-foreground)]">—</span>
+  );
+}
+
+// Edge clip id — the SAME string shown in the agent-pc «Сэжигтэй» list, so the
+// operator can match an alert to its edge clip. Empty for cloud/manual alerts.
+function EdgeIdCell(p: ICellRendererParams<AlertRow>) {
+  if (!p.value) return <span className="text-[var(--color-muted-foreground)]">—</span>;
+  return (
+    <span className="block truncate font-mono text-xs text-[var(--color-muted-foreground)]" title={p.value}>
+      {p.value}
+    </span>
   );
 }
 
@@ -235,6 +247,7 @@ export default function AlertsPage() {
       const v = verdicts[a.id] ?? a.feedback_verdict ?? "";
       return {
         id: a.id,
+        edge_id: a.edge_clip_id ?? "",
         level: LEVEL_LABEL[a.alert_level],
         browsing: acts.includes("browsing") ? YES : NO,
         cart_pickup: acts.includes("cart_pickup") ? YES : NO,
@@ -274,6 +287,7 @@ export default function AlertsPage() {
       { field: "reasoning", headerName: "Шалтгаан", flex: 2, minWidth: 200, tooltipField: "reasoning", cellRenderer: ReasoningCell },
       { field: "day", headerName: "Огноо", width: 120, flex: 0, cellStyle: MUTED },
       { field: "time", headerName: "Цаг", width: 90, flex: 0, cellStyle: MUTED },
+      { field: "edge_id", headerName: "ID", width: 200, flex: 0, tooltipField: "edge_id", cellRenderer: EdgeIdCell },
       { field: "model", headerName: "AI", width: 150, flex: 0, cellStyle: MUTED },
       { field: "latency", headerName: "Хугацаа", width: 110, flex: 0, cellStyle: MUTED },
       { field: "verdict", headerName: "Дүгнэлт", width: 170, flex: 0, cellRenderer: VerdictCell },
