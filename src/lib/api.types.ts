@@ -1837,6 +1837,8 @@ export interface components {
              * Format: uuid
              */
             clip_id: string;
+            /** Edge Clip Id */
+            edge_clip_id?: string | null;
             /**
              * Organization Id
              * Format: uuid
