@@ -1837,12 +1837,7 @@ export interface components {
              * Format: uuid
              */
             clip_id: string;
-            /**
-             * Edge Clip Id
-             * @description Edge-first traceability: the agent-pc edge clip id
-             *     (`{camera_id}_{epoch}`) behind this alert, matching the agent-pc
-             *     «Сэжигтэй» row. Null for cloud/manual alerts.
-             */
+            /** Edge Clip Id */
             edge_clip_id?: string | null;
             /**
              * Organization Id
