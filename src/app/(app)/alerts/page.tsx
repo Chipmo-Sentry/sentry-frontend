@@ -89,18 +89,18 @@ function LevelCell(p: ICellRendererParams<AlertRow>) {
 
 function CheckCell(p: ICellRendererParams<AlertRow>) {
   return p.value === YES ? (
-    <Check className="h-3.5 w-3.5 text-[var(--color-success)]" />
+    <Check className="h-3.5 w-3.5 text-(--color-success)" />
   ) : (
-    <span className="text-[var(--color-muted-foreground)]">—</span>
+    <span className="text-(--color-muted-foreground)">—</span>
   );
 }
 
 // Edge clip id — the SAME string shown in the agent-pc «Сэжигтэй» list, so the
 // operator can match an alert to its edge clip. Empty for cloud/manual alerts.
 function EdgeIdCell(p: ICellRendererParams<AlertRow>) {
-  if (!p.value) return <span className="text-[var(--color-muted-foreground)]">—</span>;
+  if (!p.value) return <span className="text-(--color-muted-foreground)">—</span>;
   return (
-    <span className="block truncate font-mono text-xs text-[var(--color-muted-foreground)]" title={p.value}>
+    <span className="block truncate font-mono text-xs text-(--color-muted-foreground)" title={p.value}>
       {p.value}
     </span>
   );
@@ -108,14 +108,14 @@ function EdgeIdCell(p: ICellRendererParams<AlertRow>) {
 
 function ReasoningCell(p: ICellRendererParams<AlertRow>) {
   return (
-    <span className="block truncate text-[var(--color-muted-foreground)]" title={p.value}>
+    <span className="block truncate text-(--color-muted-foreground)" title={p.value}>
       {p.value}
     </span>
   );
 }
 
 const ICON_BTN =
-  "inline-flex h-7 w-7 items-center justify-center rounded-md border border-[var(--color-border)] text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)]";
+  "inline-flex h-7 w-7 items-center justify-center rounded-md border border-(--color-border) text-(--color-muted-foreground) hover:bg-(--color-muted)";
 
 function VerdictCell(p: ICellRendererParams<AlertRow>) {
   const row = p.data;

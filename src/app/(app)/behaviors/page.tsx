@@ -93,16 +93,16 @@ export default function BehaviorsPage() {
   return (
     <div className="p-8">
       <div className="mb-2 flex items-center gap-2">
-        <Brain className="h-6 w-6 text-[var(--color-primary)]" />
+        <Brain className="h-6 w-6 text-(--color-primary)" />
         <h1 className="text-2xl font-semibold">Зан үйлийн engine</h1>
       </div>
-      <p className="mb-4 text-sm text-[var(--color-muted-foreground)]">
+      <p className="mb-4 text-sm text-(--color-muted-foreground)">
         AI {detectorCount} / {data.dimensions.length} детектортой шалгуураар хүн
         бүрийн үйлдлийг 0–100 эрсдэлийн оноогоор үнэлж, дараалал илрэхэд нэмэлт
         оноо өгнө.
       </p>
 
-      <div className="mb-6 flex items-center gap-2 rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] px-3 py-2 text-xs text-[var(--color-muted-foreground)]">
+      <div className="mb-6 flex items-center gap-2 rounded-md border border-(--color-border) bg-(--color-muted) px-3 py-2 text-xs text-(--color-muted-foreground)">
         <Lock className="h-3.5 w-3.5 shrink-0" />
         Зөвхөн харах. Жин болон босгыг <strong>супер админ</strong> удирдлагын
         самбараас тохируулна.
@@ -133,7 +133,7 @@ export default function BehaviorsPage() {
             />
             <Band color="bg-red-600" label={ll.CRITICAL} range={`≥ ${highMax}`} />
           </div>
-          <p className="mt-3 text-xs text-[var(--color-muted-foreground)]">
+          <p className="mt-3 text-xs text-(--color-muted-foreground)">
             🔴 {ll.CRITICAL} (≥ {highMax}) болоход автомат clip хадгалагдан VLM
             шалгаад alert үүснэ.
           </p>
@@ -151,7 +151,7 @@ export default function BehaviorsPage() {
             </CardHeader>
             <CardContent className="px-0 pt-0">
               <table className="w-full text-sm">
-                <thead className="border-y border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase tracking-wider text-[var(--color-muted-foreground)]">
+                <thead className="border-y border-(--color-border) bg-(--color-muted) text-xs uppercase tracking-wider text-(--color-muted-foreground)">
                   <tr>
                     <th className="px-3 py-2 text-left font-medium">Шалгуур</th>
                     <th className="px-3 py-2 text-left font-medium">Тайлбар</th>
@@ -163,17 +163,17 @@ export default function BehaviorsPage() {
                   {dims.map((d) => (
                     <tr
                       key={d.key}
-                      className={`border-b border-[var(--color-border)] ${
+                      className={`border-b border-(--color-border) ${
                         !d.active ? "opacity-60" : ""
                       }`}
                     >
                       <td className="px-3 py-3 align-top">
                         <div className="font-medium">{d.label_mn}</div>
-                        <code className="mt-0.5 inline-block rounded bg-[var(--color-muted)] px-1.5 py-0.5 text-xs">
+                        <code className="mt-0.5 inline-block rounded bg-(--color-muted) px-1.5 py-0.5 text-xs">
                           {d.key}
                         </code>
                       </td>
-                      <td className="max-w-md px-3 py-3 align-top text-xs text-[var(--color-muted-foreground)]">
+                      <td className="max-w-md px-3 py-3 align-top text-xs text-(--color-muted-foreground)">
                         {d.description_mn}
                       </td>
                       <td className="px-3 py-3 align-top text-center">
@@ -216,17 +216,17 @@ export default function BehaviorsPage() {
               {data.sequences.map((s) => (
                 <li
                   key={s.key}
-                  className="flex items-center justify-between gap-3 rounded-md border border-[var(--color-border)] px-3 py-2"
+                  className="flex items-center justify-between gap-3 rounded-md border border-(--color-border) px-3 py-2"
                 >
                   <span className="flex flex-wrap items-center gap-1.5 text-sm">
                     {s.pattern.map((p, i) => (
                       <span key={i} className="flex items-center gap-1.5">
                         {i > 0 && (
-                          <span className="text-[var(--color-muted-foreground)]">
+                          <span className="text-(--color-muted-foreground)">
                             →
                           </span>
                         )}
-                        <code className="rounded bg-[var(--color-muted)] px-1.5 py-0.5 text-xs">
+                        <code className="rounded bg-(--color-muted) px-1.5 py-0.5 text-xs">
                           {p}
                         </code>
                       </span>
@@ -257,7 +257,7 @@ function Band({
       <span className={`inline-block h-3 w-3 rounded-full ${color}`} />
       <span>
         <span className="font-medium">{label}</span>{" "}
-        <span className="font-mono text-[var(--color-muted-foreground)]">
+        <span className="font-mono text-(--color-muted-foreground)">
           ({range})
         </span>
       </span>

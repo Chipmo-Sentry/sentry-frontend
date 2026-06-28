@@ -108,17 +108,17 @@ export function CameraLane({ path }: { path: string }) {
       <div className="flex flex-wrap items-center gap-3">
         <Link
           href="/pipeline"
-          className="inline-flex items-center gap-1 text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
+          className="inline-flex items-center gap-1 text-sm text-(--color-muted-foreground) hover:text-(--color-foreground)"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden /> Урсгал
         </Link>
-        <span className="text-[var(--color-muted-foreground)]">/</span>
+        <span className="text-(--color-muted-foreground)">/</span>
         <h1 className="text-lg font-medium">{name}</h1>
         <StatusPill status={overall} />
         {row.node && (
-          <span className="text-xs text-[var(--color-muted-foreground)]">{row.node.name}</span>
+          <span className="text-xs text-(--color-muted-foreground)">{row.node.name}</span>
         )}
-        <span className="ml-auto text-xs text-[var(--color-muted-foreground)]">
+        <span className="ml-auto text-xs text-(--color-muted-foreground)">
           {state === "connected" ? "AI шууд" : `AI: ${state}`}
         </span>
       </div>
@@ -137,10 +137,10 @@ export function CameraLane({ path }: { path: string }) {
           </div>
 
           <section>
-            <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+            <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-(--color-muted-foreground)">
               Шатууд
             </h2>
-            <div className="divide-y divide-[var(--color-border)] rounded-[var(--radius)] border border-[var(--color-border)]">
+            <div className="divide-y divide-(--color-border) rounded-(--radius) border border-(--color-border)">
               {STAGE_ORDER.map((s) => {
                 const cell = row.cells[s];
                 const Icon = STAGE_ICON[s];
@@ -148,14 +148,14 @@ export function CameraLane({ path }: { path: string }) {
                   <Link
                     key={s}
                     href={`/pipeline/stage/${s}?camera=${encodeURIComponent(path)}`}
-                    className="flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-[var(--color-muted)]"
+                    className="flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-(--color-muted)"
                   >
                     <Icon className="h-4 w-4 shrink-0" style={{ color: STATUS_COLOR[cell.status] }} aria-hidden />
-                    <span className="w-28 shrink-0 text-sm text-[var(--color-foreground)]">
+                    <span className="w-28 shrink-0 text-sm text-(--color-foreground)">
                       {STAGE_LABEL[s]}
                     </span>
                     <StatusPill status={cell.status} />
-                    <span className="ml-auto truncate text-right text-xs text-[var(--color-muted-foreground)]">
+                    <span className="ml-auto truncate text-right text-xs text-(--color-muted-foreground)">
                       {cell.reason ?? cell.short}
                     </span>
                   </Link>
@@ -167,7 +167,7 @@ export function CameraLane({ path }: { path: string }) {
 
         {/* RIGHT — per-person behavior breakdown */}
         <section>
-          <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+          <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-(--color-muted-foreground)">
             Хүн бүрийн задаргаа
           </h2>
           {tracks.length > 0 ? (
@@ -183,7 +183,7 @@ export function CameraLane({ path }: { path: string }) {
               ))}
             </div>
           ) : (
-            <p className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-6 text-center text-sm text-[var(--color-muted-foreground)]">
+            <p className="rounded-(--radius) border border-(--color-border) bg-(--color-surface) px-3 py-6 text-center text-sm text-(--color-muted-foreground)">
               {state === "connected" ? "AI холбогдсон · 0 хүн" : "AI метадата хүлээж байна…"}
             </p>
           )}
@@ -192,13 +192,13 @@ export function CameraLane({ path }: { path: string }) {
 
       {/* Per-track table */}
       <section>
-        <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+        <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-(--color-muted-foreground)">
           Мөшгиж буй хүмүүс
         </h2>
-        <div className="overflow-x-auto rounded-[var(--radius)] border border-[var(--color-border)]">
+        <div className="overflow-x-auto rounded-(--radius) border border-(--color-border)">
           <table className="w-full min-w-[560px] border-collapse text-sm">
             <thead>
-              <tr className="border-b border-[var(--color-border)] text-left text-xs text-[var(--color-muted-foreground)]">
+              <tr className="border-b border-(--color-border) text-left text-xs text-(--color-muted-foreground)">
                 <th className="px-3 py-2 font-medium">#</th>
                 <th className="px-3 py-2 font-medium">Эрсдэл</th>
                 <th className="px-3 py-2 font-medium">Төлөв</th>
@@ -208,7 +208,7 @@ export function CameraLane({ path }: { path: string }) {
             <tbody>
               {tracks.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-3 py-4 text-center text-[var(--color-muted-foreground)]">
+                  <td colSpan={4} className="px-3 py-4 text-center text-(--color-muted-foreground)">
                     —
                   </td>
                 </tr>
@@ -218,11 +218,11 @@ export function CameraLane({ path }: { path: string }) {
                   const risk = Math.round(t.risk_pct);
                   const beh = (t.behaviors ?? []).map((k) => labels[k] ?? k).slice(0, 3);
                   return (
-                    <tr key={t.person_id} className="border-b border-[var(--color-border)] last:border-0">
-                      <td className="px-3 py-2.5 align-top text-[var(--color-foreground)]">#{pid}</td>
+                    <tr key={t.person_id} className="border-b border-(--color-border) last:border-0">
+                      <td className="px-3 py-2.5 align-top text-(--color-foreground)">#{pid}</td>
                       <td className="px-3 py-2.5 align-top">
                         <div className="flex items-center gap-2">
-                          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-[var(--color-muted)]">
+                          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-(--color-muted)">
                             <div
                               className="h-full"
                               style={{ width: `${risk}%`, background: RISK_HEX[t.color] }}
@@ -231,10 +231,10 @@ export function CameraLane({ path }: { path: string }) {
                           <span className="tabular-nums text-xs">{risk}%</span>
                         </div>
                       </td>
-                      <td className="px-3 py-2.5 align-top text-xs text-[var(--color-foreground)]">
+                      <td className="px-3 py-2.5 align-top text-xs text-(--color-foreground)">
                         {STATE_LABEL[t.state ?? "IDLE"] ?? t.state}
                       </td>
-                      <td className="px-3 py-2.5 align-top text-xs text-[var(--color-muted-foreground)]">
+                      <td className="px-3 py-2.5 align-top text-xs text-(--color-muted-foreground)">
                         {beh.length ? beh.join(", ") : "—"}
                       </td>
                     </tr>

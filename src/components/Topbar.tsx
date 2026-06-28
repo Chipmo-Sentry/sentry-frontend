@@ -42,12 +42,12 @@ export function Topbar({
   const initial = user?.email.charAt(0).toUpperCase() ?? "?";
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-background)] px-4">
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-(--color-border) bg-(--color-background) px-4">
       <button
         type="button"
         onClick={onMenuClick}
         aria-label="Цэс нээх"
-        className="rounded-md p-1.5 text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] lg:hidden"
+        className="rounded-md p-1.5 text-(--color-muted-foreground) hover:bg-(--color-muted) lg:hidden"
       >
         <Menu className="h-5 w-5" />
       </button>
@@ -63,7 +63,7 @@ export function Topbar({
           <DropdownTrigger asChild>
             <button
               type="button"
-              className="flex items-center gap-2 rounded-full p-0.5 transition-colors hover:bg-[var(--color-muted)]"
+              className="flex items-center gap-2 rounded-full p-0.5 transition-colors hover:bg-(--color-muted)"
               aria-label="Хэрэглэгчийн цэс"
             >
               <Avatar className="h-8 w-8">
@@ -91,7 +91,7 @@ export function Topbar({
           </DropdownContent>
         </Dropdown>
       ) : (
-        <div className="h-8 w-8 animate-pulse rounded-full bg-[var(--color-muted)]" />
+        <div className="h-8 w-8 animate-pulse rounded-full bg-(--color-muted)" />
       )}
     </header>
   );

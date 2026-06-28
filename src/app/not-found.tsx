@@ -5,10 +5,10 @@ import Link from "next/link";
  * or stale URL doesn't dump the user onto an unstyled, off-brand screen. */
 export default function NotFound() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[var(--color-muted)] p-6 text-center">
-      <p className="text-6xl font-bold text-[var(--color-primary)]">404</p>
+    <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-(--color-muted) p-6 text-center">
+      <p className="text-6xl font-bold text-(--color-primary)">404</p>
       <h1 className="text-xl font-semibold">Хуудас олдсонгүй</h1>
-      <p className="max-w-sm text-sm text-[var(--color-muted-foreground)]">
+      <p className="max-w-sm text-sm text-(--color-muted-foreground)">
         Таны хайсан хуудас байхгүй эсвэл шилжсэн байна.
       </p>
       <Button asChild>

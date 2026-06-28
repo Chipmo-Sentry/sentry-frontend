@@ -155,10 +155,10 @@ export default function StoresPage() {
               <CardContent className="flex items-center justify-between gap-3 py-4">
                 <div className="min-w-0">
                   <p className="font-medium">{s.name}</p>
-                  <p className="truncate text-sm text-[var(--color-muted-foreground)]">
+                  <p className="truncate text-sm text-(--color-muted-foreground)">
                     {s.address || "Хаяг оруулаагүй"}
                   </p>
-                  <p className="mt-0.5 flex items-center gap-1 text-xs text-[var(--color-muted-foreground)]">
+                  <p className="mt-0.5 flex items-center gap-1 text-xs text-(--color-muted-foreground)">
                     <Clock className="h-3 w-3" />
                     {tzLabel(s.timezone)}
                   </p>
@@ -208,7 +208,7 @@ export default function StoresPage() {
                       </DropdownItem>
                       <DropdownSeparator />
                       <DropdownItem
-                        className="text-[var(--color-danger)] focus:text-[var(--color-danger)]"
+                        className="text-(--color-danger) focus:text-(--color-danger)"
                         onClick={() => setConfirmDelete(s)}
                       >
                         <Trash2 className="h-4 w-4" />

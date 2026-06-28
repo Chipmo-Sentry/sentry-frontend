@@ -50,7 +50,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         />
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar user={user} onMenuClick={() => setMobileOpen(true)} />
-          <main className="flex flex-1 flex-col overflow-auto bg-[var(--color-muted)]">
+          <main className="flex flex-1 flex-col overflow-auto bg-(--color-muted)">
             {children}
           </main>
         </div>

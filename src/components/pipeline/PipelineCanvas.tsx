@@ -84,7 +84,7 @@ export function PipelineCanvas() {
           action={
             <Link
               href="/cameras"
-              className="rounded-[var(--radius)] bg-[var(--color-primary)] px-3 py-1.5 text-sm font-medium text-[var(--color-primary-foreground)]"
+              className="rounded-(--radius) bg-(--color-primary) px-3 py-1.5 text-sm font-medium text-(--color-primary-foreground)"
             >
               Камер удирдах
             </Link>
@@ -105,7 +105,7 @@ export function PipelineCanvas() {
 
       <GlobalHealthBanner banner={view.banner} />
 
-      <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--color-muted-foreground)]">
+      <div className="flex flex-wrap items-center gap-2 text-xs text-(--color-muted-foreground)">
         <span className="inline-flex items-center gap-1.5">
           <Cctv className="h-3.5 w-3.5" aria-hidden />
           {view.stages[0]?.metric}
@@ -423,12 +423,12 @@ function StageCard({ stage }: { stage: StageView }) {
   const Icon = stage.icon;
   const body = (
     <div
-      className="flex h-full flex-col items-center gap-1 rounded-[var(--radius)] border bg-[var(--color-surface)] px-2 py-2.5 text-center transition-colors hover:bg-[var(--color-muted)]"
+      className="flex h-full flex-col items-center gap-1 rounded-(--radius) border bg-(--color-surface) px-2 py-2.5 text-center transition-colors hover:bg-(--color-muted)"
       style={{ borderColor: stage.status === "unknown" ? "var(--color-border)" : color }}
     >
       <Icon className="h-5 w-5" style={{ color }} aria-hidden />
-      <span className="text-xs font-medium text-[var(--color-foreground)]">{stage.label}</span>
-      <span className="text-[11px] text-[var(--color-muted-foreground)]">{stage.metric}</span>
+      <span className="text-xs font-medium text-(--color-foreground)">{stage.label}</span>
+      <span className="text-[11px] text-(--color-muted-foreground)">{stage.metric}</span>
       {stage.sub && (
         <span
           className="text-[10px]"
@@ -439,7 +439,7 @@ function StageCard({ stage }: { stage: StageView }) {
       )}
       <span className="mt-1 inline-flex items-center gap-1">
         <HealthDot status={stage.status} />
-        <span className="text-[9px] text-[var(--color-muted-foreground)]">
+        <span className="text-[9px] text-(--color-muted-foreground)">
           {PROV_LABEL[stage.provenance]}
         </span>
       </span>
@@ -490,7 +490,7 @@ function GlobalHealthBanner({ banner }: { banner: BannerView }) {
   const Icon = tone === "ok" ? Bell : AlertTriangle;
   return (
     <div
-      className="flex items-center gap-2 rounded-[var(--radius)] border px-3 py-2 text-sm"
+      className="flex items-center gap-2 rounded-(--radius) border px-3 py-2 text-sm"
       style={{
         borderColor: color,
         background: tone === "ok" ? "transparent" : "color-mix(in srgb, " + color + " 12%, transparent)",
@@ -521,11 +521,11 @@ function DecisionFeed({ alerts }: { alerts: AlertPublic[] }) {
   const recent = alerts.slice(0, 6);
   return (
     <section>
-      <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+      <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-(--color-muted-foreground)">
         Шийдвэрийн урсгал
       </h2>
       {recent.length === 0 ? (
-        <p className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-4 text-sm text-[var(--color-muted-foreground)]">
+        <p className="rounded-(--radius) border border-(--color-border) bg-(--color-surface) px-3 py-4 text-sm text-(--color-muted-foreground)">
           Энэ session-д сэрэмжлүүлэг алга.
         </p>
       ) : (
@@ -534,18 +534,18 @@ function DecisionFeed({ alerts }: { alerts: AlertPublic[] }) {
             <li key={a.id}>
               <Link
                 href={`/alerts/${a.id}`}
-                className="flex items-center gap-2.5 rounded-[var(--radius)] border-l-2 bg-[var(--color-surface)] px-3 py-2 transition-colors hover:bg-[var(--color-muted)]"
+                className="flex items-center gap-2.5 rounded-(--radius) border-l-2 bg-(--color-surface) px-3 py-2 transition-colors hover:bg-(--color-muted)"
                 style={{ borderLeftColor: levelColor(a.alert_level) }}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[13px] text-[var(--color-foreground)]">
+                  <p className="truncate text-[13px] text-(--color-foreground)">
                     {CATEGORY_LABEL[a.category]}
-                    <span className="text-[var(--color-muted-foreground)]">
+                    <span className="text-(--color-muted-foreground)">
                       {" "}
                       · {Math.round(a.confidence * 100)}%
                     </span>
                   </p>
-                  <p className="truncate text-[11px] text-[var(--color-muted-foreground)]">
+                  <p className="truncate text-[11px] text-(--color-muted-foreground)">
                     {a.camera_id ?? "—"}
                     {a.person_id != null ? ` · #${a.person_id}` : ""}
                     {a.peak_risk_pct != null ? ` · эрсдэл ${Math.round(a.peak_risk_pct)}%` : ""}
@@ -587,11 +587,11 @@ function levelColor(level: AlertPublic["alert_level"]): string {
 function NodeStrip({ nodes }: { nodes: OrgNodePublic[] }) {
   return (
     <section>
-      <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+      <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-(--color-muted-foreground)">
         Node эрүүл мэнд
       </h2>
       {nodes.length === 0 ? (
-        <p className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-4 text-sm text-[var(--color-muted-foreground)]">
+        <p className="rounded-(--radius) border border-(--color-border) bg-(--color-surface) px-3 py-4 text-sm text-(--color-muted-foreground)">
           Энэ байгууллагын камер үйлчилж буй AI node алга.
         </p>
       ) : (
@@ -616,7 +616,7 @@ function NodeChip({ node }: { node: OrgNodePublic }) {
   const providerOk = node.provider_ready !== false;
   return (
     <li
-      className="rounded-[var(--radius)] border bg-[var(--color-surface)] px-3 py-2.5"
+      className="rounded-(--radius) border bg-(--color-surface) px-3 py-2.5"
       style={{ borderColor: online ? "var(--color-border)" : "var(--color-danger)" }}
     >
       <div className="mb-1.5 flex items-center gap-2">
@@ -625,7 +625,7 @@ function NodeChip({ node }: { node: OrgNodePublic }) {
           style={{ background: online ? "var(--color-success)" : "var(--color-muted-foreground)" }}
           aria-hidden
         />
-        <span className="truncate text-[13px] text-[var(--color-foreground)]">
+        <span className="truncate text-[13px] text-(--color-foreground)">
           {node.name ?? "AI node"}
         </span>
         <span
@@ -636,7 +636,7 @@ function NodeChip({ node }: { node: OrgNodePublic }) {
         </span>
       </div>
       {online && vramPct != null && (
-        <div className="mb-1.5 h-1 overflow-hidden rounded-full bg-[var(--color-muted)]">
+        <div className="mb-1.5 h-1 overflow-hidden rounded-full bg-(--color-muted)">
           <div
             className="h-full"
             style={{
@@ -646,7 +646,7 @@ function NodeChip({ node }: { node: OrgNodePublic }) {
           />
         </div>
       )}
-      <div className="flex items-center gap-1.5 text-[10px] text-[var(--color-muted-foreground)]">
+      <div className="flex items-center gap-1.5 text-[10px] text-(--color-muted-foreground)">
         {node.vram_used_mb != null && node.vram_total_mb && (
           <span>
             VRAM {(node.vram_used_mb / 1024).toFixed(1)}/{(node.vram_total_mb / 1024).toFixed(0)}GB

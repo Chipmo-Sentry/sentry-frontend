@@ -80,7 +80,7 @@ export default function UploadPage() {
                 onChange={(e) => setStoreId(e.target.value)}
                 required
                 disabled={uploading || storeList.length === 0}
-                className="h-10 w-full rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-background)] px-3 text-sm"
+                className="h-10 w-full rounded-(--radius) border border-(--color-border) bg-(--color-background) px-3 text-sm"
               >
                 {storeList.length === 0 ? (
                   <option value="">— Дэлгүүр бүртгэгдээгүй —</option>
@@ -98,7 +98,7 @@ export default function UploadPage() {
               <label className="mb-1 block text-sm font-medium">Видео</label>
               <label
                 htmlFor="clip-file"
-                className="flex h-32 cursor-pointer items-center justify-center rounded-[var(--radius)] border-2 border-dashed border-[var(--color-border)] bg-[var(--color-background)] text-sm text-[var(--color-muted-foreground)] hover:border-[var(--color-primary)]"
+                className="flex h-32 cursor-pointer items-center justify-center rounded-(--radius) border-2 border-dashed border-(--color-border) bg-(--color-background) text-sm text-(--color-muted-foreground) hover:border-(--color-primary)"
               >
                 <Upload className="mr-2 h-4 w-4" />
                 {file ? file.name : "MP4 файл сонгоно уу"}
@@ -114,13 +114,13 @@ export default function UploadPage() {
             </div>
 
             {error ? (
-              <p role="alert" className="text-sm text-[var(--color-danger)]">
+              <p role="alert" className="text-sm text-(--color-danger)">
                 {error}
               </p>
             ) : null}
 
             {result ? (
-              <div className="rounded-[var(--radius)] border border-[var(--color-success)] bg-[var(--color-muted)] p-3 text-sm">
+              <div className="rounded-(--radius) border border-(--color-success) bg-(--color-muted) p-3 text-sm">
                 ✅ Илгээгдсэн. Clip ID:{" "}
                 <code className="font-mono">{result.id}</code>
               </div>

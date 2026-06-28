@@ -59,7 +59,7 @@ function LoginForm() {
   }
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[var(--color-background)] p-4">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-(--color-background) p-4">
       <div className="sentry-aurora" aria-hidden="true" />
       <Card className="relative z-10 w-full max-w-sm">
         <CardHeader className="items-center text-center">
@@ -87,7 +87,7 @@ function LoginForm() {
               disabled={submitting}
             />
             {error ? (
-              <p role="alert" className="text-sm text-[var(--color-danger)]">
+              <p role="alert" className="text-sm text-(--color-danger)">
                 {error}
               </p>
             ) : null}

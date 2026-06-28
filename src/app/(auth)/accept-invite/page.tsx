@@ -58,7 +58,7 @@ function AcceptInviteForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--color-muted)] p-4">
+    <div className="flex min-h-screen items-center justify-center bg-(--color-muted) p-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="items-center text-center">
           <Logo className="mx-auto mb-2 h-8 w-8" />
@@ -66,16 +66,16 @@ function AcceptInviteForm() {
         </CardHeader>
         <CardContent>
           {!token ? (
-            <p className="text-sm text-[var(--color-danger)]">
+            <p className="text-sm text-(--color-danger)">
               Урилгын холбоос буруу байна (token алга).
             </p>
           ) : done ? (
-            <p className="text-sm text-[var(--color-success,#16a34a)]">
+            <p className="text-sm text-(--color-success,#16a34a)">
               Бүртгэл амжилттай! Нэвтрэх хуудас руу шилжиж байна…
             </p>
           ) : (
             <form className="space-y-4" onSubmit={onSubmit}>
-              <p className="text-sm text-[var(--color-muted-foreground)]">
+              <p className="text-sm text-(--color-muted-foreground)">
                 Бүртгэлээ идэвхжүүлэхийн тулд нууц үгээ тохируулна уу.
               </p>
               <Field label="Нууц үг" required hint="Хамгийн багадаа 8 тэмдэгт">
@@ -99,7 +99,7 @@ function AcceptInviteForm() {
                   autoComplete="new-password"
                 />
               </Field>
-              {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
+              {error && <p className="text-sm text-(--color-danger)">{error}</p>}
               <Button type="submit" className="w-full" disabled={busy}>
                 {busy ? "Хадгалж байна…" : "Бүртгэл идэвхжүүлэх"}
               </Button>

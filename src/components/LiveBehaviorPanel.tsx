@@ -74,7 +74,7 @@ export function PersonCard({
         : "bg-green-500";
 
   return (
-    <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-background)] p-3">
+    <div className="rounded-(--radius) border border-(--color-border) bg-(--color-background) p-3">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className={`inline-block h-2 w-2 rounded-full ${dotClass}`} aria-hidden />
@@ -88,7 +88,7 @@ export function PersonCard({
         </span>
       </div>
 
-      <div className="mt-1 flex items-center justify-between text-xs text-[var(--color-muted-foreground)]">
+      <div className="mt-1 flex items-center justify-between text-xs text-(--color-muted-foreground)">
         <span>{STATE_LABEL[state] ?? state}</span>
         {episodeSec != null && <span>Эпизод: {fmtDuration(episodeSec)}</span>}
       </div>
@@ -101,14 +101,14 @@ export function PersonCard({
               className="flex items-center justify-between gap-2 text-xs"
             >
               <span>{labels[key] ?? key}</span>
-              <span className="font-mono tabular-nums text-[var(--color-muted-foreground)]">
+              <span className="font-mono tabular-nums text-(--color-muted-foreground)">
                 {scores[key] != null ? `+${scores[key].toFixed(1)}` : ""}
               </span>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="mt-2 text-xs text-[var(--color-muted-foreground)]">
+        <p className="mt-2 text-xs text-(--color-muted-foreground)">
           Шалгуур илрээгүй
         </p>
       )}
@@ -157,19 +157,19 @@ export function LiveBehaviorPanel({
       <aside
         role="dialog"
         aria-label={`${name} — сэжиг шалгуурууд`}
-        className="fixed inset-y-0 right-0 z-40 flex w-full max-w-xs flex-col border-l border-[var(--color-border)] bg-[var(--color-background)] shadow-xl"
+        className="fixed inset-y-0 right-0 z-40 flex w-full max-w-xs flex-col border-l border-(--color-border) bg-(--color-background) shadow-xl"
       >
-        <header className="flex items-center justify-between gap-2 border-b border-[var(--color-border)] px-4 py-3">
+        <header className="flex items-center justify-between gap-2 border-b border-(--color-border) px-4 py-3">
           <div className="min-w-0">
             <h2 className="truncate text-sm font-semibold">{name}</h2>
-            <p className="truncate text-xs text-[var(--color-muted-foreground)]">
+            <p className="truncate text-xs text-(--color-muted-foreground)">
               Сэжиг шалгуурууд · {wsState === "connected" ? "🟢 шууд" : wsState}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-1.5 text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-muted)]"
+            className="rounded-md p-1.5 text-(--color-muted-foreground) transition-colors hover:bg-(--color-muted)"
             aria-label="Хаах"
           >
             <X className="h-4 w-4" />
@@ -188,7 +188,7 @@ export function LiveBehaviorPanel({
               />
             ))
           ) : (
-            <p className="p-4 text-center text-sm text-[var(--color-muted-foreground)]">
+            <p className="p-4 text-center text-sm text-(--color-muted-foreground)">
               {wsState === "connected"
                 ? "Одоогоор хүн илрээгүй"
                 : "AI метадата хүлээж байна…"}

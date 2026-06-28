@@ -54,8 +54,8 @@ export const NAV: readonly NavItem[] = [
   { href: "/health", label: "Эрүүл мэнд", icon: Activity },
   // ADR-0014 (live-first): clip upload is admin/debug-only — route stays
   // reachable by direct URL but is not part of the customer nav.
-  { href: "/alerts", label: "Сэжигтэй үйлдэл", icon: Video },
-  { href: "/behaviors", label: "Сэжиг шалгуур", icon: Brain },
+  { href: "/alerts", label: "Эрсдэлтэй үйлдэл", icon: Video },
+  { href: "/behaviors", label: "Эрсдэл шалгуур", icon: Brain },
   { href: "/stores", label: "Дэлгүүр", icon: Store },
   { href: "/cameras", label: "Камер", icon: Cctv },
   { href: "/team", label: "Хэрэглэгчид", icon: Users },
@@ -102,8 +102,8 @@ function SidebarContent({
   const items = NAV.filter((item) => !item.superAdmin || isSuperAdmin);
 
   return (
-    <div className="flex h-full flex-col bg-[var(--color-background)]">
-      <div className="flex h-14 items-center gap-2 border-b border-[var(--color-border)] px-4">
+    <div className="flex h-full flex-col bg-(--color-background)">
+      <div className="flex h-14 items-center gap-2 border-b border-(--color-border) px-4">
         <Logo className="h-6 w-6" />
         <span className="text-sm font-semibold">Sentry</span>
       </div>
@@ -122,10 +122,10 @@ function SidebarContent({
                 <Link
                   href={item.href}
                   onClick={onNavigate}
-                  className={`flex flex-1 items-center gap-3 rounded-[var(--radius)] px-3 py-2 text-sm transition-colors ${
+                  className={`flex flex-1 items-center gap-3 rounded-(--radius) px-3 py-2 text-sm transition-colors ${
                     linkActive
-                      ? "bg-[var(--color-primary)] text-[var(--color-primary-foreground)]"
-                      : "text-[var(--color-foreground)] hover:bg-[var(--color-muted)]"
+                      ? "bg-(--color-primary) text-(--color-primary-foreground)"
+                      : "text-(--color-foreground) hover:bg-(--color-muted)"
                   }`}
                 >
                   <Icon className="h-4 w-4" aria-hidden />
@@ -139,7 +139,7 @@ function SidebarContent({
                     }
                     aria-label={expanded ? "Хураах" : "Дэлгэх"}
                     aria-expanded={expanded}
-                    className="rounded-[var(--radius)] p-1.5 text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-muted)]"
+                    className="rounded-(--radius) p-1.5 text-(--color-muted-foreground) transition-colors hover:bg-(--color-muted)"
                   >
                     <ChevronDown
                       className={`h-4 w-4 transition-transform ${expanded ? "" : "-rotate-90"}`}
@@ -149,7 +149,7 @@ function SidebarContent({
                 )}
               </div>
               {hasChildren && expanded && (
-                <div className="ml-[18px] mt-0.5 space-y-0.5 border-l border-[var(--color-border)] pl-3">
+                <div className="ml-4.5 mt-0.5 space-y-0.5 border-l border-(--color-border) pl-3">
                   {item.children!.map((child) => {
                     const cActive = pathname === child.href;
                     return (
@@ -157,10 +157,10 @@ function SidebarContent({
                         key={child.href}
                         href={child.href}
                         onClick={onNavigate}
-                        className={`block rounded-[var(--radius)] px-3 py-1.5 text-sm transition-colors ${
+                        className={`block rounded-(--radius) px-3 py-1.5 text-sm transition-colors ${
                           cActive
-                            ? "bg-[var(--color-primary)] text-[var(--color-primary-foreground)]"
-                            : "text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]"
+                            ? "bg-(--color-primary) text-(--color-primary-foreground)"
+                            : "text-(--color-muted-foreground) hover:bg-(--color-muted) hover:text-(--color-foreground)"
                         }`}
                       >
                         {child.label}
@@ -173,12 +173,12 @@ function SidebarContent({
           );
         })}
       </nav>
-      <div className="space-y-1 border-t border-[var(--color-border)] p-2">
+      <div className="space-y-1 border-t border-(--color-border) p-2">
         <NotificationSettings />
         <button
           type="button"
           onClick={onLogout}
-          className="flex w-full items-center gap-3 rounded-[var(--radius)] px-3 py-2 text-sm text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]"
+          className="flex w-full items-center gap-3 rounded-(--radius) px-3 py-2 text-sm text-(--color-muted-foreground) transition-colors hover:bg-(--color-muted) hover:text-(--color-foreground)"
         >
           <LogOut className="h-4 w-4" aria-hidden />
           Гарах
@@ -191,7 +191,7 @@ function SidebarContent({
 /** Desktop sidebar rail — fixed width, hidden below lg. */
 export function Sidebar({ isSuperAdmin }: { isSuperAdmin?: boolean }) {
   return (
-    <aside className="hidden w-60 shrink-0 border-r border-[var(--color-border)] lg:block">
+    <aside className="hidden w-60 shrink-0 border-r border-(--color-border) lg:block">
       <SidebarContent isSuperAdmin={isSuperAdmin} />
     </aside>
   );
@@ -224,7 +224,7 @@ export function MobileSidebar({
         role="dialog"
         aria-modal="true"
         aria-label="Цэс"
-        className={`absolute inset-y-0 left-0 w-64 border-r border-[var(--color-border)] shadow-xl transition-transform ${
+        className={`absolute inset-y-0 left-0 w-64 border-r border-(--color-border) shadow-xl transition-transform ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -232,7 +232,7 @@ export function MobileSidebar({
           type="button"
           onClick={onClose}
           aria-label="Хаах"
-          className="absolute right-2 top-2 z-10 rounded-md p-1.5 text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)]"
+          className="absolute right-2 top-2 z-10 rounded-md p-1.5 text-(--color-muted-foreground) hover:bg-(--color-muted)"
         >
           <X className="h-5 w-5" />
         </button>

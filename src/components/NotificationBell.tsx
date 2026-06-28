@@ -121,11 +121,11 @@ export function NotificationBell() {
           aria-label={
             unread > 0 ? `Мэдэгдлүүд (${unread} шинэ)` : "Мэдэгдлүүд"
           }
-          className="relative rounded-md p-1.5 text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-muted)]"
+          className="relative rounded-md p-1.5 text-(--color-muted-foreground) transition-colors hover:bg-(--color-muted)"
         >
           <Bell className="h-5 w-5" />
           {unread > 0 ? (
-            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-danger)] px-1 text-[10px] font-bold leading-none text-white">
+            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-(--color-danger) px-1 text-[10px] font-bold leading-none text-white">
               {unread > 9 ? "9+" : unread}
             </span>
           ) : null}
@@ -135,7 +135,7 @@ export function NotificationBell() {
         <DropdownLabel>Мэдэгдлүүд</DropdownLabel>
         <DropdownSeparator />
         {items.length === 0 ? (
-          <div className="px-3 py-6 text-center text-sm text-[var(--color-muted-foreground)]">
+          <div className="px-3 py-6 text-center text-sm text-(--color-muted-foreground)">
             Шинэ мэдэгдэл алга
           </div>
         ) : (
@@ -152,12 +152,12 @@ export function NotificationBell() {
                 <span className="truncate text-sm font-medium">
                   {CATEGORY_LABEL[a.category]}
                 </span>
-                <span className="ml-auto shrink-0 text-xs text-[var(--color-muted-foreground)]">
+                <span className="ml-auto shrink-0 text-xs text-(--color-muted-foreground)">
                   {relativeTime(a.created_at)}
                 </span>
               </div>
               {a.peak_risk_pct != null ? (
-                <span className="text-xs text-[var(--color-muted-foreground)]">
+                <span className="text-xs text-(--color-muted-foreground)">
                   {a.person_id != null ? `Хүн #${a.person_id} · ` : ""}
                   эрсдэл {a.peak_risk_pct.toFixed(0)}%
                 </span>
@@ -168,7 +168,7 @@ export function NotificationBell() {
         <DropdownSeparator />
         <DropdownItem
           onSelect={() => router.push("/alerts")}
-          className="justify-center text-sm text-[var(--color-primary)]"
+          className="justify-center text-sm text-(--color-primary)"
         >
           Бүгдийг харах
         </DropdownItem>

@@ -196,13 +196,13 @@ export default function TeamPage() {
           {members.length === 0 ? (
             <EmptyState icon={Users} title="Гишүүн алга" description="Хэрэглэгч урина уу." />
           ) : (
-            <ul className="divide-y divide-[var(--color-border)]">
+            <ul className="divide-y divide-(--color-border)">
               {members.map((m) => (
                 <li key={m.user.id} className="flex items-center justify-between gap-2 py-2.5">
                   <div className="min-w-0">
                     <p className="truncate font-medium">{m.user.email}</p>
                     {m.user.id === meId && (
-                      <span className="text-xs text-[var(--color-muted-foreground)]">та</span>
+                      <span className="text-xs text-(--color-muted-foreground)">та</span>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
@@ -220,7 +220,7 @@ export default function TeamPage() {
                               ? "Нэвтрэх эрхийг түгжих"
                               : "Нэвтрэх эрхийг нээх"
                           }
-                          className="rounded p-1 text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]"
+                          className="rounded p-1 text-(--color-muted-foreground) hover:bg-(--color-muted) hover:text-(--color-foreground)"
                         >
                           {m.user.is_active ? (
                             <Lock className="h-4 w-4" />
@@ -231,7 +231,7 @@ export default function TeamPage() {
                         <button
                           onClick={() => onRemove(m)}
                           aria-label="Хасах"
-                          className="rounded p-1 text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] hover:text-[var(--color-danger)]"
+                          className="rounded p-1 text-(--color-muted-foreground) hover:bg-(--color-muted) hover:text-(--color-danger)"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -254,12 +254,12 @@ export default function TeamPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="divide-y divide-[var(--color-border)]">
+            <ul className="divide-y divide-(--color-border)">
               {invites.map((inv) => (
                 <li key={inv.id} className="flex items-center justify-between gap-2 py-2.5">
                   <div className="min-w-0">
                     <p className="truncate font-medium">{inv.email}</p>
-                    <span className="text-xs text-[var(--color-muted-foreground)]">
+                    <span className="text-xs text-(--color-muted-foreground)">
                       {ROLE_LABEL[inv.role]} · {new Date(inv.expires_at).toLocaleDateString()}-нд
                       хүчингүй болно
                     </span>
@@ -270,7 +270,7 @@ export default function TeamPage() {
                       onClick={() => onCancelInvite(inv)}
                       aria-label="Урилга цуцлах"
                       title="Урилга цуцлах"
-                      className="rounded p-1 text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] hover:text-[var(--color-danger)]"
+                      className="rounded p-1 text-(--color-muted-foreground) hover:bg-(--color-muted) hover:text-(--color-danger)"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -283,7 +283,7 @@ export default function TeamPage() {
       )}
 
       {!canManage && (
-        <p className="text-sm text-[var(--color-muted-foreground)]">
+        <p className="text-sm text-(--color-muted-foreground)">
           Хэрэглэгч урих / хасахын тулд админ эрх шаардлагатай.
         </p>
       )}
@@ -390,7 +390,7 @@ function InviteModal({
         </ModalHeader>
         {link ? (
           <div className="space-y-3">
-            <p className="text-sm text-[var(--color-muted-foreground)]">
+            <p className="text-sm text-(--color-muted-foreground)">
               Имэйл тохируулаагүй тул дараах урилгын холбоосыг хэрэглэгчид өгнө үү:
             </p>
             <div className="flex gap-2">

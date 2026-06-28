@@ -126,16 +126,16 @@ export default function DashboardPage() {
                   className="flex flex-1 flex-col items-center gap-1"
                   title={`${b.label}: ${b.count}`}
                 >
-                  <span className="text-xs text-[var(--color-muted-foreground)]">
+                  <span className="text-xs text-(--color-muted-foreground)">
                     {b.count}
                   </span>
                   <div
-                    className="w-full rounded-t bg-[var(--color-primary)]"
+                    className="w-full rounded-t bg-(--color-primary)"
                     style={{
                       height: `${Math.max(4, (b.count / trend.max) * 96)}px`,
                     }}
                   />
-                  <span className="text-xs text-[var(--color-muted-foreground)]">
+                  <span className="text-xs text-(--color-muted-foreground)">
                     {b.label}
                   </span>
                 </div>
@@ -158,21 +158,21 @@ export default function DashboardPage() {
                 description="Одоогоор шалгах шаардлагатай сэрэмжлүүлэг бүртгэгдээгүй байна."
               />
             ) : (
-              <ul className="divide-y divide-[var(--color-border)]">
+              <ul className="divide-y divide-(--color-border)">
                 {recentReview.map((a) => (
                   <li key={a.id}>
                     <Link
                       href={`/alerts/${a.id}`}
-                      className="flex items-center justify-between gap-2 py-2.5 transition-colors hover:bg-[var(--color-muted)]"
+                      className="flex items-center justify-between gap-2 py-2.5 transition-colors hover:bg-(--color-muted)"
                     >
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium">
                           {CATEGORY_LABEL[a.category]}{" "}
-                          <span className="text-[var(--color-muted-foreground)]">
+                          <span className="text-(--color-muted-foreground)">
                             ({Math.round(a.confidence * 100)}%)
                           </span>
                         </p>
-                        <p className="text-xs text-[var(--color-muted-foreground)]">
+                        <p className="text-xs text-(--color-muted-foreground)">
                           {relativeTime(a.created_at)}
                         </p>
                       </div>
@@ -200,10 +200,10 @@ function StatCard({
 }) {
   const accent =
     tone === "review"
-      ? "text-[var(--color-level-review)]"
+      ? "text-(--color-level-review)"
       : tone === "notify"
-        ? "text-[var(--color-level-notify)]"
-        : "text-[var(--color-foreground)]";
+        ? "text-(--color-level-notify)"
+        : "text-(--color-foreground)";
   return (
     <Card>
       <CardHeader>
@@ -211,7 +211,7 @@ function StatCard({
         <CardTitle className={`text-3xl ${accent}`}>{value}</CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-xs text-[var(--color-muted-foreground)]">
+        <p className="text-xs text-(--color-muted-foreground)">
           Сүүлийн 200 сэрэмжлүүлэг
         </p>
       </CardContent>

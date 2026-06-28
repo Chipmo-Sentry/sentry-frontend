@@ -108,7 +108,7 @@ export default function AdminPage() {
               description="Байгууллага үүсгэхийг супер админаас хүсэлт гаргана уу."
             />
           ) : (
-            <ul className="divide-y divide-[var(--color-border)]">
+            <ul className="divide-y divide-(--color-border)">
               {orgs.map((o) => (
                 <li
                   key={o.id}

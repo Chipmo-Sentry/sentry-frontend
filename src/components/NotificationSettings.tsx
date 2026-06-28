@@ -102,7 +102,7 @@ export function NotificationSettings() {
         <button
           type="button"
           aria-label={label}
-          className="flex w-full items-center gap-3 rounded-[var(--radius)] px-3 py-2 text-sm text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]"
+          className="flex w-full items-center gap-3 rounded-(--radius) px-3 py-2 text-sm text-(--color-muted-foreground) transition-colors hover:bg-(--color-muted) hover:text-(--color-foreground)"
         >
           <TriggerIcon className="h-4 w-4" aria-hidden />
           <span className="flex-1 text-left">Мэдэгдлийн тохиргоо</span>
@@ -135,13 +135,13 @@ export function NotificationSettings() {
         </DropdownCheckboxItem>
 
         {prefs.popup && perm === "denied" ? (
-          <div className="px-2 py-1.5 text-xs text-[var(--color-danger)]">
+          <div className="px-2 py-1.5 text-xs text-(--color-danger)">
             Хөтөч зөвшөөрөл хаасан байна. Хаягийн мөрийн 🔒 дээрээс зөвшөөрнө үү.
           </div>
         ) : null}
 
         <DropdownSeparator />
-        <DropdownLabel className="text-xs font-normal text-[var(--color-muted-foreground)]">
+        <DropdownLabel className="text-xs font-normal text-(--color-muted-foreground)">
           Дуу/попап өгөх доод түвшин
         </DropdownLabel>
         {MIN_LEVELS.map((lvl) => (
@@ -162,7 +162,7 @@ export function NotificationSettings() {
         ))}
 
         <DropdownSeparator />
-        <DropdownLabel className="text-xs font-normal text-[var(--color-muted-foreground)]">
+        <DropdownLabel className="text-xs font-normal text-(--color-muted-foreground)">
           Түр чимээгүй
         </DropdownLabel>
         {snoozed ? (

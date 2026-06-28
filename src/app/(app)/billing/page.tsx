@@ -199,8 +199,8 @@ export default function BillingPage() {
               <CardTitle
                 className={`text-3xl ${
                   summary.balance_mnt < 0
-                    ? "text-[var(--color-danger)]"
-                    : "text-[var(--color-foreground)]"
+                    ? "text-(--color-danger)"
+                    : "text-(--color-foreground)"
                 }`}
               >
                 {fmtMNT(summary.balance_mnt)}
@@ -210,18 +210,18 @@ export default function BillingPage() {
               </Badge>
             </div>
           </CardHeader>
-          <CardContent className="space-y-1 text-sm text-[var(--color-muted-foreground)]">
+          <CardContent className="space-y-1 text-sm text-(--color-muted-foreground)">
             <p>Өдрийн тариф: {fmtMNT(summary.daily_rate_mnt)}</p>
             {daysLeft !== null && (
               <p>Ойролцоогоор {daysLeft} өдөр хүрэлцэнэ</p>
             )}
             {promoActive && summary.promo_free_until && (
-              <p className="text-[var(--color-level-log)]">
+              <p className="text-(--color-level-log)">
                 Промо: {fmtDate(summary.promo_free_until)} хүртэл үнэгүй
               </p>
             )}
             {summary.status === "credit" && summary.credit_until && (
-              <p className="text-[var(--color-warning)]">
+              <p className="text-(--color-warning)">
                 Түр нээлттэй хугацаа: {fmtDate(summary.credit_until)} хүртэл
               </p>
             )}
@@ -240,11 +240,11 @@ export default function BillingPage() {
               цагт бүртгэж баталгаажуулна.
             </p>
             {/* TODO(founder): дансны дугаар, банкны нэрийг энд нэмэх. */}
-            <p className="text-[var(--color-muted-foreground)]">
+            <p className="text-(--color-muted-foreground)">
               Холбоо барих:{" "}
               <a
                 href="mailto:hello@chipmo.mn"
-                className="font-medium text-[var(--color-primary)] hover:underline"
+                className="font-medium text-(--color-primary) hover:underline"
               >
                 hello@chipmo.mn
               </a>
@@ -292,7 +292,7 @@ export default function BillingPage() {
                             {TIER_LABEL[s.tier] ?? s.tier}
                           </Badge>
                         ) : (
-                          <span className="text-[var(--color-muted-foreground)]">
+                          <span className="text-(--color-muted-foreground)">
                             —
                           </span>
                         )}
@@ -310,16 +310,16 @@ export default function BillingPage() {
                   ))}
                 </TableBody>
               </Table>
-              <div className="mt-3 flex flex-wrap justify-end gap-x-6 gap-y-1 border-t border-[var(--color-border)] pt-3 text-sm">
-                <span className="text-[var(--color-muted-foreground)]">
+              <div className="mt-3 flex flex-wrap justify-end gap-x-6 gap-y-1 border-t border-(--color-border) pt-3 text-sm">
+                <span className="text-(--color-muted-foreground)">
                   Нийт сарын дүн:{" "}
-                  <span className="font-semibold text-[var(--color-foreground)]">
+                  <span className="font-semibold text-(--color-foreground)">
                     {fmtMNT(summary.monthly_rate_mnt)}
                   </span>
                 </span>
-                <span className="text-[var(--color-muted-foreground)]">
+                <span className="text-(--color-muted-foreground)">
                   Өдрийн дүн:{" "}
-                  <span className="font-semibold text-[var(--color-foreground)]">
+                  <span className="font-semibold text-(--color-foreground)">
                     {fmtMNT(summary.daily_rate_mnt)}
                   </span>
                 </span>
@@ -405,14 +405,14 @@ export default function BillingPage() {
                         <TableCell
                           className={`whitespace-nowrap text-right font-medium ${
                             income
-                              ? "text-[var(--color-success)]"
-                              : "text-[var(--color-foreground)]"
+                              ? "text-(--color-success)"
+                              : "text-(--color-foreground)"
                           }`}
                         >
                           {income ? "+" : "−"}
                           {fmtMNT(j.amount_mnt)}
                         </TableCell>
-                        <TableCell className="text-[var(--color-muted-foreground)]">
+                        <TableCell className="text-(--color-muted-foreground)">
                           {j.description}
                         </TableCell>
                       </TableRow>

@@ -401,7 +401,7 @@ export function LiveCameraTile({
   return (
     <div
       ref={wrapRef}
-      className="group relative h-full w-full overflow-hidden rounded-[var(--radius)] border border-[var(--color-border)] bg-black shadow-sm"
+      className="group relative h-full w-full overflow-hidden rounded-(--radius) border border-(--color-border) bg-black shadow-sm"
     >
       <video
         ref={videoRef}
@@ -527,7 +527,7 @@ export function LiveCameraTile({
           <span>Үлдэгдэл хүрэлцэхгүй байна — Төлбөр хуудаснаас цэнэглэнэ үү</span>
           <Link
             href="/billing"
-            className="rounded-md bg-[var(--color-primary)] px-3 py-1.5 font-medium text-white transition-opacity hover:opacity-90"
+            className="rounded-md bg-(--color-primary) px-3 py-1.5 font-medium text-white transition-opacity hover:opacity-90"
           >
             Цэнэглэх
           </Link>

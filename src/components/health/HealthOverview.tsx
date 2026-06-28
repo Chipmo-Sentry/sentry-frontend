@@ -182,7 +182,7 @@ export function HealthOverview() {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.3fr_1fr]">
         {/* Topology tree: store → camera */}
         <section>
-          <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+          <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-(--color-muted-foreground)">
             Дэлгүүр → Камер
           </h2>
           {enabledCams.length === 0 ? (
@@ -195,9 +195,9 @@ export function HealthOverview() {
                 return (
                   <div
                     key={store.id}
-                    className="rounded-[var(--radius)] border border-[var(--color-border)]"
+                    className="rounded-(--radius) border border-(--color-border)"
                   >
-                    <div className="border-b border-[var(--color-border)] px-3 py-2 text-sm font-medium">
+                    <div className="border-b border-(--color-border) px-3 py-2 text-sm font-medium">
                       {store.name}
                     </div>
                     <ul>
@@ -207,7 +207,7 @@ export function HealthOverview() {
                         return (
                           <li
                             key={c.id}
-                            className="flex items-center gap-2 border-b border-[var(--color-border)] px-3 py-2 last:border-0"
+                            className="flex items-center gap-2 border-b border-(--color-border) px-3 py-2 last:border-0"
                           >
                             <HealthDot status={st} />
                             <Link
@@ -216,17 +216,17 @@ export function HealthOverview() {
                                   ? `/pipeline/camera/${encodeURIComponent(c.mediamtx_path)}`
                                   : "/cameras"
                               }
-                              className="text-sm text-[var(--color-foreground)] hover:underline"
+                              className="text-sm text-(--color-foreground) hover:underline"
                             >
                               {c.name}
                             </Link>
-                            <span className="ml-auto truncate text-right text-xs text-[var(--color-muted-foreground)]">
+                            <span className="ml-auto truncate text-right text-xs text-(--color-muted-foreground)">
                               {!c.mediamtx_path
                                 ? "зам тохируулаагүй"
                                 : (row?.cells.yolo.reason ?? row?.cells.ingest.reason ?? row?.cells.yolo.short ?? "—")}
                             </span>
                             {row?.node && (
-                              <span className="hidden shrink-0 text-[10px] text-[var(--color-muted-foreground)] sm:inline">
+                              <span className="hidden shrink-0 text-[10px] text-(--color-muted-foreground) sm:inline">
                                 {row.node.name}
                               </span>
                             )}
@@ -243,11 +243,11 @@ export function HealthOverview() {
 
         {/* AI nodes */}
         <section>
-          <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+          <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-(--color-muted-foreground)">
             AI node-ууд
           </h2>
           {nodeList.length === 0 ? (
-            <p className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-4 text-sm text-[var(--color-muted-foreground)]">
+            <p className="rounded-(--radius) border border-(--color-border) bg-(--color-surface) px-3 py-4 text-sm text-(--color-muted-foreground)">
               Энэ байгууллагын камер үйлчилж буй AI node алга.
             </p>
           ) : (
@@ -262,22 +262,22 @@ export function HealthOverview() {
 
       {/* Event activity strip */}
       <section>
-        <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+        <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-(--color-muted-foreground)">
           Сүүлийн өөрчлөлтүүд
         </h2>
         {events.length === 0 ? (
-          <p className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-3 text-sm text-[var(--color-muted-foreground)]">
+          <p className="rounded-(--radius) border border-(--color-border) bg-(--color-surface) px-3 py-3 text-sm text-(--color-muted-foreground)">
             Сүүлийн үед эрүүл мэндийн өөрчлөлт алга.
           </p>
         ) : (
-          <ul className="divide-y divide-[var(--color-border)] rounded-[var(--radius)] border border-[var(--color-border)]">
+          <ul className="divide-y divide-(--color-border) rounded-(--radius) border border-(--color-border)">
             {events.map((e) => (
               <li key={e.id} className="flex items-center gap-2 px-3 py-2 text-sm">
-                <span className="text-[var(--color-foreground)]">
+                <span className="text-(--color-foreground)">
                   {EVENT_LABEL[e.event_type] ?? e.event_type}
                 </span>
-                <span className="truncate text-xs text-[var(--color-muted-foreground)]">{e.message}</span>
-                <span className="ml-auto shrink-0 text-xs text-[var(--color-muted-foreground)]">
+                <span className="truncate text-xs text-(--color-muted-foreground)">{e.message}</span>
+                <span className="ml-auto shrink-0 text-xs text-(--color-muted-foreground)">
                   {relativeTime(e.created_at)}
                 </span>
               </li>
@@ -291,8 +291,8 @@ export function HealthOverview() {
 
 function Tile({ label, value, status }: { label: string; value: string; status: CellStatus }) {
   return (
-    <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5">
-      <div className="text-[11px] text-[var(--color-muted-foreground)]">{label}</div>
+    <div className="rounded-(--radius) border border-(--color-border) bg-(--color-surface) px-3 py-2.5">
+      <div className="text-[11px] text-(--color-muted-foreground)">{label}</div>
       <div className="mt-0.5 text-xl font-medium" style={{ color: STATUS_COLOR[status] }}>
         {value}
       </div>
@@ -309,18 +309,18 @@ function NodeRow({ node }: { node: OrgNodePublic }) {
     <li>
       <Link
         href={`/health/node/${encodeURIComponent(node.id)}`}
-        className="flex items-center gap-2 rounded-[var(--radius)] border bg-[var(--color-surface)] px-3 py-2.5 transition-colors hover:bg-[var(--color-muted)]"
+        className="flex items-center gap-2 rounded-(--radius) border bg-(--color-surface) px-3 py-2.5 transition-colors hover:bg-(--color-muted)"
         style={{ borderColor: node.is_online ? "var(--color-border)" : "var(--color-danger)" }}
       >
         <HealthDot status={node.is_online ? "ok" : "down"} />
-        <Cpu className="h-4 w-4 text-[var(--color-muted-foreground)]" aria-hidden />
-        <span className="text-sm text-[var(--color-foreground)]">{node.name ?? "AI node"}</span>
-        <span className="ml-auto text-xs text-[var(--color-muted-foreground)]">
+        <Cpu className="h-4 w-4 text-(--color-muted-foreground)" aria-hidden />
+        <span className="text-sm text-(--color-foreground)">{node.name ?? "AI node"}</span>
+        <span className="ml-auto text-xs text-(--color-muted-foreground)">
           {node.is_online
             ? `GPU ${node.gpu_pct ?? "—"}%${vramPct != null ? ` · VRAM ${vramPct}%` : ""}`
             : "офлайн"}
         </span>
-        <ChevronRight className="h-4 w-4 text-[var(--color-muted-foreground)]" aria-hidden />
+        <ChevronRight className="h-4 w-4 text-(--color-muted-foreground)" aria-hidden />
       </Link>
     </li>
   );

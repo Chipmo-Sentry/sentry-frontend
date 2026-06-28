@@ -169,15 +169,15 @@ export default function LogsPage() {
               aria-pressed={active}
               className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                 active
-                  ? "bg-[var(--color-primary)] text-[var(--color-primary-foreground)]"
-                  : "border border-[var(--color-border)] text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)]"
+                  ? "bg-(--color-primary) text-(--color-primary-foreground)"
+                  : "border border-(--color-border) text-(--color-muted-foreground) hover:bg-(--color-muted)"
               }`}
             >
               {g.label}
             </button>
           );
         })}
-        <label className="ml-auto flex items-center gap-2 text-xs text-[var(--color-muted-foreground)]">
+        <label className="ml-auto flex items-center gap-2 text-xs text-(--color-muted-foreground)">
           <input
             type="checkbox"
             checked={showHeartbeats}
@@ -208,7 +208,7 @@ export default function LogsPage() {
               </Button>
             </div>
           ) : (
-            <p className="mt-6 text-center text-xs text-[var(--color-muted-foreground)]">
+            <p className="mt-6 text-center text-xs text-(--color-muted-foreground)">
               Бүх лог ачаалагдсан
             </p>
           )}
@@ -232,17 +232,17 @@ function LogTable({ rows }: { rows: EventLogPublic[] }) {
     <div className="space-y-4">
       {groups.map((g) => (
         <div key={g.day}>
-          <div className="sticky top-0 z-10 mb-1 bg-[var(--color-background)] py-1 text-xs font-semibold text-[var(--color-muted-foreground)]">
+          <div className="sticky top-0 z-10 mb-1 bg-(--color-background) py-1 text-xs font-semibold text-(--color-muted-foreground)">
             {g.day}
           </div>
-          <ul className="divide-y divide-[var(--color-border)] rounded-lg border border-[var(--color-border)]">
+          <ul className="divide-y divide-(--color-border) rounded-lg border border-(--color-border)">
             {g.rows.map((r) => (
               <li
                 key={r.id}
                 className="flex items-start gap-3 px-3 py-2 text-sm"
                 title={relativeTime(r.created_at)}
               >
-                <span className="mt-0.5 shrink-0 font-mono text-xs tabular-nums text-[var(--color-muted-foreground)]">
+                <span className="mt-0.5 shrink-0 font-mono text-xs tabular-nums text-(--color-muted-foreground)">
                   {clockMs(r.created_at)}
                 </span>
                 <Badge tone={SEVERITY_TONE[r.severity]}>
@@ -251,7 +251,7 @@ function LogTable({ rows }: { rows: EventLogPublic[] }) {
                 <span className="min-w-0 flex-1 break-words">
                   {r.message}
                   {r.actor_label ? (
-                    <span className="ml-1.5 text-xs text-[var(--color-muted-foreground)]">
+                    <span className="ml-1.5 text-xs text-(--color-muted-foreground)">
                       · {r.actor_label}
                     </span>
                   ) : null}

@@ -124,7 +124,7 @@ export default function AlertDetailPage() {
     <div className="mx-auto max-w-3xl p-8">
       <Link
         href="/alerts"
-        className="mb-4 inline-flex items-center gap-1 text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
+        className="mb-4 inline-flex items-center gap-1 text-sm text-(--color-muted-foreground) hover:text-(--color-foreground)"
       >
         <ArrowLeft className="h-4 w-4" />
         Буцах
@@ -138,7 +138,7 @@ export default function AlertDetailPage() {
             </Badge>
             <CardTitle>
               {CATEGORY_LABEL[alert.category]}
-              <span className="ml-2 text-base font-normal text-[var(--color-muted-foreground)]">
+              <span className="ml-2 text-base font-normal text-(--color-muted-foreground)">
                 ({Math.round(alert.confidence * 100)}%)
               </span>
             </CardTitle>
@@ -151,9 +151,9 @@ export default function AlertDetailPage() {
         <CardContent className="space-y-4">
           {clip ? (
             clipUnavailable ? (
-              <div className="flex min-h-32 flex-col items-center justify-center gap-1 rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-muted)] p-6 text-center">
+              <div className="flex min-h-32 flex-col items-center justify-center gap-1 rounded-(--radius) border border-(--color-border) bg-(--color-muted) p-6 text-center">
                 <p className="text-sm font-medium">Бичлэг боломжгүй</p>
-                <p className="text-xs text-[var(--color-muted-foreground)]">
+                <p className="text-xs text-(--color-muted-foreground)">
                   Энэ бичлэг серверт байхгүй болсон (хадгалалтын Volume
                   тохируулагдаагүй эсвэл хугацаа дууссан). Шинэ бичлэгүүд
                   хадгалалт тохируулсны дараа хадгалагдана.
@@ -163,7 +163,7 @@ export default function AlertDetailPage() {
               <video
                 controls
                 preload="metadata"
-                className="w-full rounded-[var(--radius)] border border-[var(--color-border)] bg-black"
+                className="w-full rounded-(--radius) border border-(--color-border) bg-black"
                 src={`${BASE}/api/v1/clips/${clip.id}/download`}
                 onError={() => setClipUnavailable(true)}
               >
@@ -177,7 +177,7 @@ export default function AlertDetailPage() {
 
           <section>
             <h3 className="mb-1 text-sm font-semibold">AI тайлбар</h3>
-            <p className="text-sm text-[var(--color-foreground)]">
+            <p className="text-sm text-(--color-foreground)">
               {alert.reasoning}
             </p>
           </section>
@@ -188,7 +188,7 @@ export default function AlertDetailPage() {
               ambiguity so an operator doesn't read a model failure as innocence. */}
           {alert.confidence === 0 && alert.category === "other" && (
             <p
-              className="rounded-[var(--radius)] border px-3 py-2 text-xs"
+              className="rounded-(--radius) border px-3 py-2 text-xs"
               style={{
                 borderColor: "var(--color-warning)",
                 color: "var(--color-warning)",
@@ -230,13 +230,13 @@ export default function AlertDetailPage() {
                   <h3 className="mb-2 text-sm font-semibold">
                     Сэжиг шалгуурын задаргаа
                   </h3>
-                  <p className="mb-2 text-xs text-[var(--color-muted-foreground)]">
+                  <p className="mb-2 text-xs text-(--color-muted-foreground)">
                     Оноо нэмэгдсэн тохиолдол бүр — хэзээ, ямар хөдөлгөөн, хэдэн
                     оноо.
                   </p>
-                  <div className="overflow-hidden rounded-[var(--radius)] border border-[var(--color-border)]">
+                  <div className="overflow-hidden rounded-(--radius) border border-(--color-border)">
                     <table className="w-full text-sm">
-                      <thead className="border-b border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase tracking-wider text-[var(--color-muted-foreground)]">
+                      <thead className="border-b border-(--color-border) bg-(--color-muted) text-xs uppercase tracking-wider text-(--color-muted-foreground)">
                         <tr>
                           <th className="px-3 py-2 text-left font-medium">
                             Сэжиг шалгуур
@@ -249,12 +249,12 @@ export default function AlertDetailPage() {
                         {detail.map((r, i) => (
                           <tr
                             key={`${r.key}-${i}`}
-                            className="border-t border-[var(--color-border)]"
+                            className="border-t border-(--color-border)"
                           >
                             <td className="px-3 py-2">
                               {behaviorLabels[r.key] ?? r.key}
                             </td>
-                            <td className="px-3 py-2 text-right font-mono text-xs tabular-nums text-[var(--color-muted-foreground)]">
+                            <td className="px-3 py-2 text-right font-mono text-xs tabular-nums text-(--color-muted-foreground)">
                               {r.offset_sec.toFixed(1)}с
                             </td>
                             <td className="px-3 py-2 text-right font-medium tabular-nums">
@@ -264,7 +264,7 @@ export default function AlertDetailPage() {
                         ))}
                       </tbody>
                       <tfoot>
-                        <tr className="border-t-2 border-[var(--color-border)] font-semibold">
+                        <tr className="border-t-2 border-(--color-border) font-semibold">
                           <td className="px-3 py-2">Нийт ({detail.length})</td>
                           <td className="px-3 py-2" />
                           <td className="px-3 py-2 text-right tabular-nums">
@@ -275,8 +275,8 @@ export default function AlertDetailPage() {
                     </table>
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    <div className="rounded-[var(--radius)] border border-[var(--color-border)] p-3">
-                      <div className="text-xs text-[var(--color-muted-foreground)]">
+                    <div className="rounded-(--radius) border border-(--color-border) p-3">
+                      <div className="text-xs text-(--color-muted-foreground)">
                         Нийт цугларсан оноо
                       </div>
                       <div className="mt-0.5 text-xl font-semibold">
@@ -284,8 +284,8 @@ export default function AlertDetailPage() {
                       </div>
                     </div>
                     {alert.peak_risk_pct != null && (
-                      <div className="rounded-[var(--radius)] border border-[var(--color-border)] p-3">
-                        <div className="text-xs text-[var(--color-muted-foreground)]">
+                      <div className="rounded-(--radius) border border-(--color-border) p-3">
+                        <div className="text-xs text-(--color-muted-foreground)">
                           Эрсдэлийн оноо (0–100)
                         </div>
                         <div
@@ -296,8 +296,8 @@ export default function AlertDetailPage() {
                         </div>
                       </div>
                     )}
-                    <div className="rounded-[var(--radius)] border border-[var(--color-border)] p-3">
-                      <div className="text-xs text-[var(--color-muted-foreground)]">
+                    <div className="rounded-(--radius) border border-(--color-border) p-3">
+                      <div className="text-xs text-(--color-muted-foreground)">
                         Түвшин
                       </div>
                       <div className="mt-1">
@@ -337,7 +337,7 @@ export default function AlertDetailPage() {
           )}
 
           {clip ? (
-            <section className="text-xs text-[var(--color-muted-foreground)]">
+            <section className="text-xs text-(--color-muted-foreground)">
               <div>
                 Камер: <code className="font-mono">{clip.camera_id ?? "—"}</code>
               </div>
@@ -388,7 +388,7 @@ export default function AlertDetailPage() {
             {feedbackError ? (
               <p
                 role="alert"
-                className="mt-2 text-sm text-[var(--color-danger)]"
+                className="mt-2 text-sm text-(--color-danger)"
               >
                 {feedbackError}
               </p>

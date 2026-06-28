@@ -83,10 +83,10 @@ export default function LiveCameraPage() {
 
   return (
     <div className="flex h-[calc(100vh-3.5rem)] flex-col">
-      <header className="flex items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-background)] px-4 py-2">
+      <header className="flex items-center gap-3 border-b border-(--color-border) bg-(--color-background) px-4 py-2">
         <Link
           href="/live"
-          className="inline-flex items-center gap-1 text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
+          className="inline-flex items-center gap-1 text-sm text-(--color-muted-foreground) hover:text-(--color-foreground)"
         >
           <ArrowLeft className="h-4 w-4" />
           Бүх камер
@@ -94,7 +94,7 @@ export default function LiveCameraPage() {
         <span className="text-sm font-medium">{cam.name}</span>
       </header>
 
-      <div className="flex-1 bg-[var(--color-muted)] p-2">
+      <div className="flex-1 bg-(--color-muted) p-2">
         <LiveCameraTile
           key={path}
           cameraId={path}

@@ -149,14 +149,14 @@ export function StoreFormModal({
               disabled={saving}
               inputMode="numeric"
             />
-            <span className="mt-1 block text-xs text-[var(--color-muted-foreground)]">
+            <span className="mt-1 block text-xs text-(--color-muted-foreground)">
               Сэжигтэй үйлдлийн мэдэгдэл энэ чат руу очно (заавал биш).
             </span>
             <details className="mt-1.5 text-xs">
-              <summary className="cursor-pointer font-medium text-[var(--color-primary)] hover:underline">
+              <summary className="cursor-pointer font-medium text-(--color-primary) hover:underline">
                 Чат ID-гаа хэрхэн олох вэ?
               </summary>
-              <ol className="mt-2 list-decimal space-y-1 pl-4 text-[var(--color-muted-foreground)]">
+              <ol className="mt-2 list-decimal space-y-1 pl-4 text-(--color-muted-foreground)">
                 <li>
                   Telegram дээр <b>@getidsbot</b>-г хайж олоод чатаа эхлүүлнэ
                   (мессеж бичих эсвэл <code>/start</code>).

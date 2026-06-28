@@ -19,9 +19,9 @@ export default function Error({
   }, [error]);
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[var(--color-muted)] p-6 text-center">
+    <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-(--color-muted) p-6 text-center">
       <h1 className="text-xl font-semibold">Алдаа гарлаа</h1>
-      <p className="max-w-sm text-sm text-[var(--color-muted-foreground)]">
+      <p className="max-w-sm text-sm text-(--color-muted-foreground)">
         Уучлаарай, гэнэтийн алдаа гарлаа. Дахин оролдоно уу.
       </p>
       <div className="flex gap-2">

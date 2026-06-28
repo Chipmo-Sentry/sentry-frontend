@@ -106,29 +106,29 @@ export function StageDetail({
       <div className="flex flex-wrap items-center gap-3">
         <Link
           href="/pipeline"
-          className="inline-flex items-center gap-1 text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
+          className="inline-flex items-center gap-1 text-sm text-(--color-muted-foreground) hover:text-(--color-foreground)"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden /> Урсгал
         </Link>
-        <span className="text-[var(--color-muted-foreground)]">/</span>
+        <span className="text-(--color-muted-foreground)">/</span>
         <span className="inline-flex items-center gap-2">
           <Icon className="h-5 w-5" style={{ color: STATUS_COLOR[overall] }} aria-hidden />
           <h1 className="text-lg font-medium">{STAGE_LABEL[stageKey]}</h1>
         </span>
         <StatusPill status={overall} />
         {cameraFilter && (
-          <span className="rounded-[var(--radius)] bg-[var(--color-muted)] px-2 py-0.5 text-xs text-[var(--color-muted-foreground)]">
+          <span className="rounded-(--radius) bg-(--color-muted) px-2 py-0.5 text-xs text-(--color-muted-foreground)">
             {cameraFilter}
           </span>
         )}
-        <span className="ml-auto text-xs text-[var(--color-muted-foreground)]">
+        <span className="ml-auto text-xs text-(--color-muted-foreground)">
           {STAGE_PROCESS[stageKey]}
         </span>
       </div>
 
       {/* Diagnosis summary */}
       <div
-        className="rounded-[var(--radius)] border px-3 py-2.5 text-sm"
+        className="rounded-(--radius) border px-3 py-2.5 text-sm"
         style={{
           borderColor: STATUS_COLOR[overall],
           background:
@@ -138,14 +138,14 @@ export function StageDetail({
         }}
       >
         {overall === "ok" ? (
-          <span className="text-[var(--color-success)]">Энэ шат бүх камер дээр хэвийн ажиллаж байна.</span>
+          <span className="text-(--color-success)">Энэ шат бүх камер дээр хэвийн ажиллаж байна.</span>
         ) : (
           <div className="space-y-1">
             <p className="font-medium" style={{ color: STATUS_COLOR[overall] }}>
               {down.length} камер тасарсан · {warn.length} анхаарал
             </p>
             {problems.length > 0 && (
-              <ul className="list-disc pl-5 text-[var(--color-muted-foreground)]">
+              <ul className="list-disc pl-5 text-(--color-muted-foreground)">
                 {problems.map((p) => (
                   <li key={p}>{p}</li>
                 ))}
@@ -157,13 +157,13 @@ export function StageDetail({
 
       {/* Per-camera table for this stage */}
       <section>
-        <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+        <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-(--color-muted-foreground)">
           Камер бүрээр
         </h2>
-        <div className="overflow-x-auto rounded-[var(--radius)] border border-[var(--color-border)]">
+        <div className="overflow-x-auto rounded-(--radius) border border-(--color-border)">
           <table className="w-full min-w-[640px] border-collapse text-sm">
             <thead>
-              <tr className="border-b border-[var(--color-border)] text-left text-xs text-[var(--color-muted-foreground)]">
+              <tr className="border-b border-(--color-border) text-left text-xs text-(--color-muted-foreground)">
                 <th className="px-3 py-2 font-medium">Камер</th>
                 <th className="px-3 py-2 font-medium">Node</th>
                 <th className="px-3 py-2 font-medium">Төлөв</th>
@@ -207,21 +207,21 @@ function Row({
   cell: StageCell;
 }) {
   return (
-    <tr className="border-b border-[var(--color-border)] last:border-0">
+    <tr className="border-b border-(--color-border) last:border-0">
       <td className="px-3 py-2.5 align-top">
         <Link
           href={`/pipeline/camera/${encodeURIComponent(path)}`}
-          className="text-[var(--color-foreground)] hover:underline"
+          className="text-(--color-foreground) hover:underline"
         >
           {name}
         </Link>
       </td>
-      <td className="px-3 py-2.5 align-top text-[var(--color-muted-foreground)]">{node?.name ?? "—"}</td>
+      <td className="px-3 py-2.5 align-top text-(--color-muted-foreground)">{node?.name ?? "—"}</td>
       <td className="px-3 py-2.5 align-top">
         <StatusPill status={cell.status} />
       </td>
-      <td className="px-3 py-2.5 align-top text-[var(--color-foreground)]">{cell.short}</td>
-      <td className="px-3 py-2.5 align-top text-[var(--color-muted-foreground)]">{cell.reason ?? "—"}</td>
+      <td className="px-3 py-2.5 align-top text-(--color-foreground)">{cell.short}</td>
+      <td className="px-3 py-2.5 align-top text-(--color-muted-foreground)">{cell.reason ?? "—"}</td>
     </tr>
   );
 }
@@ -235,13 +235,13 @@ function dedupeNodes(nodes: (OrgNodePublic | null)[]): OrgNodePublic[] {
 function NodeCard({ node, children }: { node: OrgNodePublic; children: React.ReactNode }) {
   return (
     <div
-      className="rounded-[var(--radius)] border bg-[var(--color-surface)] p-3"
+      className="rounded-(--radius) border bg-(--color-surface) p-3"
       style={{ borderColor: node.is_online ? "var(--color-border)" : "var(--color-danger)" }}
     >
       <div className="mb-2 flex items-center gap-2">
         <HealthDot status={node.is_online ? "ok" : "down"} />
-        <span className="font-medium text-[var(--color-foreground)]">{node.name ?? "AI node"}</span>
-        <span className="ml-auto text-xs text-[var(--color-muted-foreground)]">
+        <span className="font-medium text-(--color-foreground)">{node.name ?? "AI node"}</span>
+        <span className="ml-auto text-xs text-(--color-muted-foreground)">
           {node.is_online ? "онлайн" : "офлайн"}
           {node.last_seen_at ? ` · ${relativeTime(node.last_seen_at)}` : ""}
         </span>
@@ -253,9 +253,9 @@ function NodeCard({ node, children }: { node: OrgNodePublic; children: React.Rea
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[var(--radius)] bg-[var(--color-muted)] px-2.5 py-1.5">
-      <div className="text-[10px] text-[var(--color-muted-foreground)]">{label}</div>
-      <div className="text-sm text-[var(--color-foreground)]">{value}</div>
+    <div className="rounded-(--radius) bg-(--color-muted) px-2.5 py-1.5">
+      <div className="text-[10px] text-(--color-muted-foreground)">{label}</div>
+      <div className="text-sm text-(--color-foreground)">{value}</div>
     </div>
   );
 }
@@ -264,7 +264,7 @@ function YoloNodes({ nodes }: { nodes: OrgNodePublic[] }) {
   if (nodes.length === 0) return null;
   return (
     <section>
-      <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+      <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-(--color-muted-foreground)">
         Node нөөц & per-камер YOLO
       </h2>
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
@@ -279,8 +279,8 @@ function YoloNodes({ nodes }: { nodes: OrgNodePublic[] }) {
               {n.cameras.map((c) => (
                 <li key={c.camera_id} className="flex items-center gap-2">
                   <HealthDot status={c.status === "ok" ? "ok" : c.status === "stalled" ? "warn" : "down"} />
-                  <span className="text-[var(--color-foreground)]">{c.camera_id}</span>
-                  <span className="ml-auto text-[var(--color-muted-foreground)]">
+                  <span className="text-(--color-foreground)">{c.camera_id}</span>
+                  <span className="ml-auto text-(--color-muted-foreground)">
                     {c.fps != null ? `${c.fps.toFixed(1)} fps` : "—"} ·{" "}
                     {c.status === "ok" ? "инференц" : c.status === "stalled" ? "кадргүй" : "алдаа"}
                   </span>
@@ -297,7 +297,7 @@ function YoloNodes({ nodes }: { nodes: OrgNodePublic[] }) {
 function VlmNodes({ nodes, alerts }: { nodes: OrgNodePublic[]; alerts: AlertPublic[] }) {
   return (
     <section className="space-y-3">
-      <h2 className="text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+      <h2 className="text-xs font-medium uppercase tracking-wide text-(--color-muted-foreground)">
         VLM провайдер & GPU
       </h2>
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
@@ -311,10 +311,10 @@ function VlmNodes({ nodes, alerts }: { nodes: OrgNodePublic[]; alerts: AlertPubl
           return (
             <NodeCard key={n.id} node={n}>
               <div className="mb-2 flex flex-wrap items-center gap-1.5 text-xs">
-                <span className="text-[var(--color-muted-foreground)]">Провайдер:</span>
-                <span className="text-[var(--color-foreground)]">{n.provider}</span>
+                <span className="text-(--color-muted-foreground)">Провайдер:</span>
+                <span className="text-(--color-foreground)">{n.provider}</span>
                 {n.provider_effective && n.provider_effective !== n.provider && (
-                  <span className="text-[var(--color-muted-foreground)]">→ {n.provider_effective}</span>
+                  <span className="text-(--color-muted-foreground)">→ {n.provider_effective}</span>
                 )}
                 <span
                   style={{
@@ -329,7 +329,7 @@ function VlmNodes({ nodes, alerts }: { nodes: OrgNodePublic[]; alerts: AlertPubl
                 </span>
               </div>
               {n.provider_error && (
-                <p className="mb-2 text-xs text-[var(--color-danger)]">{n.provider_error}</p>
+                <p className="mb-2 text-xs text-(--color-danger)">{n.provider_error}</p>
               )}
               <div className="mb-2 grid grid-cols-3 gap-2">
                 <Stat label="Сүүлд" value={n.vlm_activity?.last_ago_sec != null ? `${n.vlm_activity.last_ago_sec}с` : "—"} />
@@ -339,7 +339,7 @@ function VlmNodes({ nodes, alerts }: { nodes: OrgNodePublic[]; alerts: AlertPubl
                 />
                 <Stat label="Тоо" value={n.vlm_activity?.count != null ? String(n.vlm_activity.count) : "—"} />
               </div>
-              <div className="text-xs text-[var(--color-muted-foreground)]">
+              <div className="text-xs text-(--color-muted-foreground)">
                 {n.vlm?.loaded
                   ? `GPU дээр: ${n.vlm.model ?? "—"} · ${n.vlm.vram_mb != null ? (n.vlm.vram_mb / 1024).toFixed(1) + "GB" : "—"} · ${n.vlm.gpu_pct ?? "—"}%`
                   : "VLM GPU дээр ачаалагдаагүй (event-driven)"}
@@ -357,7 +357,7 @@ function VlmNodes({ nodes, alerts }: { nodes: OrgNodePublic[]; alerts: AlertPubl
 function IngestPanel({ ingest }: { ingest: { available: boolean; paths: { path: string; name: string; ready: boolean; readers: number }[] } | null }) {
   if (!ingest || !ingest.available) {
     return (
-      <p className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-3 text-sm text-[var(--color-muted-foreground)]">
+      <p className="rounded-(--radius) border border-(--color-border) bg-(--color-surface) px-3 py-3 text-sm text-(--color-muted-foreground)">
         MediaMTX-ийн удирдлагын API-тай холбогдоогүй тул замын төлөв тайлагнаагүй. (Backend-ийн
         <code className="mx-1">MEDIAMTX_API_URL</code> ingest-ийн :9997 руу хүрэх эсэхийг шалгана уу.)
       </p>
@@ -365,7 +365,7 @@ function IngestPanel({ ingest }: { ingest: { available: boolean; paths: { path: 
   }
   const notReady = ingest.paths.filter((p) => !p.ready);
   return (
-    <p className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-3 text-sm text-[var(--color-muted-foreground)]">
+    <p className="rounded-(--radius) border border-(--color-border) bg-(--color-surface) px-3 py-3 text-sm text-(--color-muted-foreground)">
       Үүлэн MediaMTX дээр {ingest.paths.filter((p) => p.ready).length}/{ingest.paths.length} зам идэвхтэй.
       {notReady.length > 0 && ` Publisher хүлээж буй: ${notReady.map((p) => p.name).join(", ")}.`}
     </p>
@@ -393,7 +393,7 @@ function TrackerLive({ cams }: { cams: { path: string; name: string }[] }) {
   }, []);
   return (
     <section>
-      <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+      <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-(--color-muted-foreground)">
         Амьд хүн + state machine
       </h2>
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
@@ -427,11 +427,11 @@ function TrackerCam({
     (a, b) => (b.store_risk_pct ?? b.risk_pct) - (a.store_risk_pct ?? a.risk_pct),
   );
   return (
-    <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+    <div className="rounded-(--radius) border border-(--color-border) bg-(--color-surface) p-3">
       <div className="mb-2 flex items-center gap-2">
         <HealthDot status={state === "connected" ? "ok" : "unknown"} />
-        <span className="text-sm font-medium text-[var(--color-foreground)]">{name}</span>
-        <span className="ml-auto text-xs text-[var(--color-muted-foreground)]">
+        <span className="text-sm font-medium text-(--color-foreground)">{name}</span>
+        <span className="ml-auto text-xs text-(--color-muted-foreground)">
           {tracks.length} хүн
         </span>
       </div>
@@ -448,7 +448,7 @@ function TrackerCam({
           ))}
         </div>
       ) : (
-        <p className="py-3 text-center text-xs text-[var(--color-muted-foreground)]">
+        <p className="py-3 text-center text-xs text-(--color-muted-foreground)">
           {state === "connected" ? "AI холбогдсон · 0 хүн" : "AI метадата хүлээж байна…"}
         </p>
       )}
@@ -484,7 +484,7 @@ function StageDiag({ nodes, stageKey }: { nodes: OrgNodePublic[]; stageKey: Stag
   if (!nodes.length) return null;
   return (
     <section>
-      <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+      <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-(--color-muted-foreground)">
         Node оношлогоо — дэлгэрэнгүй лог
       </h2>
       <div className="space-y-3">
@@ -495,7 +495,7 @@ function StageDiag({ nodes, stageKey }: { nodes: OrgNodePublic[]; stageKey: Stag
             return (
               <p
                 key={n.id}
-                className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-3 text-sm text-[var(--color-muted-foreground)]"
+                className="rounded-(--radius) border border-(--color-border) bg-(--color-surface) px-3 py-3 text-sm text-(--color-muted-foreground)"
               >
                 {label}: уншиж байна…
               </p>
@@ -505,7 +505,7 @@ function StageDiag({ nodes, stageKey }: { nodes: OrgNodePublic[]; stageKey: Stag
             return (
               <p
                 key={n.id}
-                className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-3 text-sm text-[var(--color-muted-foreground)]"
+                className="rounded-(--radius) border border-(--color-border) bg-(--color-surface) px-3 py-3 text-sm text-(--color-muted-foreground)"
               >
                 {label}: diag тайлагнаагүй (хуучин build эсвэл push хүлээж байна — node-д шинэ
                 хувилбар deploy хийх шаардлагатай).
@@ -540,16 +540,16 @@ function NodeDiagCard({
 }) {
   const v = diag.vlm;
   return (
-    <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
-      <div className="mb-2 flex items-center gap-2 text-xs text-[var(--color-muted-foreground)]">
-        <span className="font-medium text-[var(--color-foreground)]">{name}</span>
+    <div className="rounded-(--radius) border border-(--color-border) bg-(--color-surface) p-3">
+      <div className="mb-2 flex items-center gap-2 text-xs text-(--color-muted-foreground)">
+        <span className="font-medium text-(--color-foreground)">{name}</span>
         <span>· v{diag.version}</span>
         <span className="ml-auto">{ageSec != null ? `${ageSec}с өмнө` : ""}</span>
       </div>
 
       {stageKey === "vlm" ? (
         <>
-          <div className="mb-2 flex flex-wrap items-center gap-1.5 text-[11px] text-[var(--color-muted-foreground)]">
+          <div className="mb-2 flex flex-wrap items-center gap-1.5 text-[11px] text-(--color-muted-foreground)">
             <Chip>num_predict {v.config.num_predict}</Chip>
             <Chip>num_ctx {v.config.num_ctx}</Chip>
             <Chip>frames {v.config.frames_per_clip}</Chip>
@@ -571,10 +571,10 @@ function NodeDiagCard({
             )}
           </div>
           {v.provider_error && (
-            <p className="mb-2 text-xs text-[var(--color-danger)]">{v.provider_error}</p>
+            <p className="mb-2 text-xs text-(--color-danger)">{v.provider_error}</p>
           )}
           {v.verdicts.length === 0 ? (
-            <p className="text-xs text-[var(--color-muted-foreground)]">
+            <p className="text-xs text-(--color-muted-foreground)">
               VLM verdict алга (breach хүлээж байна).
             </p>
           ) : (
@@ -582,21 +582,21 @@ function NodeDiagCard({
               {[...v.verdicts].reverse().map((vd, i) => (
                 <li
                   key={i}
-                  className="rounded-[var(--radius)] border-l-2 px-2.5 py-1.5 text-xs"
+                  className="rounded-(--radius) border-l-2 px-2.5 py-1.5 text-xs"
                   style={{
                     borderLeftColor: vd.parsed ? "var(--color-success)" : "var(--color-danger)",
                     background: "var(--color-muted)",
                   }}
                 >
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="tabular-nums text-[var(--color-muted-foreground)]">
+                    <span className="tabular-nums text-(--color-muted-foreground)">
                       {new Date(vd.ts * 1000).toLocaleTimeString("mn-MN")}
                     </span>
-                    <span className="text-[var(--color-foreground)]">{vd.category}</span>
-                    <span className="text-[var(--color-muted-foreground)]">
+                    <span className="text-(--color-foreground)">{vd.category}</span>
+                    <span className="text-(--color-muted-foreground)">
                       conf {vd.confidence}
                     </span>
-                    <span className="text-[var(--color-muted-foreground)]">
+                    <span className="text-(--color-muted-foreground)">
                       {(vd.latency_ms / 1000).toFixed(1)}с · {vd.frames_used} frame
                     </span>
                     <span
@@ -609,7 +609,7 @@ function NodeDiagCard({
                     </span>
                   </div>
                   {!vd.parsed && vd.raw && (
-                    <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded bg-[var(--color-background)] p-2 font-mono text-[10px] text-[var(--color-muted-foreground)]">
+                    <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded bg-(--color-background) p-2 font-mono text-[10px] text-(--color-muted-foreground)">
                       {vd.raw}
                     </pre>
                   )}
@@ -622,7 +622,7 @@ function NodeDiagCard({
         <div className="overflow-x-auto">
           <table className="w-full min-w-[480px] border-collapse text-xs">
             <thead>
-              <tr className="border-b border-[var(--color-border)] text-left text-[var(--color-muted-foreground)]">
+              <tr className="border-b border-(--color-border) text-left text-(--color-muted-foreground)">
                 <th className="px-2 py-1 font-medium">Камер</th>
                 <th className="px-2 py-1 font-medium">fps (cap/inf)</th>
                 <th className="px-2 py-1 font-medium">Frame</th>
@@ -632,8 +632,8 @@ function NodeDiagCard({
             </thead>
             <tbody>
               {diag.workers.map((w) => (
-                <tr key={w.camera_id} className="border-b border-[var(--color-border)] last:border-0">
-                  <td className="px-2 py-1 text-[var(--color-foreground)]">{w.camera_id}</td>
+                <tr key={w.camera_id} className="border-b border-(--color-border) last:border-0">
+                  <td className="px-2 py-1 text-(--color-foreground)">{w.camera_id}</td>
                   <td className="px-2 py-1 tabular-nums">
                     {w.fps_capture}/{w.fps_inference}
                   </td>
@@ -657,7 +657,7 @@ function NodeDiagCard({
 
 function Chip({ children }: { children: ReactNode }) {
   return (
-    <span className="rounded bg-[var(--color-muted)] px-1.5 py-0.5 text-[var(--color-muted-foreground)]">
+    <span className="rounded bg-(--color-muted) px-1.5 py-0.5 text-(--color-muted-foreground)">
       {children}
     </span>
   );
@@ -669,11 +669,11 @@ function RecentVerdicts({ alerts, cameraIds }: { alerts: AlertPublic[]; cameraId
   const recent = list.slice(0, 8);
   return (
     <section>
-      <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+      <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-(--color-muted-foreground)">
         Сүүлийн дүгнэлтүүд
       </h2>
       {recent.length === 0 ? (
-        <p className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-3 text-sm text-[var(--color-muted-foreground)]">
+        <p className="rounded-(--radius) border border-(--color-border) bg-(--color-surface) px-3 py-3 text-sm text-(--color-muted-foreground)">
           Энэ session-д дүгнэлт алга.
         </p>
       ) : (
@@ -682,13 +682,13 @@ function RecentVerdicts({ alerts, cameraIds }: { alerts: AlertPublic[]; cameraId
             <li key={a.id}>
               <Link
                 href={`/alerts/${a.id}`}
-                className="flex items-center gap-2.5 rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 transition-colors hover:bg-[var(--color-muted)]"
+                className="flex items-center gap-2.5 rounded-(--radius) border border-(--color-border) bg-(--color-surface) px-3 py-2 transition-colors hover:bg-(--color-muted)"
               >
-                <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--color-foreground)]">
+                <span className="min-w-0 flex-1 truncate text-[13px] text-(--color-foreground)">
                   {CATEGORY_LABEL[a.category]} · {Math.round(a.confidence * 100)}%
-                  <span className="text-[var(--color-muted-foreground)]"> · {relativeTime(a.created_at)}</span>
+                  <span className="text-(--color-muted-foreground)"> · {relativeTime(a.created_at)}</span>
                 </span>
-                <span className="shrink-0 text-xs text-[var(--color-muted-foreground)]">
+                <span className="shrink-0 text-xs text-(--color-muted-foreground)">
                   {LEVEL_LABEL[a.alert_level]}
                 </span>
               </Link>

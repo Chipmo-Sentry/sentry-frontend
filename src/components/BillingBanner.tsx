@@ -81,8 +81,8 @@ export function BillingBanner() {
 
   const toneClass =
     tone === "danger"
-      ? "border-[var(--color-danger)]/40 bg-[var(--color-danger)]/10 text-[var(--color-danger)]"
-      : "border-[var(--color-warning)]/40 bg-[var(--color-warning)]/15 text-[var(--color-foreground)]";
+      ? "border-(--color-danger)/40 bg-(--color-danger)/10 text-(--color-danger)"
+      : "border-(--color-warning)/40 bg-(--color-warning)/15 text-(--color-foreground)";
 
   return (
     <div

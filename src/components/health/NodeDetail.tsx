@@ -69,8 +69,8 @@ export function NodeDetail({ nodeId }: { nodeId: string }) {
   }
   if (node === null) {
     return (
-      <div className="p-8 text-sm text-[var(--color-muted-foreground)]">
-        <Link href="/health" className="inline-flex items-center gap-1 hover:text-[var(--color-foreground)]">
+      <div className="p-8 text-sm text-(--color-muted-foreground)">
+        <Link href="/health" className="inline-flex items-center gap-1 hover:text-(--color-foreground)">
           <ArrowLeft className="h-4 w-4" aria-hidden /> Эрүүл мэнд
         </Link>
         <p className="mt-4">Энэ node олдсонгүй эсвэл таны байгууллагынх биш байна.</p>
@@ -90,14 +90,14 @@ export function NodeDetail({ nodeId }: { nodeId: string }) {
       <div className="flex flex-wrap items-center gap-3">
         <Link
           href="/health"
-          className="inline-flex items-center gap-1 text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
+          className="inline-flex items-center gap-1 text-sm text-(--color-muted-foreground) hover:text-(--color-foreground)"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden /> Эрүүл мэнд
         </Link>
-        <span className="text-[var(--color-muted-foreground)]">/</span>
+        <span className="text-(--color-muted-foreground)">/</span>
         <HealthDot status={node.is_online ? "ok" : "down"} />
         <h1 className="text-lg font-medium">{node.name ?? "AI node"}</h1>
-        <span className="text-xs text-[var(--color-muted-foreground)]">
+        <span className="text-xs text-(--color-muted-foreground)">
           {node.is_online ? "онлайн" : "офлайн"}
           {node.last_seen_at ? ` · ${relativeTime(node.last_seen_at)}` : ""}
           {node.version ? ` · v${node.version}` : ""}
@@ -117,12 +117,12 @@ export function NodeDetail({ nodeId }: { nodeId: string }) {
         />
       </div>
       {node.provider_error && (
-        <p className="text-xs text-[var(--color-danger)]">{node.provider_error}</p>
+        <p className="text-xs text-(--color-danger)">{node.provider_error}</p>
       )}
 
       {starved && (
         <div
-          className="flex items-center gap-2 rounded-[var(--radius)] border px-3 py-2 text-sm"
+          className="flex items-center gap-2 rounded-(--radius) border px-3 py-2 text-sm"
           style={{ borderColor: "var(--color-warning)", color: "var(--color-warning)" }}
         >
           <AlertTriangle className="h-4 w-4" aria-hidden />
@@ -150,7 +150,7 @@ export function NodeDetail({ nodeId }: { nodeId: string }) {
       {/* History */}
       <section>
         <div className="mb-2 flex items-center gap-2">
-          <h2 className="text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+          <h2 className="text-xs font-medium uppercase tracking-wide text-(--color-muted-foreground)">
             Түүх
           </h2>
           <div className="ml-auto flex gap-1">
@@ -159,10 +159,10 @@ export function NodeDetail({ nodeId }: { nodeId: string }) {
                 key={r}
                 type="button"
                 onClick={() => setRange(r)}
-                className={`rounded-[var(--radius)] px-2 py-1 text-xs transition-colors ${
+                className={`rounded-(--radius) px-2 py-1 text-xs transition-colors ${
                   r === range
-                    ? "bg-[var(--color-primary)] text-[var(--color-primary-foreground)]"
-                    : "text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)]"
+                    ? "bg-(--color-primary) text-(--color-primary-foreground)"
+                    : "text-(--color-muted-foreground) hover:bg-(--color-muted)"
                 }`}
               >
                 {r}
@@ -171,7 +171,7 @@ export function NodeDetail({ nodeId }: { nodeId: string }) {
           </div>
         </div>
         {samples.length < 2 ? (
-          <p className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-6 text-center text-sm text-[var(--color-muted-foreground)]">
+          <p className="rounded-(--radius) border border-(--color-border) bg-(--color-surface) px-3 py-6 text-center text-sm text-(--color-muted-foreground)">
             Энэ хугацаанд хангалттай өгөгдөл алга.
           </p>
         ) : (
@@ -197,11 +197,11 @@ export function NodeDetail({ nodeId }: { nodeId: string }) {
 
       {/* This node's cameras */}
       <section>
-        <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+        <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-(--color-muted-foreground)">
           Энэ node-ийн камерууд
         </h2>
         {node.cameras.length === 0 ? (
-          <p className="text-sm text-[var(--color-muted-foreground)]">Камер тайлагнаагүй.</p>
+          <p className="text-sm text-(--color-muted-foreground)">Камер тайлагнаагүй.</p>
         ) : (
           <ul className="space-y-1 text-sm">
             {node.cameras.map((c) => (
@@ -209,11 +209,11 @@ export function NodeDetail({ nodeId }: { nodeId: string }) {
                 <HealthDot status={c.status === "ok" ? "ok" : c.status === "stalled" ? "warn" : "down"} />
                 <Link
                   href={`/pipeline/camera/${encodeURIComponent(c.camera_id)}`}
-                  className="text-[var(--color-foreground)] hover:underline"
+                  className="text-(--color-foreground) hover:underline"
                 >
                   {c.camera_id}
                 </Link>
-                <span className="ml-auto text-xs text-[var(--color-muted-foreground)]">
+                <span className="ml-auto text-xs text-(--color-muted-foreground)">
                   {c.fps != null ? `${c.fps.toFixed(1)} fps` : "—"} ·{" "}
                   {c.status === "ok" ? "инференц" : c.status === "stalled" ? "кадргүй" : "алдаа"}
                 </span>
@@ -229,7 +229,7 @@ export function NodeDetail({ nodeId }: { nodeId: string }) {
 function Badge({ text, color }: { text: string; color: string }) {
   return (
     <span
-      className="rounded-[var(--radius)] px-2 py-1"
+      className="rounded-(--radius) px-2 py-1"
       style={{ color, background: "color-mix(in srgb, " + color + " 14%, transparent)" }}
     >
       {text}
@@ -239,9 +239,9 @@ function Badge({ text, color }: { text: string; color: string }) {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2">
-      <div className="text-[11px] text-[var(--color-muted-foreground)]">{label}</div>
-      <div className="text-base text-[var(--color-foreground)]">{value}</div>
+    <div className="rounded-(--radius) border border-(--color-border) bg-(--color-surface) px-3 py-2">
+      <div className="text-[11px] text-(--color-muted-foreground)">{label}</div>
+      <div className="text-base text-(--color-foreground)">{value}</div>
     </div>
   );
 }
@@ -285,8 +285,8 @@ function ChartCard({
   const y = (v: number) => H - pad - (v / max) * (H - 2 * pad);
 
   return (
-    <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
-      <div className="mb-2 flex items-center gap-3 text-xs text-[var(--color-muted-foreground)]">
+    <div className="rounded-(--radius) border border-(--color-border) bg-(--color-surface) p-3">
+      <div className="mb-2 flex items-center gap-3 text-xs text-(--color-muted-foreground)">
         <span>{title}</span>
         <span className="ml-auto flex gap-2">
           {series.map((sd) => (

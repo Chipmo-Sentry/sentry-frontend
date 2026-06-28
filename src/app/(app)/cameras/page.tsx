@@ -126,7 +126,7 @@ export default function CamerasPage() {
                       {c.enabled ? "Идэвхтэй" : "Унтраалттай"}
                     </Badge>
                   </div>
-                  <p className="truncate text-sm text-[var(--color-muted-foreground)]">
+                  <p className="truncate text-sm text-(--color-muted-foreground)">
                     {storeName(c.store_id)} ·{" "}
                     {c.has_rtsp_url ? "RTSP холбосон" : "RTSP алга"} · risk{" "}
                     {Math.round(c.risk_threshold)}%
@@ -148,7 +148,7 @@ export default function CamerasPage() {
                     aria-label="Устгах"
                     onClick={() => setConfirmDelete(c)}
                   >
-                    <Trash2 className="h-4 w-4 text-[var(--color-danger)]" />
+                    <Trash2 className="h-4 w-4 text-(--color-danger)" />
                   </Button>
                 </div>
               </CardContent>

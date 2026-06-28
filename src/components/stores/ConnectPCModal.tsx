@@ -223,7 +223,7 @@ export function ConnectPCModal({ store, onClose }: ConnectPCModalProps) {
             <p className="text-sm font-medium">2. Холболтын код үүсгэнэ</p>
             {code ? (
               <>
-                <div className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-muted)] p-4 text-center">
+                <div className="rounded-(--radius) border border-(--color-border) bg-(--color-muted) p-4 text-center">
                   <div className="flex items-center justify-center gap-2">
                     <p className="font-mono text-4xl font-bold tracking-[0.3em]">
                       {code.code}
@@ -236,13 +236,13 @@ export function ConnectPCModal({ store, onClose }: ConnectPCModalProps) {
                       onClick={() => copyCode(code.code)}
                     >
                       {copied ? (
-                        <Check className="h-4 w-4 text-[var(--color-success)]" />
+                        <Check className="h-4 w-4 text-(--color-success)" />
                       ) : (
                         <Copy className="h-4 w-4" />
                       )}
                     </Button>
                   </div>
-                  <p className="mt-2 text-xs text-[var(--color-muted-foreground)]">
+                  <p className="mt-2 text-xs text-(--color-muted-foreground)">
                     Агент дээр энэ кодыг 10 минутын дотор оруулна уу.
                   </p>
                 </div>
@@ -266,11 +266,11 @@ export function ConnectPCModal({ store, onClose }: ConnectPCModalProps) {
           <div className="space-y-1.5">
             <p className="text-sm font-medium">Холбогдсон компьютерүүд</p>
             {agentList === null ? (
-              <p className="text-sm text-[var(--color-muted-foreground)]">
+              <p className="text-sm text-(--color-muted-foreground)">
                 Ачааллаж байна…
               </p>
             ) : agentList.length === 0 ? (
-              <p className="text-sm text-[var(--color-muted-foreground)]">
+              <p className="text-sm text-(--color-muted-foreground)">
                 Одоогоор холбогдсон компьютер алга. Агент дээр кодоо оруулмагц
                 энд автоматаар гарч ирнэ.
               </p>
@@ -282,13 +282,13 @@ export function ConnectPCModal({ store, onClose }: ConnectPCModalProps) {
                     className="flex items-center justify-between gap-2 text-sm"
                   >
                     <span className="flex min-w-0 items-center gap-2">
-                      <Laptop className="h-4 w-4 shrink-0 text-[var(--color-muted-foreground)]" />
+                      <Laptop className="h-4 w-4 shrink-0 text-(--color-muted-foreground)" />
                       <span className="min-w-0">
                         <span className="block truncate">
                           {a.name || "Нэргүй компьютер"}
                         </span>
                         {a.last_seen_at && (
-                          <span className="text-xs text-[var(--color-muted-foreground)]">
+                          <span className="text-xs text-(--color-muted-foreground)">
                             сүүлд {relativeTime(a.last_seen_at)}
                           </span>
                         )}
@@ -298,14 +298,14 @@ export function ConnectPCModal({ store, onClose }: ConnectPCModalProps) {
                       <span className="flex shrink-0 items-center gap-1">
                         {a.is_active ? (
                           <span
-                            className="flex items-center gap-1 text-xs font-medium text-[var(--color-warning)]"
+                            className="flex items-center gap-1 text-xs font-medium text-(--color-warning)"
                             title="Энэ компьютер яг одоо ажиллаж байна. Салгавал камерын дамжуулалт зогсоно."
                           >
                             <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                             Ажиллаж байна! Салгах уу?
                           </span>
                         ) : (
-                          <span className="text-xs text-[var(--color-muted-foreground)]">
+                          <span className="text-xs text-(--color-muted-foreground)">
                             Устгах уу?
                           </span>
                         )}
@@ -337,7 +337,7 @@ export function ConnectPCModal({ store, onClose }: ConnectPCModalProps) {
                           aria-label="Компьютер устгах"
                           onClick={() => setPendingDelete(`agent:${a.id}`)}
                         >
-                          <Trash2 className="h-4 w-4 text-[var(--color-danger)]" />
+                          <Trash2 className="h-4 w-4 text-(--color-danger)" />
                         </Button>
                       </span>
                     )}
@@ -351,11 +351,11 @@ export function ConnectPCModal({ store, onClose }: ConnectPCModalProps) {
           <div className="space-y-1.5">
             <p className="text-sm font-medium">Дамжуулж буй камерууд</p>
             {camList === null ? (
-              <p className="text-sm text-[var(--color-muted-foreground)]">
+              <p className="text-sm text-(--color-muted-foreground)">
                 Ачааллаж байна…
               </p>
             ) : camList.length === 0 ? (
-              <p className="text-sm text-[var(--color-muted-foreground)]">
+              <p className="text-sm text-(--color-muted-foreground)">
                 Камер хараахан бүртгэгдээгүй. Агент холбогдоод камераа илрүүлмэгц
                 энд гарч ирнэ.
               </p>
@@ -367,12 +367,12 @@ export function ConnectPCModal({ store, onClose }: ConnectPCModalProps) {
                     className="flex items-center justify-between gap-2 text-sm"
                   >
                     <span className="flex min-w-0 items-center gap-2">
-                      <Cctv className="h-4 w-4 shrink-0 text-[var(--color-muted-foreground)]" />
+                      <Cctv className="h-4 w-4 shrink-0 text-(--color-muted-foreground)" />
                       <span className="truncate">{c.name}</span>
                     </span>
                     {pendingDelete === `camera:${c.id}` ? (
                       <span className="flex shrink-0 items-center gap-1">
-                        <span className="text-xs text-[var(--color-muted-foreground)]">
+                        <span className="text-xs text-(--color-muted-foreground)">
                           Устгах уу?
                         </span>
                         <Button
@@ -411,7 +411,7 @@ export function ConnectPCModal({ store, onClose }: ConnectPCModalProps) {
                           aria-label="Камер устгах"
                           onClick={() => setPendingDelete(`camera:${c.id}`)}
                         >
-                          <Trash2 className="h-4 w-4 text-[var(--color-danger)]" />
+                          <Trash2 className="h-4 w-4 text-(--color-danger)" />
                         </Button>
                       </span>
                     )}

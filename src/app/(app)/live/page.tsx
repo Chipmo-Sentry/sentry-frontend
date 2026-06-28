@@ -124,17 +124,17 @@ export default function LivePage() {
   return (
     <div className="flex h-[calc(100vh-3.5rem)] flex-col">
       {/* Compact control bar */}
-      <header className="flex items-center justify-between gap-4 border-b border-[var(--color-border)] bg-[var(--color-background)] px-4 py-2">
-        <p className="text-xs text-[var(--color-muted-foreground)]">
+      <header className="flex items-center justify-between gap-4 border-b border-(--color-border) bg-(--color-background) px-4 py-2">
+        <p className="text-xs text-(--color-muted-foreground)">
           {cams.length} камер · WebRTC (бага саатал)
         </p>
-        <p className="text-xs text-[var(--color-muted-foreground)]">
+        <p className="text-xs text-(--color-muted-foreground)">
           Камер дээр дарж томруулна
         </p>
       </header>
 
       {/* Body — all cameras in a grid; click a tile's ⛶ to view it full-screen. */}
-      <div className="flex-1 overflow-auto bg-[var(--color-muted)] p-2">
+      <div className="flex-1 overflow-auto bg-(--color-muted) p-2">
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {cams.map((c) => (
             <div key={c.path} className="aspect-video">
