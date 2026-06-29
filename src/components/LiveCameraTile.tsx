@@ -333,6 +333,37 @@ export function LiveCameraTile({
           }
         }
       }
+
+      // Held items: box + Mongolian name (WHAT is in the shopper's hand). Amber
+      // so it reads as distinct from the risk-coloured person boxes. Only `held`
+      // items draw, to keep the view clean — all detections stay in metadata.
+      const amber = "#FFAA00";
+      for (const it of latest.items ?? []) {
+        if (!it.held) continue;
+        const [ix1, iy1, ix2, iy2] = it.box;
+        const rx = offX + ix1 * sx;
+        const ry = offY + iy1 * sy;
+        const rw = (ix2 - ix1) * sx;
+        const rh = (iy2 - iy1) * sy;
+        ctx.beginPath();
+        ctx.roundRect(rx, ry, rw, rh, 4);
+        ctx.strokeStyle = amber;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        const name = it.label_mn || it.label;
+        if (name) {
+          const pad = 6;
+          const h = 18;
+          ctx.font = "600 12px ui-sans-serif, system-ui, sans-serif";
+          const w = ctx.measureText(name).width + 2 * pad;
+          const ly = Math.max(0, ry - h - 2);
+          pill(rx, ly, w, h, 6, amber);
+          ctx.textBaseline = "middle";
+          ctx.fillStyle = "#1a1a1a";
+          ctx.fillText(name, rx + pad, ly + h / 2 + 0.5);
+          ctx.textBaseline = "alphabetic";
+        }
+      }
     }
 
     function schedule() {

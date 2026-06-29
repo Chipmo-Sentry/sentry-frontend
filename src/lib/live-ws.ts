@@ -29,6 +29,19 @@ export type Track = {
   episode_started_ms?: number | null; // node epoch ms of the episode's first firing
 };
 
+/**
+ * One detected item (merchandise) from sentry-ai's per-frame metadata.
+ * `held` marks an item a shopper's wrist is over (the "in hand" geometry);
+ * `label_mn` is the Mongolian display name computed node-side. Source-frame px.
+ */
+export type Item = {
+  box: [number, number, number, number]; // [x1, y1, x2, y2]
+  label: string;       // detector class label (English)
+  label_mn: string;    // Mongolian display name (falls back to label)
+  confidence: number;
+  held: boolean;
+};
+
 export type FrameMetadata = {
   camera_id: string;
   frame_id: number;
@@ -37,6 +50,9 @@ export type FrameMetadata = {
   height: number;       // source frame height
   fps_inference: number;
   tracks: Track[];
+  // Detected merchandise this frame (held-item box + name overlay). Optional —
+  // an older AI node / backend simply doesn't send it.
+  items?: Item[];
 };
 
 export type LiveConnState = "connecting" | "connected" | "disconnected" | "error";
