@@ -28,6 +28,16 @@ export type LiveCameraTileProps = {
   /** docs/29 P1d — the camera's detection zones (normalized 0-1 polygons),
    * drawn read-only over the video so the operator sees what the engine uses. */
   zones?: Zone[] | null;
+  /** Smart-console thumbnail variant — a slim tile (ambient risk border, no
+   * header/overlay/buttons) for the bottom strip. The full tile is the spotlight. */
+  compact?: boolean;
+  /** Highlight this thumbnail as the active spotlight (compact mode ring). */
+  active?: boolean;
+  /** Click → pin this camera as the spotlight (compact mode). */
+  onSelect?: () => void;
+  /** Report this camera's current max risk % + online state up to the parent so
+   * it can auto-focus the spotlight and colour the thumbnail border. */
+  onRisk?: (risk: number, online: boolean) => void;
 };
 
 type Status = "loading" | "playing" | "stalled" | "error";
@@ -58,6 +68,10 @@ export function LiveCameraTile({
   detailHref,
   onShowPanel,
   zones,
+  compact = false,
+  active = false,
+  onSelect,
+  onRisk,
 }: LiveCameraTileProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -76,6 +90,15 @@ export function LiveCameraTile({
   );
 
   const { latest, state: wsState } = useLiveMetadata(cameraId);
+
+  // Current max per-person risk on this camera — drives the spotlight auto-focus
+  // and the thumbnail ambient border. Reported up so the parent can compare cams.
+  const maxRisk = latest
+    ? latest.tracks.reduce((m, t) => Math.max(m, t.risk_pct), 0)
+    : 0;
+  useEffect(() => {
+    onRisk?.(maxRisk, status === "playing");
+  }, [maxRisk, status, onRisk]);
 
   // Fetch a short-lived read token and append it to the stream URLs. On failure
   // fall back to the raw URLs (local/dev MediaMTX without authHTTP still works).
@@ -456,6 +479,53 @@ export function LiveCameraTile({
       if (raf) cancelAnimationFrame(raf);
     };
   }, [zones]);
+
+  // Compact thumbnail (smart-console strip): slim live tile, ambient risk
+  // border, click to promote to the spotlight. No header/overlay/buttons.
+  if (compact) {
+    const ambient = maxRisk > 0 ? riskColor(maxRisk) : "var(--color-border)";
+    return (
+      <button
+        type="button"
+        onClick={onSelect}
+        className={`group relative block aspect-video w-full overflow-hidden rounded-lg border-2 bg-black transition ${
+          active ? "ring-2 ring-white/80" : "hover:brightness-110"
+        }`}
+        style={{ borderColor: ambient }}
+        aria-label={`${name} — томруулах`}
+      >
+        <video
+          ref={videoRef}
+          className="h-full w-full object-cover"
+          data-camera-id={cameraId}
+        />
+        {maxRisk >= 70 && (
+          <span
+            className="pointer-events-none absolute inset-0 animate-pulse rounded-md ring-2 ring-red-500/80"
+            aria-hidden
+          />
+        )}
+        {status !== "playing" && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/45">
+            <span className="h-5 w-5 animate-spin rounded-full border-2 border-(--color-border) border-t-(--color-primary)" />
+          </div>
+        )}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/75 to-transparent px-2 py-1">
+          <span className="truncate text-[11px] font-medium text-white">
+            {name}
+          </span>
+          {maxRisk > 0 && (
+            <span
+              className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-white"
+              style={{ backgroundColor: ambient }}
+            >
+              {maxRisk.toFixed(0)}%
+            </span>
+          )}
+        </div>
+      </button>
+    );
+  }
 
   return (
     <div

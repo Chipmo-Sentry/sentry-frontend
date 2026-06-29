@@ -1,26 +1,41 @@
 "use client";
 
 import { Button, EmptyState, ErrorState, Spinner } from "@chipmo-sentry/ui-kit";
-import { Cctv } from "lucide-react";
+import { Cctv, Pin } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { LiveAlertRail } from "@/components/LiveAlertRail";
 import { LiveBehaviorPanel } from "@/components/LiveBehaviorPanel";
 import { LiveCameraTile } from "@/components/LiveCameraTile";
-import { behaviors as behaviorsApi, cameras as camerasApi } from "@/lib/api";
-import type { CameraPublic, Zone } from "@/lib/types";
+import { LiveKpiBar } from "@/components/LiveKpiBar";
+import {
+  alerts as alertsApi,
+  behaviors as behaviorsApi,
+  cameras as camerasApi,
+} from "@/lib/api";
+import { useAlertStreamContext } from "@/lib/alert-stream-context";
+import { dayKey } from "@/lib/time";
+import type { AlertPublic, CameraPublic, Zone } from "@/lib/types";
 
 /**
- * M1-LIVE Phase L2 — camera list now comes from /api/v1/cameras.
- * `mediamtx_path` is the live-worker camera_id and drives both the HLS URL
- * and the WS metadata channel (see sentry-backend camera schema).
- * NEXT_PUBLIC_MEDIAMTX_HLS_BASE — env override for non-localhost dev.
+ * M1-LIVE — smart monitoring console. Instead of a static grid, the highest-risk
+ * camera is auto-promoted to a large spotlight (Tier 1 UX), with a live alert
+ * rail (the operator's worklist) and a thumbnail strip where every camera's
+ * border is coloured by its current risk. Click a thumbnail or alert to pin.
+ *
+ * `mediamtx_path` is the live-worker camera_id and drives both the stream URLs
+ * and the WS metadata channel. NEXT_PUBLIC_MEDIAMTX_* — env overrides for dev.
  */
 const MEDIAMTX_HLS_BASE =
   process.env.NEXT_PUBLIC_MEDIAMTX_HLS_BASE ?? "http://localhost:8888";
-// WebRTC/WHEP endpoint (MediaMTX :8889) — primary low-latency transport.
 const MEDIAMTX_WHEP_BASE =
   process.env.NEXT_PUBLIC_MEDIAMTX_WHEP_BASE ?? "http://localhost:8889";
+
+// Spotlight auto-focus hysteresis: a different camera must beat the current
+// spotlight's risk by this margin before we switch, so it doesn't flicker
+// between near-equal risks.
+const FOCUS_MARGIN = 8;
 
 type LiveCamera = {
   id: string;
@@ -29,15 +44,24 @@ type LiveCamera = {
   zones?: Zone[] | null;
 };
 
+type RiskState = { risk: number; online: boolean };
+
 export default function LivePage() {
   const [cams, setCams] = useState<LiveCamera[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // REV.2 — behavior-criteria side panel: which camera it shows (null = closed)
-  // + key→Mongolian label maps from /api/v1/behaviors (best-effort: on failure
-  // the panel just shows raw keys).
   const [panelCam, setPanelCam] = useState<LiveCamera | null>(null);
   const [behaviorLabels, setBehaviorLabels] = useState<Record<string, string>>({});
   const [levelLabels, setLevelLabels] = useState<Record<string, string>>({});
+
+  // Per-camera live risk + online state, reported up by each thumbnail tile.
+  const [riskByCam, setRiskByCam] = useState<Record<string, RiskState>>({});
+  // Auto-focused camera (highest risk, with hysteresis) and the manual pin.
+  const [autoCam, setAutoCam] = useState<string | null>(null);
+  const [pinned, setPinned] = useState<string | null>(null);
+
+  // Live alert feed: SSE stream (AppShell-mounted) + an initial history seed.
+  const { alerts: streamed, connected: alertConnected } = useAlertStreamContext();
+  const [seedAlerts, setSeedAlerts] = useState<AlertPublic[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,6 +82,21 @@ export default function LivePage() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    alertsApi.list({ limit: 40 }).then(
+      (list) => {
+        if (!cancelled) setSeedAlerts(list);
+      },
+      () => {
+        /* rail just shows live stream */
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const load = useCallback(() => {
     setError(null);
     setCams(null);
@@ -65,7 +104,6 @@ export default function LivePage() {
     camerasApi.list().then(
       (list: CameraPublic[]) => {
         if (cancelled) return;
-        // Only enabled cameras that have a MediaMTX path can be streamed.
         const streamable = list
           .filter((c) => c.enabled && c.mediamtx_path)
           .map((c) => ({
@@ -86,6 +124,76 @@ export default function LivePage() {
   }, []);
 
   useEffect(() => load(), [load]);
+
+  // Stable per-camera risk-report callback so the tile's report effect doesn't
+  // refire (and loop) every render. `handleRisk` bails when nothing changed.
+  const handleRisk = useCallback(
+    (path: string, risk: number, online: boolean) => {
+      setRiskByCam((prev) => {
+        const cur = prev[path];
+        if (cur && cur.risk === risk && cur.online === online) return prev;
+        return { ...prev, [path]: { risk, online } };
+      });
+    },
+    [],
+  );
+  const riskCbRef = useRef<Record<string, (r: number, o: boolean) => void>>({});
+  const riskCb = useCallback(
+    (path: string) => {
+      if (!riskCbRef.current[path]) {
+        riskCbRef.current[path] = (r, o) => handleRisk(path, r, o);
+      }
+      return riskCbRef.current[path];
+    },
+    [handleRisk],
+  );
+
+  // Auto-focus: track the highest-risk online camera, with hysteresis.
+  useEffect(() => {
+    let best: string | null = null;
+    let bestRisk = -1;
+    for (const [path, s] of Object.entries(riskByCam)) {
+      if (!s.online) continue;
+      if (s.risk > bestRisk) {
+        bestRisk = s.risk;
+        best = path;
+      }
+    }
+    if (best == null) return;
+    setAutoCam((prev) => {
+      if (prev == null || !riskByCam[prev]?.online) return best;
+      const prevRisk = riskByCam[prev]?.risk ?? -1;
+      if (best !== prev && bestRisk >= prevRisk + FOCUS_MARGIN) return best;
+      return prev;
+    });
+  }, [riskByCam]);
+
+  const camById = useMemo(() => {
+    const m: Record<string, { path: string; name: string }> = {};
+    for (const c of cams ?? []) m[c.id] = { path: c.path, name: c.name };
+    return m;
+  }, [cams]);
+
+  const recentAlerts = useMemo(() => {
+    const map = new Map<string, AlertPublic>();
+    for (const a of [...streamed, ...seedAlerts]) map.set(a.id, a);
+    return [...map.values()]
+      .sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at))
+      .slice(0, 40);
+  }, [streamed, seedAlerts]);
+
+  const online = useMemo(
+    () => Object.values(riskByCam).filter((s) => s.online).length,
+    [riskByCam],
+  );
+  const todayKey = dayKey(new Date().toISOString());
+  const todayAlerts = recentAlerts.filter(
+    (a) => dayKey(a.created_at) === todayKey,
+  ).length;
+  const avgLatencyMs = recentAlerts.length
+    ? recentAlerts.reduce((s, a) => s + (a.inference_latency_ms ?? 0), 0) /
+      recentAlerts.length
+    : null;
 
   const hlsUrl = (path: string) => `${MEDIAMTX_HLS_BASE}/${path}/index.m3u8`;
   const whepUrl = (path: string) => `${MEDIAMTX_WHEP_BASE}/${path}/whep`;
@@ -121,39 +229,91 @@ export default function LivePage() {
     );
   }
 
+  const first = cams[0]!; // cams is non-empty here (the length===0 case returned)
+  const spotlightPath = pinned ?? autoCam ?? first.path;
+  const spotlight = cams.find((c) => c.path === spotlightPath) ?? first;
+
   return (
     <div className="flex h-[calc(100vh-3.5rem)] flex-col">
-      {/* Compact control bar */}
+      {/* Control bar — camera count + pin state. */}
       <header className="flex items-center justify-between gap-4 border-b border-(--color-border) bg-(--color-background) px-4 py-2">
         <p className="text-xs text-(--color-muted-foreground)">
-          {cams.length} камер · WebRTC (бага саатал)
+          {cams.length} камер · эрсдэлээр автоматаар томруулна
         </p>
-        <p className="text-xs text-(--color-muted-foreground)">
-          Камер дээр дарж томруулна
-        </p>
+        {pinned ? (
+          <button
+            type="button"
+            onClick={() => setPinned(null)}
+            className="flex items-center gap-1.5 rounded-md bg-(--color-primary)/15 px-2 py-1 text-xs font-medium text-blue-300 transition hover:bg-(--color-primary)/25"
+          >
+            <Pin className="h-3 w-3" aria-hidden />
+            Тогтоосон: {spotlight.name} · Авто болгох
+          </button>
+        ) : (
+          <p className="text-xs text-(--color-muted-foreground)">
+            Камер дээр дарж тогтооно
+          </p>
+        )}
       </header>
 
-      {/* Body — all cameras in a grid; click a tile's ⛶ to view it full-screen. */}
-      <div className="flex-1 overflow-auto bg-(--color-muted) p-2">
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {cams.map((c) => (
-            <div key={c.path} className="aspect-video">
+      <div className="flex flex-1 flex-col gap-3 overflow-auto bg-(--color-muted) p-3">
+        <LiveKpiBar
+          online={online}
+          total={cams.length}
+          todayAlerts={todayAlerts}
+          avgLatencyMs={avgLatencyMs}
+          aiHealthy={online > 0}
+        />
+
+        {/* Spotlight (auto-focused or pinned) + live alert rail. */}
+        <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[1fr_280px]">
+          <div className="min-w-0">
+            <div className="aspect-video w-full">
               <LiveCameraTile
-                cameraId={c.path}
-                streamCameraId={c.id}
-                name={c.name}
-                whepUrl={whepUrl(c.path)}
-                hlsUrl={hlsUrl(c.path)}
-                detailHref={`/live/${encodeURIComponent(c.path)}`}
-                onShowPanel={() => setPanelCam(c)}
-                zones={c.zones}
+                key={spotlight.path}
+                cameraId={spotlight.path}
+                streamCameraId={spotlight.id}
+                name={spotlight.name}
+                whepUrl={whepUrl(spotlight.path)}
+                hlsUrl={hlsUrl(spotlight.path)}
+                detailHref={`/live/${encodeURIComponent(spotlight.path)}`}
+                onShowPanel={() => setPanelCam(spotlight)}
+                zones={spotlight.zones}
               />
             </div>
+          </div>
+
+          <div className="min-h-0 lg:h-full">
+            <LiveAlertRail
+              alerts={recentAlerts}
+              connected={alertConnected}
+              camById={camById}
+              behaviorLabels={behaviorLabels}
+              onSelectCamera={(path) => setPinned(path)}
+            />
+          </div>
+        </div>
+
+        {/* Thumbnail strip — every camera, ambient risk border, click to pin. */}
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+          {cams.map((c) => (
+            <LiveCameraTile
+              key={`thumb-${c.path}`}
+              compact
+              active={c.path === spotlightPath}
+              onSelect={() => setPinned(c.path)}
+              onRisk={riskCb(c.path)}
+              cameraId={c.path}
+              streamCameraId={c.id}
+              name={c.name}
+              whepUrl={whepUrl(c.path)}
+              hlsUrl={hlsUrl(c.path)}
+              zones={c.zones}
+            />
           ))}
         </div>
       </div>
 
-      {/* REV.2 — live behavior-criteria breakdown for the selected camera */}
       {panelCam && (
         <LiveBehaviorPanel
           key={panelCam.path}
