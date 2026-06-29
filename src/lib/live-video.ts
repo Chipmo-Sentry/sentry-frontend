@@ -48,6 +48,17 @@ export function attachLiveVideo(
     "Шууд дамжуулал амжилтгүй. Энэ камер H.265 (HEVC) кодектой бол вэб хөтөч " +
     "дээр харагдахгүй — камерынхаа тохиргооноос H.264 болгоно уу.";
 
+  // The playlist couldn't be fetched — name the real reason (an offline AI node,
+  // not a codec problem) so the operator knows what to fix.
+  function unavailableMsg(httpStatus: number | null): string {
+    if (httpStatus === 503)
+      return "AI зангилаа офлайн байна — стрим дамжуулагдахгүй. Зангилаагаа эхлүүлээд хуудсаа сэргээнэ үү.";
+    if (httpStatus === 502)
+      return "Камерын стрим зангилаа дээр алга — камер дамжуулж байгаа эсэхийг шалгана уу.";
+    if (httpStatus === 404) return "Камерын стрим олдсонгүй.";
+    return `Стримийг ачаалж чадсангүй${httpStatus ? ` (HTTP ${httpStatus})` : ""}.`;
+  }
+
   function giveUp(message: string) {
     if (disposed) return;
     disposed = true; // halts attempt() + scheduleReconnect()
@@ -113,6 +124,12 @@ export function attachLiveVideo(
           onUnsupported: () => {
             stopWatchdog();
             giveUp(UNSUPPORTED_MSG);
+          },
+          onUnavailable: (status) => {
+            // Stream source is down (node offline / not serving) — show the real
+            // reason instead of retrying into the misleading H.265 watchdog.
+            stopWatchdog();
+            giveUp(unavailableMsg(status));
           },
         });
       } catch {

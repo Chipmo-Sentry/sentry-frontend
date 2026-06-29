@@ -8,6 +8,12 @@ export type HlsCallbacks = {
    * reconnecting will never help, so the caller should surface a terminal,
    * actionable message instead of looping forever on "connecting". */
   onUnsupported?: (err: Error) => void;
+  /** The PLAYLIST (.m3u8) itself couldn't be fetched — the stream source isn't
+   * available: the AI node is offline (HTTP 503), or it isn't serving this path
+   * (502/404). Distinct from a codec error so the UI can name the real cause
+   * instead of mislabelling an offline node as "H.265". `status` = the upstream
+   * HTTP code if hls.js exposed one, else null. */
+  onUnavailable?: (status: number | null) => void;
 };
 
 // hls.js error details that mean "this browser can't decode the codec" — almost
@@ -16,6 +22,14 @@ const CODEC_UNSUPPORTED_DETAILS = new Set<string>([
   "manifestIncompatibleCodecsError",
   "bufferAddCodecError",
   "bufferIncompatibleCodecsError",
+]);
+
+// hls.js error details where the PLAYLIST fetch failed → the stream source is
+// unavailable (node offline / path not served), NOT a transient segment blip.
+const MANIFEST_LOAD_DETAILS = new Set<string>([
+  "manifestLoadError",
+  "manifestLoadTimeOut",
+  "manifestParsingError",
 ]);
 
 /**
@@ -50,6 +64,14 @@ export function attachHls(
         return;
       }
       if (!data.fatal) return; // hls.js self-heals non-fatal errors
+      // The playlist couldn't be fetched → the stream source is unavailable
+      // (node offline / not serving this path). Report the upstream HTTP code so
+      // the caller shows the real reason, not the generic codec message.
+      if (MANIFEST_LOAD_DETAILS.has(data.details)) {
+        cbs.onUnavailable?.(data.response?.code ?? null);
+        hls.destroy();
+        return;
+      }
       switch (data.type) {
         case Hls.ErrorTypes.NETWORK_ERROR:
           hls.startLoad(); // retry the manifest/segment fetch
