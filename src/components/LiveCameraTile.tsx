@@ -1,8 +1,10 @@
 "use client";
 
-import { ExternalLink, ListChecks, Maximize2, Minimize2 } from "lucide-react";
+import { Cctv, ExternalLink, ListChecks, Maximize2, Minimize2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+
+import { riskColor } from "@chipmo-sentry/ui-kit";
 
 import { ApiError, API_BASE_URL, cameras as camerasApi } from "@/lib/api";
 import { attachLiveVideo, type LiveTransport } from "@/lib/live-video";
@@ -225,6 +227,22 @@ export function LiveCameraTile({
       const sx = scale;
       const sy = scale;
 
+      // Rounded-rect helper for the reference-style pills.
+      const pill = (
+        x: number,
+        y: number,
+        w: number,
+        h: number,
+        r: number,
+        fill: string,
+      ) => {
+        const rad = Math.min(r, h / 2, w / 2);
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, h, rad);
+        ctx.fillStyle = fill;
+        ctx.fill();
+      };
+
       for (const t of latest.tracks) {
         const [x1, y1, x2, y2] = t.box;
         const rx = offX + x1 * sx;
@@ -232,55 +250,64 @@ export function LiveCameraTile({
         const rw = (x2 - x1) * sx;
         const rh = (y2 - y1) * sy;
 
-        const color =
-          t.color === "red"
-            ? "#ef4444"
-            : t.color === "yellow"
-              ? "#eab308"
-              : "#22c55e";
+        // Risk % MUST be the per-camera risk_pct so the number and the colour
+        // always agree. (We deliberately do NOT use store_risk_pct here: the
+        // cross-camera accumulated score ratchets toward a saturated 100% while
+        // the box stays low, which reads as "everyone is 100% but green".
+        // store_risk_pct lives in the panel.) The band/colour is derived from
+        // risk_pct via the shared ui-kit spec — the SAME mapping the agent uses.
+        const risk = t.risk_pct;
+        const color = riskColor(risk);
 
+        // Box: rounded, band-coloured, 2px.
+        ctx.beginPath();
+        ctx.roundRect(rx, ry, rw, rh, 6);
         ctx.strokeStyle = color;
         ctx.lineWidth = 2;
-        ctx.strokeRect(rx, ry, rw, rh);
+        ctx.stroke();
 
-        // Prefer the store-global re-ID number so the SAME person shows the SAME
-        // id across the store's cameras (ADR-0023); fall back to the per-camera
-        // ByteTrack id when re-ID is off.
+        // Primary pill (reference): solid band-colour, white bold risk %, with
+        // the re-ID number tucked in smaller. Prefer the store-global re-ID so
+        // the SAME person shows the SAME id across the store's cameras
+        // (ADR-0023); fall back to the per-camera ByteTrack id when re-ID is off.
         const pid = t.store_person_id ?? t.person_id;
-        // Risk % MUST be the per-camera risk_pct — the SAME score that drives
-        // `color` — so the number and the colour always agree. (We deliberately
-        // do NOT use store_risk_pct here: the cross-camera accumulated score
-        // ratchets toward a saturated 100% while the box stays green, which read
-        // as "everyone is 100% but green". store_risk_pct lives in the panel.)
-        const risk = t.risk_pct;
-        const label =
-          risk > 0 ? `#${pid} · ${risk.toFixed(0)}%` : `#${pid}`;
-        ctx.font = "600 13px ui-sans-serif, system-ui, sans-serif";
-        const labelW = ctx.measureText(label).width + 8;
-        const labelH = 18;
-        const labelY = Math.max(0, ry - labelH);
-        ctx.fillStyle = color;
-        ctx.fillRect(rx, labelY, labelW, labelH);
-        ctx.fillStyle = "#000";
-        ctx.fillText(label, rx + 4, labelY + 13);
+        const riskTxt = risk > 0 ? `${risk.toFixed(0)}%` : "—";
+        const idTxt = `#${pid}`;
+        const pad = 8;
+        const gap = 5;
+        ctx.font = "700 14px ui-sans-serif, system-ui, sans-serif";
+        const riskW = ctx.measureText(riskTxt).width;
+        ctx.font = "600 11px ui-sans-serif, system-ui, sans-serif";
+        const idW = ctx.measureText(idTxt).width;
+        const pillH = 22;
+        const pillW = pad + riskW + gap + idW + pad;
+        const pillY = Math.max(0, ry - pillH - 3);
+        pill(rx, pillY, pillW, pillH, 8, color);
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = "#fff";
+        ctx.font = "700 14px ui-sans-serif, system-ui, sans-serif";
+        ctx.fillText(riskTxt, rx + pad, pillY + pillH / 2 + 0.5);
+        ctx.fillStyle = "rgba(255,255,255,0.78)";
+        ctx.font = "600 11px ui-sans-serif, system-ui, sans-serif";
+        ctx.fillText(idTxt, rx + pad + riskW + gap, pillY + pillH / 2 + 0.5);
+        ctx.textBaseline = "alphabetic";
 
         // Accumulated episode score ("how many points banked"), in a neutral
-        // pill right after the risk label so it reads as a DIFFERENT number from
-        // the colour-coded current risk. Sum of the per-criterion scores; the
-        // per-criterion breakdown lives in the side panel. Unlike the decaying
-        // risk %, this is the episode total, so it's the "оноо цуглуулсан" view.
+        // dark pill to the right so it reads as a DIFFERENT number from the
+        // colour-coded current risk. Sum of the per-criterion scores; the
+        // per-criterion breakdown lives in the side panel.
         const points = t.behavior_scores
           ? Object.values(t.behavior_scores).reduce((a, b) => a + (Number(b) || 0), 0)
           : 0;
         if (points > 0) {
           const pts = `${points.toFixed(0)} оноо`;
           ctx.font = "600 11px ui-sans-serif, system-ui, sans-serif";
-          const pw = ctx.measureText(pts).width + 8;
-          const px = rx + labelW + 3;
-          ctx.fillStyle = "rgba(0,0,0,0.72)";
-          ctx.fillRect(px, labelY, pw, labelH);
+          const pw = ctx.measureText(pts).width + 2 * pad;
+          pill(rx + pillW + 4, pillY, pw, pillH, 8, "rgba(10,10,10,0.78)");
+          ctx.textBaseline = "middle";
           ctx.fillStyle = "#fff";
-          ctx.fillText(pts, px + 4, labelY + 13);
+          ctx.fillText(pts, rx + pillW + 4 + pad, pillY + pillH / 2 + 0.5);
+          ctx.textBaseline = "alphabetic";
         }
 
         // REV.2 — active criteria under the box: the engine's Mongolian reason
@@ -293,14 +320,15 @@ export function LiveCameraTile({
           const extra = reasons.length - shown.length;
           if (extra > 0) shown[shown.length - 1] += `  +${extra}`;
           ctx.font = "500 11px ui-sans-serif, system-ui, sans-serif";
-          const lineH = 15;
-          let ly = Math.min(cssH - lineH * shown.length, ry + rh + 2);
+          const lineH = 17;
+          let ly = Math.min(cssH - lineH * shown.length, ry + rh + 3);
           for (const line of shown) {
-            const w = ctx.measureText(line).width + 8;
-            ctx.fillStyle = "rgba(0,0,0,0.65)";
-            ctx.fillRect(rx, ly, w, lineH);
+            const w = ctx.measureText(line).width + 2 * pad;
+            pill(rx, ly, w, lineH - 2, 6, "rgba(10,10,10,0.7)");
+            ctx.textBaseline = "middle";
             ctx.fillStyle = color;
-            ctx.fillText(line, rx + 4, ly + 11);
+            ctx.fillText(line, rx + pad, ly + (lineH - 2) / 2 + 0.5);
+            ctx.textBaseline = "alphabetic";
             ly += lineH;
           }
         }
@@ -430,39 +458,22 @@ export function LiveCameraTile({
           isFullscreen ? "opacity-0 group-hover:opacity-100" : "opacity-100"
         }`}
       >
-        <div className="flex items-center gap-2 rounded-md bg-black/60 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
-          <span
-            className={`inline-block h-1.5 w-1.5 rounded-full ${
-              status === "playing"
-                ? "bg-green-400"
-                : status === "stalled"
-                  ? "bg-yellow-400"
-                  : status === "error"
-                    ? "bg-red-500"
-                    : "bg-gray-400"
-            }`}
-            aria-hidden
-          />
-          {name}
+        <div className="flex items-center gap-2 rounded-lg bg-black/60 px-2 py-1.5 text-white backdrop-blur-sm">
+          <span className="flex h-5 w-5 items-center justify-center rounded-md bg-(--color-primary)/25 text-blue-300">
+            <Cctv className="h-3.5 w-3.5" aria-hidden />
+          </span>
+          <span className="text-xs font-medium leading-none">{name}</span>
         </div>
         <div className="pointer-events-auto flex items-center gap-2">
-          {/* Transport indicator — WebRTC (low latency) vs HLS fallback */}
+          {/* Live status badge — pulsing dot, red while streaming (reference UX).
+           * Transport + AI throughput moved to the bottom meta strip. */}
           <span
-            className="rounded-md bg-black/60 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm"
-            title={
-              transport === "webrtc"
-                ? "WebRTC — бага саатал (sub-second)"
-                : "HLS — нөөц горим (WebRTC амжилтгүй)"
-            }
-          >
-            {transport === "webrtc" ? "⚡ RTC" : "HLS"}
-          </span>
-          {/* AI detection count + ws state */}
-          <span
-            className={`rounded-md px-2 py-1 text-xs font-medium backdrop-blur-sm ${
-              wsState === "connected"
-                ? "bg-black/60 text-white"
-                : "bg-yellow-500/80 text-black"
+            className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium backdrop-blur-sm ${
+              status === "playing"
+                ? "bg-red-500/85 text-white"
+                : status === "error"
+                  ? "bg-red-600/85 text-white"
+                  : "bg-amber-500/85 text-black"
             }`}
             title={
               wsState === "connected"
@@ -470,20 +481,17 @@ export function LiveCameraTile({
                 : `AI: ${wsState}`
             }
           >
-            🤖 {latest ? latest.tracks.length : "—"}
-          </span>
-          <span
-            className={`rounded-md px-2 py-1 text-xs font-medium backdrop-blur-sm ${
-              status === "playing"
-                ? "bg-green-500/80 text-white"
-                : status === "stalled"
-                  ? "bg-yellow-500/80 text-black"
+            <span
+              className={`inline-block h-1.5 w-1.5 rounded-full ${
+                status === "playing"
+                  ? "animate-pulse bg-white"
                   : status === "error"
-                    ? "bg-red-500/80 text-white"
-                    : "bg-black/60 text-white"
-            }`}
-          >
-            {STATUS_LABEL[status]}
+                    ? "bg-white"
+                    : "animate-pulse bg-black/70"
+              }`}
+              aria-hidden
+            />
+            {status === "playing" ? "Шууд" : STATUS_LABEL[status]}
           </span>
           {onShowPanel && !isFullscreen && (
             <button
@@ -522,6 +530,23 @@ export function LiveCameraTile({
         </div>
       </div>
 
+      {/* Connecting / buffering placeholder — an intentional state instead of an
+       * empty black void (reference UX). Hidden once the first frame plays. */}
+      {!paymentRequired && status !== "playing" && status !== "error" && (
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">
+          <div className="relative h-12 w-12">
+            <span className="absolute inset-0 animate-spin rounded-full border-[3px] border-(--color-border) border-t-(--color-primary)" />
+            <span className="absolute inset-0 flex items-center justify-center text-blue-300">
+              <Cctv className="h-5 w-5" aria-hidden />
+            </span>
+          </div>
+          <div>
+            <p className="text-sm text-white/90">{STATUS_LABEL[status]}…</p>
+            <p className="mt-0.5 text-xs text-white/45">LAN-аас шууд</p>
+          </div>
+        </div>
+      )}
+
       {paymentRequired ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/70 p-4 text-center text-sm text-white">
           <span>Үлдэгдэл хүрэлцэхгүй байна — Төлбөр хуудаснаас цэнэглэнэ үү</span>
@@ -539,6 +564,26 @@ export function LiveCameraTile({
             {errorMsg}
           </div>
         )
+      )}
+
+      {/* Bottom meta strip — transport + live AI throughput (reference UX). */}
+      {!isFullscreen && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-black/65 to-transparent px-3 py-2 text-[11px] font-medium text-white/85">
+          <span className="inline-flex items-center gap-1.5">
+            <span
+              className={`inline-block h-1.5 w-1.5 rounded-full ${
+                status === "playing" ? "bg-green-400" : "bg-gray-500"
+              }`}
+              aria-hidden
+            />
+            {transport === "webrtc" ? "WebRTC" : "HLS"}
+          </span>
+          <span>
+            {status === "playing" && latest
+              ? `${latest.fps_inference.toFixed(0)} FPS · ${latest.tracks.length} objects`
+              : "—"}
+          </span>
+        </div>
       )}
     </div>
   );
