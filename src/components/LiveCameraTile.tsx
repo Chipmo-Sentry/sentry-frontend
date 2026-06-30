@@ -488,7 +488,7 @@ export function LiveCameraTile({
       <button
         type="button"
         onClick={onSelect}
-        className={`group relative block aspect-video w-full overflow-hidden rounded-lg border-2 bg-black transition ${
+        className={`group relative block aspect-video w-full overflow-hidden rounded-lg border-2 bg-black transition-colors duration-500 ${
           active ? "ring-2 ring-white/80" : "hover:brightness-110"
         }`}
         style={{ borderColor: ambient }}

@@ -1,7 +1,8 @@
 "use client";
 
 import { riskColor } from "@chipmo-sentry/ui-kit";
-import { Bell } from "lucide-react";
+import { Bell, ExternalLink } from "lucide-react";
+import Link from "next/link";
 
 import { relativeTime } from "@/lib/time";
 import type { AlertPublic } from "@/lib/types";
@@ -82,13 +83,17 @@ export function LiveAlertRail({
               .map((k) => behaviorLabels[k] ?? k)
               .slice(0, 3)
               .join(" → ");
+            const verdict =
+              a.model_name && a.confidence != null
+                ? `AI ${Math.round(a.confidence * 100)}%`
+                : null;
             return (
-              <button
+              <div
                 key={a.id}
-                type="button"
                 onClick={() => cam && onSelectCamera(cam.path)}
-                disabled={!cam}
-                className="block w-full rounded-lg border border-(--color-border) bg-(--color-muted)/40 p-2 text-left transition hover:bg-(--color-muted) disabled:cursor-default disabled:hover:bg-(--color-muted)/40"
+                className={`rounded-lg border border-(--color-border) bg-(--color-muted)/40 p-2 transition ${
+                  cam ? "cursor-pointer hover:bg-(--color-muted)" : ""
+                }`}
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="truncate text-xs font-medium text-(--color-foreground)">
@@ -108,11 +113,32 @@ export function LiveAlertRail({
                     {why}
                   </p>
                 )}
-                <div className="mt-1 flex items-center justify-between gap-2 text-[10px] text-(--color-muted-foreground)">
-                  <span className="truncate">{cam?.name ?? "Камер"}</span>
-                  <span className="shrink-0">{relativeTime(a.created_at)}</span>
+                <div className="mt-1.5 flex items-center justify-between gap-2 text-[10px] text-(--color-muted-foreground)">
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <span className="truncate">{cam?.name ?? "Камер"}</span>
+                    {verdict && (
+                      <span
+                        className="shrink-0 rounded bg-(--color-primary)/15 px-1 py-0.5 font-medium text-blue-300"
+                        title={a.reasoning || undefined}
+                      >
+                        {verdict}
+                      </span>
+                    )}
+                  </span>
+                  <span className="flex shrink-0 items-center gap-2">
+                    <span>{relativeTime(a.created_at)}</span>
+                    <Link
+                      href={`/alerts/${a.id}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-blue-300 transition-colors hover:text-blue-200"
+                      aria-label="Дэлгэрэнгүй харах"
+                      title="Дэлгэрэнгүй"
+                    >
+                      <ExternalLink className="h-3 w-3" aria-hidden />
+                    </Link>
+                  </span>
                 </div>
-              </button>
+              </div>
             );
           })
         )}

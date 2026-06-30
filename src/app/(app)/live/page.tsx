@@ -36,6 +36,9 @@ const MEDIAMTX_WHEP_BASE =
 // spotlight's risk by this margin before we switch, so it doesn't flicker
 // between near-equal risks.
 const FOCUS_MARGIN = 8;
+// ...and it must itself be at least this risky to steal focus — below this we
+// keep the current spotlight instead of shuffling on low-risk noise.
+const AUTO_FOCUS_MIN = 30;
 
 type LiveCamera = {
   id: string;
@@ -163,7 +166,15 @@ export default function LivePage() {
     setAutoCam((prev) => {
       if (prev == null || !riskByCam[prev]?.online) return best;
       const prevRisk = riskByCam[prev]?.risk ?? -1;
-      if (best !== prev && bestRisk >= prevRisk + FOCUS_MARGIN) return best;
+      // Steal focus only toward a genuinely elevated camera that also beats the
+      // current spotlight by the margin.
+      if (
+        best !== prev &&
+        bestRisk >= AUTO_FOCUS_MIN &&
+        bestRisk >= prevRisk + FOCUS_MARGIN
+      ) {
+        return best;
+      }
       return prev;
     });
   }, [riskByCam]);
@@ -232,6 +243,8 @@ export default function LivePage() {
   const first = cams[0]!; // cams is non-empty here (the length===0 case returned)
   const spotlightPath = pinned ?? autoCam ?? first.path;
   const spotlight = cams.find((c) => c.path === spotlightPath) ?? first;
+  // Strip shows every OTHER camera (the spotlight plays large above).
+  const stripCams = cams.filter((c) => c.path !== spotlight.path);
 
   return (
     <div className="flex h-[calc(100vh-3.5rem)] flex-col">
@@ -278,6 +291,7 @@ export default function LivePage() {
                 hlsUrl={hlsUrl(spotlight.path)}
                 detailHref={`/live/${encodeURIComponent(spotlight.path)}`}
                 onShowPanel={() => setPanelCam(spotlight)}
+                onRisk={riskCb(spotlight.path)}
                 zones={spotlight.zones}
               />
             </div>
@@ -294,24 +308,28 @@ export default function LivePage() {
           </div>
         </div>
 
-        {/* Thumbnail strip — every camera, ambient risk border, click to pin. */}
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {cams.map((c) => (
-            <LiveCameraTile
-              key={`thumb-${c.path}`}
-              compact
-              active={c.path === spotlightPath}
-              onSelect={() => setPinned(c.path)}
-              onRisk={riskCb(c.path)}
-              cameraId={c.path}
-              streamCameraId={c.id}
-              name={c.name}
-              whepUrl={whepUrl(c.path)}
-              hlsUrl={hlsUrl(c.path)}
-              zones={c.zones}
-            />
-          ))}
-        </div>
+        {/* Thumbnail strip — every camera EXCEPT the spotlighted one (which plays
+         * large above; excluding it avoids a second stream of the same camera and
+         * the redundant thumbnail on a single-camera store). Ambient risk border,
+         * click to pin. Hidden when there's nothing left to show. */}
+        {stripCams.length > 0 && (
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+            {stripCams.map((c) => (
+              <LiveCameraTile
+                key={`thumb-${c.path}`}
+                compact
+                onSelect={() => setPinned(c.path)}
+                onRisk={riskCb(c.path)}
+                cameraId={c.path}
+                streamCameraId={c.id}
+                name={c.name}
+                whepUrl={whepUrl(c.path)}
+                hlsUrl={hlsUrl(c.path)}
+                zones={c.zones}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {panelCam && (
