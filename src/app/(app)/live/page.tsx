@@ -61,6 +61,12 @@ export default function LivePage() {
   // Auto-focused camera (highest risk, with hysteresis) and the manual pin.
   const [autoCam, setAutoCam] = useState<string | null>(null);
   const [pinned, setPinned] = useState<string | null>(null);
+  // Directory of ALL cameras (incl. disabled / non-streamable) keyed by DB id →
+  // name + streamable path. Lets the alert rail name an alert even when its
+  // camera isn't in the live grid (path null → card names it but can't pin).
+  const [camDir, setCamDir] = useState<
+    Record<string, { name: string; path: string | null }>
+  >({});
 
   // Live alert feed: SSE stream (AppShell-mounted) + an initial history seed.
   const { alerts: streamed, connected: alertConnected } = useAlertStreamContext();
@@ -116,6 +122,14 @@ export default function LivePage() {
             zones: c.zones,
           }));
         setCams(streamable);
+        const dir: Record<string, { name: string; path: string | null }> = {};
+        for (const c of list) {
+          dir[c.id] = {
+            name: c.name,
+            path: c.enabled && c.mediamtx_path ? c.mediamtx_path : null,
+          };
+        }
+        setCamDir(dir);
       },
       (e) => {
         if (!cancelled) setError(e instanceof Error ? e.message : "Алдаа");
@@ -127,6 +141,26 @@ export default function LivePage() {
   }, []);
 
   useEffect(() => load(), [load]);
+
+  // Prune per-camera state when a camera leaves the list (disabled/deleted), so a
+  // removed camera can't keep the pin stuck on a ghost, hold the spotlight via a
+  // dead autoCam path, or stay counted as "online" in the KPI (riskByCam only
+  // ever grows otherwise — handleRisk never deletes).
+  useEffect(() => {
+    if (cams === null) return;
+    const paths = new Set(cams.map((c) => c.path));
+    setRiskByCam((prev) => {
+      let changed = false;
+      const next: Record<string, RiskState> = {};
+      for (const [k, v] of Object.entries(prev)) {
+        if (paths.has(k)) next[k] = v;
+        else changed = true;
+      }
+      return changed ? next : prev;
+    });
+    setPinned((p) => (p && !paths.has(p) ? null : p));
+    setAutoCam((a) => (a && !paths.has(a) ? null : a));
+  }, [cams]);
 
   // Stable per-camera risk-report callback so the tile's report effect doesn't
   // refire (and loop) every render. `handleRisk` bails when nothing changed.
@@ -178,12 +212,6 @@ export default function LivePage() {
       return prev;
     });
   }, [riskByCam]);
-
-  const camById = useMemo(() => {
-    const m: Record<string, { path: string; name: string }> = {};
-    for (const c of cams ?? []) m[c.id] = { path: c.path, name: c.name };
-    return m;
-  }, [cams]);
 
   const recentAlerts = useMemo(() => {
     const map = new Map<string, AlertPublic>();
@@ -283,7 +311,7 @@ export default function LivePage() {
           <div className="min-w-0">
             <div className="aspect-video w-full">
               <LiveCameraTile
-                key={spotlight.path}
+                key="spotlight"
                 cameraId={spotlight.path}
                 streamCameraId={spotlight.id}
                 name={spotlight.name}
@@ -301,7 +329,7 @@ export default function LivePage() {
             <LiveAlertRail
               alerts={recentAlerts}
               connected={alertConnected}
-              camById={camById}
+              camById={camDir}
               behaviorLabels={behaviorLabels}
               onSelectCamera={(path) => setPinned(path)}
             />

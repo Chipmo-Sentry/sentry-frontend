@@ -33,8 +33,9 @@ function alertColor(a: AlertPublic): string {
 export type LiveAlertRailProps = {
   alerts: AlertPublic[];
   connected: boolean;
-  /** DB camera id → { path, name } so a card can name its camera + pin it. */
-  camById: Record<string, { path: string; name: string }>;
+  /** DB camera id → { path, name } so a card can name its camera + pin it. A
+   * null path means the camera isn't streamable (disabled): name it, don't pin. */
+  camById: Record<string, { path: string | null; name: string }>;
   /** behavior key → Mongolian label (from /api/v1/behaviors) for the "why" line. */
   behaviorLabels?: Record<string, string>;
   /** Click a card → promote its camera to the spotlight. */
@@ -90,9 +91,9 @@ export function LiveAlertRail({
             return (
               <div
                 key={a.id}
-                onClick={() => cam && onSelectCamera(cam.path)}
+                onClick={() => cam?.path && onSelectCamera(cam.path)}
                 className={`rounded-lg border border-(--color-border) bg-(--color-muted)/40 p-2 transition ${
-                  cam ? "cursor-pointer hover:bg-(--color-muted)" : ""
+                  cam?.path ? "cursor-pointer hover:bg-(--color-muted)" : ""
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">

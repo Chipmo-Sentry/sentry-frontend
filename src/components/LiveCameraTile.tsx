@@ -93,9 +93,12 @@ export function LiveCameraTile({
 
   // Current max per-person risk on this camera — drives the spotlight auto-focus
   // and the thumbnail ambient border. Reported up so the parent can compare cams.
-  const maxRisk = latest
-    ? latest.tracks.reduce((m, t) => Math.max(m, t.risk_pct), 0)
-    : 0;
+  // Defensive `?? []`: a malformed metadata frame (camera_id but no tracks) must
+  // not crash the tile — the WS layer doesn't runtime-validate `tracks`.
+  const maxRisk = (latest?.tracks ?? []).reduce(
+    (m, t) => Math.max(m, t.risk_pct),
+    0,
+  );
   useEffect(() => {
     onRisk?.(maxRisk, status === "playing");
   }, [maxRisk, status, onRisk]);
@@ -482,6 +485,12 @@ export function LiveCameraTile({
 
   // Compact thumbnail (smart-console strip): slim live tile, ambient risk
   // border, click to promote to the spotlight. No header/overlay/buttons.
+  // HOOK-ORDER INVARIANT: every hook is declared ABOVE this early return, and
+  // `compact` never flips for a mounted instance — the page keys spotlight vs
+  // strip tiles differently (key="spotlight" vs key=`thumb-${path}`) so React
+  // remounts rather than reusing an instance across the variant. Don't let those
+  // keys collide, or React will reuse the instance, flip `compact`, and throw
+  // "rendered fewer hooks than expected".
   if (compact) {
     const ambient = maxRisk > 0 ? riskColor(maxRisk) : "var(--color-border)";
     return (
@@ -681,7 +690,7 @@ export function LiveCameraTile({
           </span>
           <span>
             {status === "playing" && latest
-              ? `${latest.fps_inference.toFixed(0)} FPS · ${latest.tracks.length} objects`
+              ? `${(latest.fps_inference ?? 0).toFixed(0)} FPS · ${latest.tracks?.length ?? 0} objects`
               : "—"}
           </span>
         </div>
