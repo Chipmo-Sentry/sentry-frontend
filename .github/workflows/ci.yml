@@ -36,8 +36,16 @@ jobs:
         # would let CI pass against a newer ui-kit than the image ships, so a
         # breaking change slips to prod. Bump both together on a ui-kit release.
         env:
-          UI_KIT_REF: v0.6.1
+          UI_KIT_REF: v0.6.2
         run: |
+          # docs/33 Sprint C — guard against pin drift: CI once sat on v0.6.1
+          # while the image shipped v0.6.2, so CI validated against a DIFFERENT
+          # ui-kit than prod. Fail fast when the two pins diverge.
+          DOCKER_REF=$(sed -n 's/^ARG UI_KIT_REF=//p' Dockerfile | tr -d '[:space:]')
+          if [ "${DOCKER_REF}" != "${UI_KIT_REF}" ]; then
+            echo "::error::UI_KIT_REF drift: ci.yml=${UI_KIT_REF} vs Dockerfile=${DOCKER_REF} — bump both together"
+            exit 1
+          fi
           git clone --depth 1 --branch "${UI_KIT_REF}" \
             https://github.com/Chipmo-Sentry/sentry-ui-kit.git ../sentry-ui-kit
           (cd ../sentry-ui-kit && npm ci --no-audit --no-fund && npm run build)
@@ -52,7 +60,9 @@ jobs:
         run: npm run typecheck
 
       - name: Build (Next.js standalone)
+        # NB: deliberately NO NEXT_PUBLIC_API_BASE_URL here — prod builds run
+        # same-origin (Dockerfile/railway.toml forbid baking an absolute base,
+        # ADR-0017); CI must build the same artifact shape prod does.
         run: npm run build
         env:
           NEXT_TELEMETRY_DISABLED: "1"
-          NEXT_PUBLIC_API_BASE_URL: "http://localhost:8000"

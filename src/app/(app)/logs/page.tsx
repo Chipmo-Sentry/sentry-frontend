@@ -11,6 +11,7 @@ import { Activity, Radio, RadioTower } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { events as eventsApi } from "@/lib/api";
+import { openResilientEventSource } from "@/lib/sse";
 import {
   EVENT_GROUPS,
   EVENT_LABEL,
@@ -72,20 +73,24 @@ export default function LogsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeGroups, showHeartbeats]);
 
-  // Live SSE stream. Reconnects automatically (EventSource default).
+  // Live SSE stream — via the resilient helper (docs/33 P0-8): a bare
+  // EventSource dies PERMANENTLY on the first 401 after the ~15 min access
+  // cookie expires; this one refreshes the session and reopens with backoff.
   useEffect(() => {
-    const es = new EventSource(eventsApi.streamUrl(), { withCredentials: true });
-    es.onopen = () => setConnected(true);
-    es.onerror = () => setConnected(false);
-    es.addEventListener("log", (e) => {
-      try {
-        const row = JSON.parse((e as MessageEvent).data) as EventLogPublic;
-        setLive((prev) => [row, ...prev].slice(0, 500));
-      } catch {
-        // ignore malformed frame
-      }
-    });
-    return () => es.close();
+    return openResilientEventSource(
+      eventsApi.streamUrl(),
+      (es) => {
+        es.addEventListener("log", (e) => {
+          try {
+            const row = JSON.parse((e as MessageEvent).data) as EventLogPublic;
+            setLive((prev) => [row, ...prev].slice(0, 500));
+          } catch {
+            // ignore malformed frame
+          }
+        });
+      },
+      setConnected,
+    );
   }, []);
 
   async function loadMore() {

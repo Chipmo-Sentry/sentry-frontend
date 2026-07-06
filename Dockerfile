@@ -40,6 +40,12 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # auth cookie (ADR-0017). Leaving it unset → the code's `?? ""` default → relative.
 ARG NEXT_PUBLIC_MEDIAMTX_HLS_BASE
 ENV NEXT_PUBLIC_MEDIAMTX_HLS_BASE=${NEXT_PUBLIC_MEDIAMTX_HLS_BASE}
+# docs/33 Sprint C — the WHEP (WebRTC, sub-second) base was never plumbed, so
+# prod always fell back to the localhost default → WHEP failed → every viewer
+# silently rode the higher-latency HLS path. Leave the ARG unset to keep the
+# HLS-proxy-only behaviour deliberately.
+ARG NEXT_PUBLIC_MEDIAMTX_WHEP_BASE
+ENV NEXT_PUBLIC_MEDIAMTX_WHEP_BASE=${NEXT_PUBLIC_MEDIAMTX_WHEP_BASE}
 # Server-side proxy target for the /api + /ws rewrites (NOT exposed to browser).
 ARG BACKEND_ORIGIN
 ENV BACKEND_ORIGIN=${BACKEND_ORIGIN}
