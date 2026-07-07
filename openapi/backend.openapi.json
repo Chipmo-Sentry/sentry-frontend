@@ -680,6 +680,617 @@
         }
       }
     },
+    "/api/v1/stores/{store_id}/floor-plan": {
+      "get": {
+        "tags": [
+          "stores"
+        ],
+        "summary": "Get Store Floor Plan",
+        "operationId": "get_store_floor_plan_api_v1_stores__store_id__floor_plan_get",
+        "parameters": [
+          {
+            "name": "store_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Store Id"
+            }
+          },
+          {
+            "name": "X-Org-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Org-Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "sentry_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sentry Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FloorPlan"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stores/{store_id}/analytics/footfall": {
+      "get": {
+        "tags": [
+          "stores"
+        ],
+        "summary": "Get Store Footfall",
+        "description": "Dwell heatmap: person-frame samples per plan grid-cell over the last\n`hours` (default 24). Sparse — only non-zero cells are returned.",
+        "operationId": "get_store_footfall_api_v1_stores__store_id__analytics_footfall_get",
+        "parameters": [
+          {
+            "name": "store_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Store Id"
+            }
+          },
+          {
+            "name": "hours",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 2160,
+              "minimum": 1,
+              "default": 24,
+              "title": "Hours"
+            }
+          },
+          {
+            "name": "X-Org-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Org-Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "sentry_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sentry Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FootfallGrid"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stores/{store_id}/analytics/traffic": {
+      "get": {
+        "tags": [
+          "stores"
+        ],
+        "summary": "Get Store Traffic",
+        "description": "Visitor count per hour over the last `hours` (default 24) — the headline\n\"зочид\" KPI + peak hour + an hourly series for the traffic chart.",
+        "operationId": "get_store_traffic_api_v1_stores__store_id__analytics_traffic_get",
+        "parameters": [
+          {
+            "name": "store_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Store Id"
+            }
+          },
+          {
+            "name": "hours",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 2160,
+              "minimum": 1,
+              "default": 24,
+              "title": "Hours"
+            }
+          },
+          {
+            "name": "X-Org-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Org-Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "sentry_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sentry Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrafficSummary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stores/{store_id}/analytics/zones": {
+      "get": {
+        "tags": [
+          "stores"
+        ],
+        "summary": "Get Store Zones",
+        "description": "Attribute the dwell heatmap to each drawn zone: for every plan fixture,\nsum the footfall samples whose grid-cell centre falls inside it. Reuses the\nF2 grid + the plan polygons — no extra aggregation path.",
+        "operationId": "get_store_zones_api_v1_stores__store_id__analytics_zones_get",
+        "parameters": [
+          {
+            "name": "store_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Store Id"
+            }
+          },
+          {
+            "name": "hours",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 2160,
+              "minimum": 1,
+              "default": 24,
+              "title": "Hours"
+            }
+          },
+          {
+            "name": "X-Org-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Org-Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "sentry_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sentry Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ZoneBreakdown"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stores/{store_id}/analytics/flow": {
+      "get": {
+        "tags": [
+          "stores"
+        ],
+        "summary": "Get Store Flow",
+        "description": "Movement graph: the busiest transitions between coarse plan cells over the\nlast `hours`. Edge endpoints are cell centres normalized to [0,1] so the\nfrontend draws lines directly over the plan.",
+        "operationId": "get_store_flow_api_v1_stores__store_id__analytics_flow_get",
+        "parameters": [
+          {
+            "name": "store_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Store Id"
+            }
+          },
+          {
+            "name": "hours",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 2160,
+              "minimum": 1,
+              "default": 24,
+              "title": "Hours"
+            }
+          },
+          {
+            "name": "X-Org-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Org-Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "sentry_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sentry Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlowSummary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stores/{store_id}/analytics/peak": {
+      "get": {
+        "tags": [
+          "stores"
+        ],
+        "summary": "Get Store Peak",
+        "description": "When is the store busy? Visitors bucketed by (weekday, hour) in the\nstore's local timezone over the last `days` (default 28 = 4 weeks).",
+        "operationId": "get_store_peak_api_v1_stores__store_id__analytics_peak_get",
+        "parameters": [
+          {
+            "name": "store_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Store Id"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 90,
+              "minimum": 1,
+              "default": 28,
+              "title": "Days"
+            }
+          },
+          {
+            "name": "X-Org-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Org-Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "sentry_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sentry Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PeakMatrix"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/cameras": {
       "get": {
         "tags": [
@@ -2669,6 +3280,99 @@
         }
       }
     },
+    "/api/v1/admin/alerts": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "List Alerts Admin",
+        "description": "Recent alerts across ALL orgs for the superadmin pipeline (\"Урсгал\") page.\n\nEach row is one problematic clip's end-to-end journey — camera → behaviours\n(triggered_*) → VLM (reasoning/confidence/model) → decision (alert_level/\ncategory) → review (feedback_verdict) — enriched with org/store/camera display\nnames. Newest first. Filtering is done client-side over the fetched window.",
+        "operationId": "list_alerts_admin_api_v1_admin_alerts_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "sentry_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sentry Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminAlertRow"
+                  },
+                  "title": "Response List Alerts Admin Api V1 Admin Alerts Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/analytics/feedback": {
       "get": {
         "tags": [
@@ -2730,6 +3434,162 @@
                   "type": "object",
                   "additionalProperties": true,
                   "title": "Response Feedback Analytics Api V1 Admin Analytics Feedback Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/analytics/quality": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Quality Analytics",
+        "description": "Detection-QUALITY metrics derived from staff feedback — answers «how\nACCURATE are we?», not just «how many alerts fired». Read-only.\n\n- precision = TP / (TP + FP) over labelled alerts (unclear excluded), overall\n  and per VLM category.\n- coverage = labelled alerts / all alerts in range — precision is only as\n  trustworthy as how much got reviewed, so we surface it explicitly.\n- confidence calibration: TP-rate per confidence bucket — validates whether\n  the alert-level thresholds (0.30 / 0.70 / 0.85) actually track correctness.\n- false_alerts_per_day = FP-labelled notify/review alerts ÷ days — the\n  alert-fatigue number (the #1 reason staff stop trusting the system).\n\nUses the LATEST verdict per alert (an alert can be reviewed more than once),\nscoped by alert creation time so it reflects the model's recent behaviour.",
+        "operationId": "quality_analytics_api_v1_admin_analytics_quality_get",
+        "parameters": [
+          {
+            "name": "range",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "30d",
+              "title": "Range"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "sentry_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sentry Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Quality Analytics Api V1 Admin Analytics Quality Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/eval/dataset": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Eval Dataset",
+        "description": "Export feedback-labelled alerts as an eval manifest (score mode) for the\nsentry-ai harness: `python -m sentry_ai.eval score dataset.json`. Staff verdict\nis the ground-truth label (true_positive→theft, false_positive→benign, unclear\ndropped); the VLM category is the prediction — so it scores PRECISION on real\nproduction data with no model run. (Recall needs a curated clip set — see the\nharness README.) Latest verdict per alert.",
+        "operationId": "eval_dataset_api_v1_admin_eval_dataset_get",
+        "parameters": [
+          {
+            "name": "range",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "30d",
+              "title": "Range"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "sentry_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sentry Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Eval Dataset Api V1 Admin Eval Dataset Get"
                 }
               }
             }
@@ -3815,6 +4675,73 @@
       }
     },
     "/api/v1/admin/ai-nodes/{node_id}": {
+      "delete": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Delete Ai Node",
+        "description": "Hard-delete a node — removes it from the superadmin + org node lists.\nRevoke only deactivates (row stays); this removes the row entirely for a\ndecommissioned node. Metrics cascade; pairing codes/event-log survive.",
+        "operationId": "delete_ai_node_api_v1_admin_ai_nodes__node_id__delete",
+        "parameters": [
+          {
+            "name": "node_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Node Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "sentry_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sentry Access"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
       "patch": {
         "tags": [
           "admin"
@@ -3882,6 +4809,302 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AiNodePublic"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/stores": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "List Stores Admin",
+        "description": "Every store across ALL orgs with its org name + camera count — drives the\nsuperadmin store pickers (e.g. the per-store edge-config editor).",
+        "operationId": "list_stores_admin_api_v1_admin_stores_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "sentry_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sentry Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StoreAdminRow"
+                  },
+                  "title": "Response List Stores Admin Api V1 Admin Stores Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/stores/{store_id}": {
+      "patch": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Update Store Admin",
+        "description": "Superadmin edit of a store's cloud push target. Repoints where the store's\nagent pushes (e.g. after a vast.ai instance restart changes the IP/port) with\nno backend redeploy. Empty string clears it back to the global env URL.",
+        "operationId": "update_store_admin_api_v1_admin_stores__store_id__patch",
+        "parameters": [
+          {
+            "name": "store_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Store Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "sentry_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sentry Access"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StoreAdminUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreAdminRow"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/edge-config": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Get Global Edge Config",
+        "description": "The ONE global edge tunable overrides + version + the effective merged\nconfig every store's agents receive (ADR-0029 I3; global per founder request).",
+        "operationId": "get_global_edge_config_api_v1_admin_edge_config_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "sentry_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sentry Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EdgeConfigAdminView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Set Global Edge Config",
+        "description": "Set the global edge tunable overrides (partial); bumps `version` so ALL\nstore agents re-apply. An empty body resets to the agent defaults (the version\nstill bumps, so the agents pick up the reset).",
+        "operationId": "set_global_edge_config_api_v1_admin_edge_config_put",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "sentry_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sentry Access"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EdgeConfigOverridesIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EdgeConfigAdminView"
                 }
               }
             }
@@ -6039,7 +7262,7 @@
           "agents"
         ],
         "summary": "Agent Stream Config",
-        "description": "Tell a paired agent where (and whether) to publish its camera streams.\n\npush_enabled=True → cloud topology: the agent runs ffmpeg relays pushing\neach LAN camera to `push_rtsp_base/<mediamtx_path>`. False → MediaMTX pulls\ncameras directly (local/on-LAN) and the agent pushes nothing.",
+        "description": "Tell a paired agent where (and whether) to publish its camera streams.\n\npush_enabled=True → cloud topology: the agent runs ffmpeg relays pushing\neach LAN camera to `push_rtsp_base/<mediamtx_path>`. False → MediaMTX pulls\ncameras directly (local/on-LAN) and the agent pushes nothing.\n\nThe per-store `agent_stream_push_url` (editable from superadmin) wins over the\nglobal env, so a vast.ai restart can be repointed without a backend redeploy.",
         "operationId": "agent_stream_config_api_v1_agent_stream_config_get",
         "parameters": [
           {
@@ -6083,6 +7306,288 @@
         }
       }
     },
+    "/api/v1/agent/edge-config": {
+      "get": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Agent Edge Config",
+        "description": "Edge Stage-1 tunables for the store agent's config-poller (ADR-0029 I3).\n\nReturns the ONE GLOBAL overrides merged over the defaults (the config is\nplatform-wide now, not per store), with a monotonic `version` the agent uses\nto re-apply only on a real change. No config set → defaults at version 1. The\nagent's `from_dict` keeps its own defaults for any omitted field, so this stays\nforward-compatible. The agent token is still required (authenticated poll).",
+        "operationId": "agent_edge_config_api_v1_agent_edge_config_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EdgeConfigPayload"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/floor-plan": {
+      "get": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Agent Get Floor Plan",
+        "description": "The store's top-down floor plan (docs/30), or an empty plan if none drawn.",
+        "operationId": "agent_get_floor_plan_api_v1_agent_floor_plan_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FloorPlan"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Agent Update Floor Plan",
+        "description": "Replace the store's floor plan (full-document write). The agent derives each\ncamera's Camera.zones from this + that camera's homography and PATCHes them\nseparately, so the behavior-engine pipeline is untouched (docs/30).",
+        "operationId": "agent_update_floor_plan_api_v1_agent_floor_plan_patch",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FloorPlan"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FloorPlan"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/edge/clips": {
+      "post": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Agent Edge Clip",
+        "description": "Edge Stage-1 (ADR-0029): the store agent ran YOLO + behaviour LOCALLY and\nuploads ONE suspicious clip. We store it, get the VLM verdict from sentry-ai\n(bytes-forward — the GPU node can't read this host's disk), and create the\nalert. If the VLM is unavailable we still create a log-level behaviour alert\nso a flagged event is never lost (ADR §8.4); the clip is stored either way.",
+        "operationId": "agent_edge_clip_api_v1_agent_edge_clips_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_agent_edge_clip_api_v1_agent_edge_clips_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertPublic"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/live-metadata": {
+      "post": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Agent Live Metadata",
+        "description": "Edge Stage-1 live overlay feed (ADR-0029, edge-first). The agent's edge\nengine POSTs per-frame tracks so the browser live overlay shows EDGE boxes\nwhen the node runs no live analysis.\n\nPublishes to the WS live broker ONLY — deliberately NOT through the threshold\nhandler (which `/internal/live-metadata` runs) — so the EDGE alone, via\n`/agent/edge/clips` → VLM, decides alerts; this overlay path NEVER creates one.\nThe agent JWT scopes trust to its store; `camera_id` is the mediamtx_path.\n\nSECURITY: frames are filtered to mediamtx_paths owned by the agent's store, so\na paired agent can't inject overlay boxes onto another tenant's live view.",
+        "operationId": "agent_live_metadata_api_v1_agent_live_metadata_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LiveMetadataBatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "integer"
+                  },
+                  "title": "Response Agent Live Metadata Api V1 Agent Live Metadata Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/agent/heartbeat": {
       "post": {
         "tags": [
@@ -6108,6 +7613,23 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/AgentHeartbeat"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "204": {
             "description": "Successful Response"
@@ -6258,6 +7780,582 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AiNodeConfig"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/nodes": {
+      "get": {
+        "tags": [
+          "nodes"
+        ],
+        "summary": "List Org Nodes",
+        "description": "AI nodes that serve at least one of this org's cameras, projected to the\norg's cameras only. Any org member (read access) may view node health.",
+        "operationId": "list_org_nodes_api_v1_nodes_get",
+        "parameters": [
+          {
+            "name": "X-Org-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Org-Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "sentry_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sentry Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrgNodePublic"
+                  },
+                  "title": "Response List Org Nodes Api V1 Nodes Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/nodes/agent-push": {
+      "get": {
+        "tags": [
+          "nodes"
+        ],
+        "summary": "Org Agent Push",
+        "description": "Per-camera ffmpeg push-relay state across this org's store agents, keyed by\nmediamtx_path. Drives the 'Камер' pipeline stage: a down relay shows the real\nreason (last_error) instead of just 'кадр зогссон'. Cameras whose agent never\nreported push (pull/on-LAN topology, older agent) simply don't appear here, so\nthe frontend keeps its WS-based fallback for them.",
+        "operationId": "org_agent_push_api_v1_nodes_agent_push_get",
+        "parameters": [
+          {
+            "name": "X-Org-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Org-Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "sentry_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sentry Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentPushStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/nodes/{node_id}/metrics": {
+      "get": {
+        "tags": [
+          "nodes"
+        ],
+        "summary": "Org Node Metrics",
+        "description": "Resource time-series (CPU/RAM/GPU/VRAM/FPS) for a node THIS org owns.\n\nOrg ownership is derived (same as the node list): the node must report at\nleast one of the caller-org's cameras. A node the org doesn't own returns\n404 (not 403) so node existence isn't leaked across tenants.\n`range` = 1h | 6h | 24h | 7d | 30d.",
+        "operationId": "org_node_metrics_api_v1_nodes__node_id__metrics_get",
+        "parameters": [
+          {
+            "name": "node_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Node Id"
+            }
+          },
+          {
+            "name": "range",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "24h",
+              "title": "Range"
+            }
+          },
+          {
+            "name": "bucket",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "auto",
+              "title": "Bucket"
+            }
+          },
+          {
+            "name": "X-Org-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Org-Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "sentry_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sentry Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response Org Node Metrics Api V1 Nodes  Node Id  Metrics Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/{path}/hls/{filename}": {
+      "get": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Hls Proxy",
+        "description": "Proxy one HLS playlist/segment for `path` from its node's MediaMTX, over\nHTTPS. Playlists are rewritten to keep the token on every nested request.",
+        "operationId": "hls_proxy_api_v1_live__path__hls__filename__get",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Path"
+            }
+          },
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Filename"
+            }
+          },
+          {
+            "name": "jwt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Jwt"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/internal/node-diag": {
+      "post": {
+        "tags": [
+          "node-diag"
+        ],
+        "summary": "Push Node Diag",
+        "description": "Store the latest diagnostics snapshot for the calling node (identified by\nits ai_node JWT). Body is the node's free-form diag JSON.",
+        "operationId": "push_node_diag_api_v1_internal_node_diag_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true,
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/nodes/{node_id}/diag": {
+      "get": {
+        "tags": [
+          "node-diag"
+        ],
+        "summary": "Get Node Diag",
+        "description": "Latest diagnostics for a node THIS org owns. `available=false` when the\nnode has never pushed a diag (e.g. running an older build).",
+        "operationId": "get_node_diag_api_v1_nodes__node_id__diag_get",
+        "parameters": [
+          {
+            "name": "node_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Node Id"
+            }
+          },
+          {
+            "name": "X-Org-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Org-Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "sentry_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sentry Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Node Diag Api V1 Nodes  Node Id  Diag Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ingest/paths": {
+      "get": {
+        "tags": [
+          "ingest"
+        ],
+        "summary": "List Ingest Paths",
+        "description": "Runtime publish state of THIS org's camera paths at the cloud ingest.\n\nAny org member (read access) may view. `available=False` ⇒ MediaMTX API\ndisabled/unreachable (stage 2 stays \"unknown\", never a fake \"0 ready\").",
+        "operationId": "list_ingest_paths_api_v1_ingest_paths_get",
+        "parameters": [
+          {
+            "name": "X-Org-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Org-Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "sentry_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sentry Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestPathsResponse"
                 }
               }
             }
@@ -7115,6 +9213,222 @@
         "title": "AcceptInvite",
         "description": "Public — the invitee sets their own password to activate the account."
       },
+      "AdminAlertRow": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "clip_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Clip Id"
+          },
+          "edge_clip_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edge Clip Id"
+          },
+          "organization_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Organization Id"
+          },
+          "store_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store Id"
+          },
+          "camera_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Camera Id"
+          },
+          "category": {
+            "$ref": "#/components/schemas/AlertCategory"
+          },
+          "actions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actions"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence"
+          },
+          "reasoning": {
+            "type": "string",
+            "title": "Reasoning"
+          },
+          "model_name": {
+            "type": "string",
+            "title": "Model Name"
+          },
+          "alert_level": {
+            "$ref": "#/components/schemas/AlertLevel"
+          },
+          "inference_latency_ms": {
+            "type": "integer",
+            "title": "Inference Latency Ms"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "triggered_by": {
+            "$ref": "#/components/schemas/AlertTrigger",
+            "default": "manual_upload"
+          },
+          "person_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Person Id"
+          },
+          "peak_risk_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peak Risk Pct"
+          },
+          "triggered_behaviors": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Triggered Behaviors"
+          },
+          "triggered_sequences": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Triggered Sequences"
+          },
+          "triggered_behavior_detail": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/BehaviorDetailItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Triggered Behavior Detail"
+          },
+          "feedback_verdict": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FeedbackVerdict"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "organization_name": {
+            "type": "string",
+            "title": "Organization Name"
+          },
+          "store_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store Name"
+          },
+          "camera_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Camera Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "clip_id",
+          "organization_id",
+          "store_id",
+          "camera_id",
+          "category",
+          "confidence",
+          "reasoning",
+          "model_name",
+          "alert_level",
+          "inference_latency_ms",
+          "created_at",
+          "organization_name"
+        ],
+        "title": "AdminAlertRow",
+        "description": "One alert enriched with org/store/camera display names for the superadmin\npipeline (\"Урсгал\") page. Each row is one problematic clip's full journey:\ncamera → behaviours (triggered_*) → VLM (reasoning/confidence/model) →\ndecision (alert_level/category) → review (feedback_verdict)."
+      },
       "AdminStats": {
         "properties": {
           "orgs": {
@@ -7196,10 +9510,14 @@
           },
           "risk_threshold": {
             "type": "number",
-            "maximum": 100.0,
-            "minimum": 0.0,
+            "maximum": 100,
+            "minimum": 0,
             "title": "Risk Threshold",
-            "default": 11.0
+            "default": 11
+          },
+          "compute_tier": {
+            "$ref": "#/components/schemas/ComputeTier",
+            "default": "cloud"
           },
           "zones": {
             "anyOf": [
@@ -7256,14 +9574,24 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 100.0,
-                "minimum": 0.0
+                "maximum": 100,
+                "minimum": 0
               },
               {
                 "type": "null"
               }
             ],
             "title": "Risk Threshold"
+          },
+          "compute_tier": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ComputeTier"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "zones": {
             "anyOf": [
@@ -7284,6 +9612,40 @@
         "type": "object",
         "title": "AgentCameraUpdate",
         "description": "Partial camera update from a paired agent (edit connection / settings).\n\nAll fields optional — only the provided ones change. mediamtx_path is NOT\neditable here: it is the stream identity the live pipeline keys on, so the\nagent edits the connection (rtsp_url) and name, never the path."
+      },
+      "AgentHeartbeat": {
+        "properties": {
+          "push": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/AgentPushEntry"
+                },
+                "type": "array",
+                "maxItems": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Push"
+          },
+          "hls_tunnel_base": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hls Tunnel Base"
+          }
+        },
+        "type": "object",
+        "title": "AgentHeartbeat",
+        "description": "Optional heartbeat body. Empty body (older agent) is still valid — it just\nrefreshes liveness and leaves any stored push status untouched."
       },
       "AgentPairRequest": {
         "properties": {
@@ -7406,6 +9768,123 @@
         "title": "AgentPublic",
         "description": "A paired agent, shown in the admin UI."
       },
+      "AgentPushEntry": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Path"
+          },
+          "running": {
+            "type": "boolean",
+            "title": "Running",
+            "default": false
+          },
+          "restarts": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Restarts",
+            "default": 0
+          },
+          "last_error": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "path"
+        ],
+        "title": "AgentPushEntry",
+        "description": "One camera's ffmpeg push-relay state, as reported by the agent heartbeat."
+      },
+      "AgentPushPath": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Path"
+          },
+          "running": {
+            "type": "boolean",
+            "title": "Running",
+            "default": false
+          },
+          "restarts": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Restarts",
+            "default": 0
+          },
+          "last_error": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error"
+          },
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "agent_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Name"
+          },
+          "agent_online": {
+            "type": "boolean",
+            "title": "Agent Online",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "path",
+          "agent_id"
+        ],
+        "title": "AgentPushPath",
+        "description": "A push entry projected to the org pipeline view, with which agent owns it\nand whether that agent is currently online (heartbeat fresh)."
+      },
+      "AgentPushStatusResponse": {
+        "properties": {
+          "paths": {
+            "items": {
+              "$ref": "#/components/schemas/AgentPushPath"
+            },
+            "type": "array",
+            "title": "Paths"
+          }
+        },
+        "type": "object",
+        "required": [
+          "paths"
+        ],
+        "title": "AgentPushStatusResponse",
+        "description": "Per-camera (mediamtx_path) push state across an org's agents. The frontend\nmatches `path` to its cameras to drive the 'Камер' pipeline stage."
+      },
       "AgentStreamConfig": {
         "properties": {
           "push_enabled": {
@@ -7471,6 +9950,36 @@
             "type": "string",
             "title": "Breach Mode",
             "default": "node_push"
+          },
+          "person_conf": {
+            "type": "number",
+            "title": "Person Conf",
+            "default": 0.35
+          },
+          "item_conf": {
+            "type": "number",
+            "title": "Item Conf",
+            "default": 0.4
+          },
+          "item_every_n": {
+            "type": "integer",
+            "title": "Item Every N",
+            "default": 5
+          },
+          "scan_interval_sec": {
+            "type": "number",
+            "title": "Scan Interval Sec",
+            "default": 3
+          },
+          "frames_per_clip": {
+            "type": "integer",
+            "title": "Frames Per Clip",
+            "default": 1
+          },
+          "frame_max_dim": {
+            "type": "integer",
+            "title": "Frame Max Dim",
+            "default": 320
           }
         },
         "type": "object",
@@ -7499,7 +10008,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0.0
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -7556,12 +10065,50 @@
             ],
             "title": "Health"
           },
+          "ollama_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ollama Required"
+          },
+          "mediamtx_hls_base": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mediamtx Hls Base"
+          },
+          "mediamtx_paths": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "maxItems": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mediamtx Paths"
+          },
           "cpu_pct": {
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 100.0,
-                "minimum": 0.0
+                "maximum": 100,
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -7573,7 +10120,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0.0
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -7585,7 +10132,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0.0
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -7597,8 +10144,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 100.0,
-                "minimum": 0.0
+                "maximum": 100,
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -7610,7 +10157,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0.0
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -7622,7 +10169,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0.0
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -7645,8 +10192,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 100.0,
-                "minimum": 0.0
+                "maximum": 100,
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -7658,7 +10205,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0.0
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -7670,7 +10217,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0.0
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -8002,6 +10549,30 @@
             "type": "string",
             "title": "Breach Mode"
           },
+          "person_conf": {
+            "type": "number",
+            "title": "Person Conf"
+          },
+          "item_conf": {
+            "type": "number",
+            "title": "Item Conf"
+          },
+          "item_every_n": {
+            "type": "integer",
+            "title": "Item Every N"
+          },
+          "scan_interval_sec": {
+            "type": "number",
+            "title": "Scan Interval Sec"
+          },
+          "frames_per_clip": {
+            "type": "integer",
+            "title": "Frames Per Clip"
+          },
+          "frame_max_dim": {
+            "type": "integer",
+            "title": "Frame Max Dim"
+          },
           "created_at": {
             "anyOf": [
               {
@@ -8102,6 +10673,12 @@
           "provider",
           "frame_skip",
           "breach_mode",
+          "person_conf",
+          "item_conf",
+          "item_every_n",
+          "scan_interval_sec",
+          "frames_per_clip",
+          "frame_max_dim",
           "created_at",
           "cameras",
           "provider_effective",
@@ -8153,8 +10730,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 30.0,
-                "minimum": 0.0
+                "maximum": 30,
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -8176,6 +10753,84 @@
               }
             ],
             "title": "Breach Mode"
+          },
+          "person_conf": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 0.95,
+                "minimum": 0.05
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Person Conf"
+          },
+          "item_conf": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 0.95,
+                "minimum": 0.05
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Item Conf"
+          },
+          "item_every_n": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 30,
+                "minimum": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Item Every N"
+          },
+          "scan_interval_sec": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 60,
+                "minimum": 0.5
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scan Interval Sec"
+          },
+          "frames_per_clip": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 8,
+                "minimum": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frames Per Clip"
+          },
+          "frame_max_dim": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1280,
+                "minimum": 160
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frame Max Dim"
           }
         },
         "type": "object",
@@ -8205,8 +10860,8 @@
           },
           "confidence": {
             "type": "number",
-            "maximum": 1.0,
-            "minimum": 0.0,
+            "maximum": 1,
+            "minimum": 0,
             "title": "Confidence"
           },
           "reasoning": {
@@ -8223,7 +10878,7 @@
           },
           "inference_latency_ms": {
             "type": "integer",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Inference Latency Ms"
           }
         },
@@ -8442,7 +11097,8 @@
         "type": "string",
         "enum": [
           "manual_upload",
-          "live_threshold"
+          "live_threshold",
+          "edge_pc_upload"
         ],
         "title": "AlertTrigger"
       },
@@ -8819,6 +11475,68 @@
         ],
         "title": "BillingSummary"
       },
+      "Body_agent_edge_clip_api_v1_agent_edge_clips_post": {
+        "properties": {
+          "clip": {
+            "type": "string",
+            "format": "binary",
+            "title": "Clip"
+          },
+          "camera_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Camera Uuid"
+          },
+          "risk_pct": {
+            "type": "number",
+            "title": "Risk Pct",
+            "default": 0
+          },
+          "behaviors": {
+            "type": "string",
+            "title": "Behaviors",
+            "default": ""
+          },
+          "started_at": {
+            "type": "number",
+            "title": "Started At",
+            "default": 0
+          },
+          "ended_at": {
+            "type": "number",
+            "title": "Ended At",
+            "default": 0
+          },
+          "edge_behavior_detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edge Behavior Detail"
+          },
+          "clip_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clip Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "clip",
+          "camera_uuid"
+        ],
+        "title": "Body_agent_edge_clip_api_v1_agent_edge_clips_post"
+      },
       "Body_upload_clip_api_v1_clips_post": {
         "properties": {
           "file": {
@@ -8858,7 +11576,7 @@
           "duration_sec": {
             "type": "number",
             "title": "Duration Sec",
-            "default": 0.0
+            "default": 0
           }
         },
         "type": "object",
@@ -8885,8 +11603,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 100.0,
-                "minimum": 0.0
+                "maximum": 100,
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -8919,8 +11637,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 1.0,
-                "minimum": 0.0
+                "maximum": 1,
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -8950,6 +11668,45 @@
         ],
         "title": "BreachClearedCreate",
         "description": "POST /api/v1/internal/breach-cleared — observability for breaches the node\ndetected but did NOT turn into an alert (VLM cleared it as browsing / low\nconfidence, or the clip-cut failed). Without this the drop is silent: the\noperator sees nothing and can't tell a miss from \"nothing happened\". We log\nit on the activity timeline so the detection funnel is visible + tunable."
+      },
+      "CalibPoint": {
+        "properties": {
+          "img": {
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array",
+            "maxItems": 2,
+            "minItems": 2,
+            "title": "Img"
+          },
+          "plan": {
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array",
+            "maxItems": 2,
+            "minItems": 2,
+            "title": "Plan"
+          }
+        },
+        "type": "object",
+        "required": [
+          "img",
+          "plan"
+        ],
+        "title": "CalibPoint",
+        "description": "One calibration pair: a NORMALIZED 0-1 camera-image point ↔ a plan point."
       },
       "CameraCreate": {
         "properties": {
@@ -8990,8 +11747,8 @@
           },
           "stage2_threshold": {
             "type": "number",
-            "maximum": 1.0,
-            "minimum": 0.0,
+            "maximum": 1,
+            "minimum": 0,
             "title": "Stage2 Threshold",
             "default": 0.5
           },
@@ -9014,10 +11771,14 @@
           },
           "risk_threshold": {
             "type": "number",
-            "maximum": 100.0,
-            "minimum": 0.0,
+            "maximum": 100,
+            "minimum": 0,
             "title": "Risk Threshold",
-            "default": 11.0
+            "default": 11
+          },
+          "compute_tier": {
+            "$ref": "#/components/schemas/ComputeTier",
+            "default": "cloud"
           },
           "zones": {
             "anyOf": [
@@ -9054,7 +11815,7 @@
             "anyOf": [
               {
                 "type": "number",
-                "minimum": 0.0
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -9139,7 +11900,16 @@
           "risk_threshold": {
             "type": "number",
             "title": "Risk Threshold",
-            "default": 11.0
+            "default": 11
+          },
+          "compute_tier": {
+            "$ref": "#/components/schemas/ComputeTier",
+            "default": "cloud"
+          },
+          "topology_mode": {
+            "type": "string",
+            "title": "Topology Mode",
+            "default": "cloud"
           },
           "zones": {
             "anyOf": [
@@ -9213,8 +11983,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 1.0,
-                "minimum": 0.0
+                "maximum": 1,
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -9249,14 +12019,24 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 100.0,
-                "minimum": 0.0
+                "maximum": 100,
+                "minimum": 0
               },
               {
                 "type": "null"
               }
             ],
             "title": "Risk Threshold"
+          },
+          "compute_tier": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ComputeTier"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "zones": {
             "anyOf": [
@@ -9379,7 +12159,7 @@
             "anyOf": [
               {
                 "type": "number",
-                "minimum": 0.0
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -9391,7 +12171,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0.0
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -9406,6 +12186,16 @@
         ],
         "title": "ComponentUsage",
         "description": "Per-component CPU/RAM (sentry-ai / Ollama / MediaMTX / Tunnel) — the\nresource breakdown shown in the dashboard. Stored in telemetry JSON."
+      },
+      "ComputeTier": {
+        "type": "string",
+        "enum": [
+          "cloud",
+          "edge_pc",
+          "edge_device"
+        ],
+        "title": "ComputeTier",
+        "description": "Where this camera's Stage-1 (YOLO + behaviour) runs — the billing + topology\nprimitive (ADR-0029). Stored as a plain string column (not a PG enum) so adding\na tier later needs no type migration.\n\n- ``cloud`` — sentry-ai on the GPU node runs Stage-1 + Stage-2 from a pulled RTSP\n  stream. The default; the existing path, unchanged.\n- ``edge_pc`` — the store PC (sentry-agent-pc) runs Stage-1 locally and uploads\n  only suspicious clips for the cloud VLM verdict.\n- ``edge_device`` — a future on-prem edge box (Orange Pi 5, sentry-agent-pi5).\n  Reserved; not built yet."
       },
       "CreditRequest": {
         "properties": {
@@ -9455,9 +12245,9 @@
           },
           "weight": {
             "type": "number",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Weight",
-            "default": 1.0
+            "default": 1
           },
           "category": {
             "type": "string",
@@ -9466,8 +12256,8 @@
           },
           "level": {
             "type": "integer",
-            "maximum": 4.0,
-            "minimum": 1.0,
+            "maximum": 4,
+            "minimum": 1,
             "title": "Level",
             "default": 1
           }
@@ -9510,7 +12300,7 @@
             "anyOf": [
               {
                 "type": "number",
-                "minimum": 0.0
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -9544,8 +12334,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 4.0,
-                "minimum": 1.0
+                "maximum": 4,
+                "minimum": 1
               },
               {
                 "type": "null"
@@ -9570,6 +12360,659 @@
         },
         "type": "object",
         "title": "DimensionUpdate"
+      },
+      "EdgeConfigAdminView": {
+        "properties": {
+          "store_id": {
+            "type": "string",
+            "title": "Store Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "overrides": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Overrides"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "effective": {
+            "$ref": "#/components/schemas/EdgeConfigPayload"
+          }
+        },
+        "type": "object",
+        "required": [
+          "store_id",
+          "version",
+          "overrides",
+          "effective"
+        ],
+        "title": "EdgeConfigAdminView",
+        "description": "Superadmin read view: the raw overrides + version + the effective merged\nconfig the agent would receive."
+      },
+      "EdgeConfigOverridesIn": {
+        "properties": {
+          "person_conf": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Person Conf"
+          },
+          "item_conf": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Item Conf"
+          },
+          "frame_skip": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frame Skip"
+          },
+          "w_holding": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "W Holding"
+          },
+          "w_conceal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "W Conceal"
+          },
+          "w_wrist_torso": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "W Wrist Torso"
+          },
+          "w_exit_after_conceal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "W Exit After Conceal"
+          },
+          "w_repeated_shelf": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "W Repeated Shelf"
+          },
+          "repeated_shelf_threshold": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repeated Shelf Threshold"
+          },
+          "interval_holding": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interval Holding"
+          },
+          "mindur_holding": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mindur Holding"
+          },
+          "interval_wrist_torso": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interval Wrist Torso"
+          },
+          "mindur_wrist_torso": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mindur Wrist Torso"
+          },
+          "interval_conceal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interval Conceal"
+          },
+          "mindur_conceal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mindur Conceal"
+          },
+          "interval_repeated_shelf": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interval Repeated Shelf"
+          },
+          "mindur_repeated_shelf": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mindur Repeated Shelf"
+          },
+          "interval_exit_after_conceal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interval Exit After Conceal"
+          },
+          "mindur_exit_after_conceal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mindur Exit After Conceal"
+          },
+          "reach_frac": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reach Frac"
+          },
+          "near_frac": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Near Frac"
+          },
+          "min_kp_conf": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Kp Conf"
+          },
+          "decay": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decay"
+          },
+          "open_risk": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Open Risk"
+          },
+          "close_risk": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Close Risk"
+          },
+          "post_quiet_sec": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Post Quiet Sec"
+          },
+          "drop_after_sec": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drop After Sec"
+          },
+          "iou_match": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Iou Match"
+          },
+          "band_yellow": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Band Yellow"
+          },
+          "band_red": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Band Red"
+          },
+          "pre_sec": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pre Sec"
+          },
+          "post_sec": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Post Sec"
+          },
+          "segment_sec": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Segment Sec"
+          },
+          "keep_sec": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keep Sec"
+          },
+          "max_clips": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Clips"
+          },
+          "max_age_sec": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Age Sec"
+          },
+          "upload_clips": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Clips"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "EdgeConfigOverridesIn",
+        "description": "Superadmin write body (I3/I9): a PARTIAL set of edge tunables. Unset fields\n(None) are left at the agent default; unknown keys are rejected. Stored as the\nper-store ``overrides`` dict via ``model_dump(exclude_none=True)``."
+      },
+      "EdgeConfigPayload": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version",
+            "default": 1
+          },
+          "person_conf": {
+            "type": "number",
+            "title": "Person Conf",
+            "default": 0.35
+          },
+          "item_conf": {
+            "type": "number",
+            "title": "Item Conf",
+            "default": 0.4
+          },
+          "frame_skip": {
+            "type": "integer",
+            "title": "Frame Skip",
+            "default": 3
+          },
+          "w_holding": {
+            "type": "number",
+            "title": "W Holding",
+            "default": 5
+          },
+          "w_conceal": {
+            "type": "number",
+            "title": "W Conceal",
+            "default": 14
+          },
+          "w_wrist_torso": {
+            "type": "number",
+            "title": "W Wrist Torso",
+            "default": 3
+          },
+          "w_exit_after_conceal": {
+            "type": "number",
+            "title": "W Exit After Conceal",
+            "default": 40
+          },
+          "w_repeated_shelf": {
+            "type": "number",
+            "title": "W Repeated Shelf",
+            "default": 3
+          },
+          "repeated_shelf_threshold": {
+            "type": "integer",
+            "title": "Repeated Shelf Threshold",
+            "default": 3
+          },
+          "interval_holding": {
+            "type": "number",
+            "title": "Interval Holding",
+            "default": 2
+          },
+          "mindur_holding": {
+            "type": "number",
+            "title": "Mindur Holding",
+            "default": 0.5
+          },
+          "interval_wrist_torso": {
+            "type": "number",
+            "title": "Interval Wrist Torso",
+            "default": 3
+          },
+          "mindur_wrist_torso": {
+            "type": "number",
+            "title": "Mindur Wrist Torso",
+            "default": 1.5
+          },
+          "interval_conceal": {
+            "type": "number",
+            "title": "Interval Conceal",
+            "default": 0.5
+          },
+          "mindur_conceal": {
+            "type": "number",
+            "title": "Mindur Conceal",
+            "default": 0.6
+          },
+          "interval_repeated_shelf": {
+            "type": "number",
+            "title": "Interval Repeated Shelf",
+            "default": 0
+          },
+          "mindur_repeated_shelf": {
+            "type": "number",
+            "title": "Mindur Repeated Shelf",
+            "default": 0.5
+          },
+          "interval_exit_after_conceal": {
+            "type": "number",
+            "title": "Interval Exit After Conceal",
+            "default": 0
+          },
+          "mindur_exit_after_conceal": {
+            "type": "number",
+            "title": "Mindur Exit After Conceal",
+            "default": 0.3
+          },
+          "reach_frac": {
+            "type": "number",
+            "title": "Reach Frac",
+            "default": 0.35
+          },
+          "near_frac": {
+            "type": "number",
+            "title": "Near Frac",
+            "default": 0.18
+          },
+          "min_kp_conf": {
+            "type": "number",
+            "title": "Min Kp Conf",
+            "default": 0.3
+          },
+          "decay": {
+            "type": "number",
+            "title": "Decay",
+            "default": 0.92
+          },
+          "open_risk": {
+            "type": "number",
+            "title": "Open Risk",
+            "default": 60
+          },
+          "close_risk": {
+            "type": "number",
+            "title": "Close Risk",
+            "default": 30
+          },
+          "post_quiet_sec": {
+            "type": "number",
+            "title": "Post Quiet Sec",
+            "default": 2
+          },
+          "drop_after_sec": {
+            "type": "number",
+            "title": "Drop After Sec",
+            "default": 1.5
+          },
+          "iou_match": {
+            "type": "number",
+            "title": "Iou Match",
+            "default": 0.3
+          },
+          "band_yellow": {
+            "type": "number",
+            "title": "Band Yellow",
+            "default": 40
+          },
+          "band_red": {
+            "type": "number",
+            "title": "Band Red",
+            "default": 70
+          },
+          "pre_sec": {
+            "type": "number",
+            "title": "Pre Sec",
+            "default": 3
+          },
+          "post_sec": {
+            "type": "number",
+            "title": "Post Sec",
+            "default": 3
+          },
+          "segment_sec": {
+            "type": "number",
+            "title": "Segment Sec",
+            "default": 1
+          },
+          "keep_sec": {
+            "type": "number",
+            "title": "Keep Sec",
+            "default": 45
+          },
+          "max_clips": {
+            "type": "integer",
+            "title": "Max Clips",
+            "default": 50
+          },
+          "max_age_sec": {
+            "type": "number",
+            "title": "Max Age Sec",
+            "default": 604800
+          },
+          "upload_clips": {
+            "type": "boolean",
+            "title": "Upload Clips",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "EdgeConfigPayload",
+        "description": "The 24 edge tunables + a monotonic version. v1 serves the defaults below;\na per-store override + version bump arrives with the superadmin EdgeConfig CRUD."
       },
       "EventLogPublic": {
         "properties": {
@@ -9832,6 +13275,358 @@
         ],
         "title": "FeedbackVerdict"
       },
+      "FloorCamera": {
+        "properties": {
+          "camera_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Camera Id"
+          },
+          "pos": {
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array",
+            "maxItems": 2,
+            "minItems": 2,
+            "title": "Pos"
+          },
+          "dir_deg": {
+            "type": "number",
+            "title": "Dir Deg",
+            "default": 0
+          },
+          "homography": {
+            "anyOf": [
+              {
+                "items": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Homography"
+          },
+          "reproj_err": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reproj Err"
+          },
+          "calib_points": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/CalibPoint"
+                },
+                "type": "array",
+                "maxItems": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calib Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "camera_id",
+          "pos"
+        ],
+        "title": "FloorCamera",
+        "description": "A camera placed on the plan + its homography (set during calibration)."
+      },
+      "FloorFixture": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "shelf",
+              "exit",
+              "entrance",
+              "checkout"
+            ],
+            "title": "Type"
+          },
+          "points": {
+            "items": {
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array",
+              "maxItems": 2,
+              "minItems": 2
+            },
+            "type": "array",
+            "title": "Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "points"
+        ],
+        "title": "FloorFixture",
+        "description": "A drawn zone on the plan (shelf/exit/entrance/checkout), PLAN coords."
+      },
+      "FloorPlan": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version",
+            "default": 1
+          },
+          "size": {
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array",
+            "maxItems": 2,
+            "minItems": 2,
+            "title": "Size",
+            "default": [
+              1000,
+              800
+            ]
+          },
+          "walls": {
+            "items": {
+              "$ref": "#/components/schemas/FloorWall"
+            },
+            "type": "array",
+            "maxItems": 256,
+            "title": "Walls"
+          },
+          "fixtures": {
+            "items": {
+              "$ref": "#/components/schemas/FloorFixture"
+            },
+            "type": "array",
+            "maxItems": 256,
+            "title": "Fixtures"
+          },
+          "cameras": {
+            "items": {
+              "$ref": "#/components/schemas/FloorCamera"
+            },
+            "type": "array",
+            "maxItems": 128,
+            "title": "Cameras"
+          }
+        },
+        "type": "object",
+        "title": "FloorPlan",
+        "description": "The full per-store plan. Empty default = nothing drawn yet."
+      },
+      "FloorWall": {
+        "properties": {
+          "points": {
+            "items": {
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array",
+              "maxItems": 2,
+              "minItems": 2
+            },
+            "type": "array",
+            "title": "Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "points"
+        ],
+        "title": "FloorWall",
+        "description": "A wall / fixture outline polyline in PLAN coordinates (not 0-1)."
+      },
+      "FlowEdge": {
+        "properties": {
+          "x1": {
+            "type": "number",
+            "title": "X1"
+          },
+          "y1": {
+            "type": "number",
+            "title": "Y1"
+          },
+          "x2": {
+            "type": "number",
+            "title": "X2"
+          },
+          "y2": {
+            "type": "number",
+            "title": "Y2"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "x1",
+          "y1",
+          "x2",
+          "y2",
+          "count"
+        ],
+        "title": "FlowEdge",
+        "description": "One movement edge between two coarse grid cells (docs/30 F4 flow).\nCoords are cell CENTRES normalized to the plan [0,1]² for direct drawing."
+      },
+      "FlowSummary": {
+        "properties": {
+          "grid_size": {
+            "type": "integer",
+            "title": "Grid Size"
+          },
+          "window_from": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Window From"
+          },
+          "window_to": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Window To"
+          },
+          "max_count": {
+            "type": "integer",
+            "title": "Max Count"
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/FlowEdge"
+            },
+            "type": "array",
+            "title": "Edges"
+          }
+        },
+        "type": "object",
+        "required": [
+          "grid_size",
+          "window_from",
+          "window_to",
+          "max_count"
+        ],
+        "title": "FlowSummary",
+        "description": "Movement-flow graph for a store over a window."
+      },
+      "FootfallGrid": {
+        "properties": {
+          "grid_size": {
+            "type": "integer",
+            "title": "Grid Size"
+          },
+          "size": {
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array",
+            "maxItems": 2,
+            "minItems": 2,
+            "title": "Size"
+          },
+          "window_from": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Window From"
+          },
+          "window_to": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Window To"
+          },
+          "max_samples": {
+            "type": "integer",
+            "title": "Max Samples"
+          },
+          "total_samples": {
+            "type": "integer",
+            "title": "Total Samples"
+          },
+          "cells": {
+            "items": {
+              "prefixItems": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "integer"
+                }
+              ],
+              "type": "array",
+              "maxItems": 3,
+              "minItems": 3
+            },
+            "type": "array",
+            "title": "Cells"
+          }
+        },
+        "type": "object",
+        "required": [
+          "grid_size",
+          "size",
+          "window_from",
+          "window_to",
+          "max_samples",
+          "total_samples"
+        ],
+        "title": "FootfallGrid",
+        "description": "Aggregated dwell heatmap for one store over a time window.\n\n`cells` are sparse — only non-zero cells are returned, each as [gx, gy, n].\nThe frontend normalizes intensity by `max_samples` and lays cells out over\nthe plan using `grid_size` and `size` (the plan's logical dimensions)."
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -9844,6 +13639,57 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "IngestPath": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "ready": {
+            "type": "boolean",
+            "title": "Ready"
+          },
+          "readers": {
+            "type": "integer",
+            "title": "Readers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "path",
+          "name",
+          "ready",
+          "readers"
+        ],
+        "title": "IngestPath",
+        "description": "Runtime state of one MediaMTX path (one camera's cloud stream)."
+      },
+      "IngestPathsResponse": {
+        "properties": {
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          },
+          "paths": {
+            "items": {
+              "$ref": "#/components/schemas/IngestPath"
+            },
+            "type": "array",
+            "title": "Paths"
+          }
+        },
+        "type": "object",
+        "required": [
+          "available",
+          "paths"
+        ],
+        "title": "IngestPathsResponse",
+        "description": "`available` is False when MediaMTX's control API is not configured or\nunreachable — the canvas renders stage 2 as \"unknown\" rather than \"0 ready\"."
       },
       "InviteCreate": {
         "properties": {
@@ -10039,8 +13885,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 100000.0,
-                "minimum": 0.0
+                "maximum": 100000,
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -10255,8 +14101,8 @@
           },
           "confidence": {
             "type": "number",
-            "maximum": 1.0,
-            "minimum": 0.0,
+            "maximum": 1,
+            "minimum": 0,
             "title": "Confidence"
           },
           "reasoning": {
@@ -10273,7 +14119,7 @@
           },
           "inference_latency_ms": {
             "type": "integer",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Inference Latency Ms"
           },
           "clip_b64": {
@@ -10283,12 +14129,12 @@
           },
           "file_size_bytes": {
             "type": "integer",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "File Size Bytes"
           },
           "duration_sec_clip": {
             "type": "number",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Duration Sec Clip"
           },
           "captured_at": {
@@ -10373,6 +14219,21 @@
               }
             ],
             "title": "Triggered Behavior Detail"
+          },
+          "pose_sequence": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pose Sequence"
           }
         },
         "type": "object",
@@ -10422,7 +14283,7 @@
           "fps_inference": {
             "type": "number",
             "title": "Fps Inference",
-            "default": 0.0
+            "default": 0
           },
           "tracks": {
             "items": {
@@ -10487,13 +14348,13 @@
           "det_confidence": {
             "type": "number",
             "title": "Det Confidence",
-            "default": 0.0
+            "default": 0
           },
           "risk_pct": {
             "type": "number",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Risk Pct",
-            "default": 0.0
+            "default": 0
           },
           "color": {
             "type": "string",
@@ -10788,6 +14649,285 @@
         "title": "OrgMemberPublic",
         "description": "A user together with their role inside one organization."
       },
+      "OrgNodePublic": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "is_online": {
+            "type": "boolean",
+            "title": "Is Online"
+          },
+          "last_seen_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Seen At"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          },
+          "gpu": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gpu"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider"
+          },
+          "provider_effective": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Effective"
+          },
+          "provider_ready": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Ready"
+          },
+          "provider_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Error"
+          },
+          "breach_mode": {
+            "type": "string",
+            "title": "Breach Mode"
+          },
+          "breach_mode_effective": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Breach Mode Effective"
+          },
+          "fps_inference": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fps Inference"
+          },
+          "active_cameras": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Cameras"
+          },
+          "cpu_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cpu Pct"
+          },
+          "ram_used_mb": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ram Used Mb"
+          },
+          "ram_total_mb": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ram Total Mb"
+          },
+          "gpu_pct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gpu Pct"
+          },
+          "vram_used_mb": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vram Used Mb"
+          },
+          "vram_total_mb": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vram Total Mb"
+          },
+          "gpu_temp_c": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gpu Temp C"
+          },
+          "vlm_activity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VlmActivity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "vlm": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VlmStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "health": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "boolean"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Health"
+          },
+          "cameras": {
+            "items": {
+              "$ref": "#/components/schemas/CameraHealth"
+            },
+            "type": "array",
+            "title": "Cameras"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "is_online",
+          "last_seen_at",
+          "version",
+          "gpu",
+          "provider",
+          "provider_effective",
+          "provider_ready",
+          "provider_error",
+          "breach_mode",
+          "breach_mode_effective",
+          "fps_inference",
+          "active_cameras",
+          "cpu_pct",
+          "ram_used_mb",
+          "ram_total_mb",
+          "gpu_pct",
+          "vram_used_mb",
+          "vram_total_mb",
+          "gpu_temp_c",
+          "vlm_activity",
+          "vlm",
+          "health",
+          "cameras"
+        ],
+        "title": "OrgNodePublic",
+        "description": "Org-scoped, camera-PROJECTED view of an AI node for the customer app.\n\nAiNode has no organization_id — a node serves cameras across orgs and is\nlinked to an org ONLY through telemetry.cameras[].camera_id == Camera\n.mediamtx_path. So this view (built by `build_org_node`) deliberately:\n  • returns ONLY the caller-org's cameras out of a (possibly shared) node,\n  • NEVER exposes the raw telemetry string (it carries other tenants'\n    camera ids) — only the safe whole-node gauges are projected through.\nContrast AiNodePublic (superadmin), which returns everything verbatim."
+      },
       "OrgRole": {
         "type": "string",
         "enum": [
@@ -10876,6 +15016,68 @@
         "title": "PairingCodePublic",
         "description": "Returned to the admin UI after generating a code."
       },
+      "PeakCell": {
+        "properties": {
+          "dow": {
+            "type": "integer",
+            "title": "Dow"
+          },
+          "hour": {
+            "type": "integer",
+            "title": "Hour"
+          },
+          "entries": {
+            "type": "integer",
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dow",
+          "hour",
+          "entries"
+        ],
+        "title": "PeakCell",
+        "description": "Visitors in one (weekday, hour) slot. dow 1-7 = Mon-Sun (local time)."
+      },
+      "PeakMatrix": {
+        "properties": {
+          "window_from": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Window From"
+          },
+          "window_to": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Window To"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          },
+          "max_entries": {
+            "type": "integer",
+            "title": "Max Entries"
+          },
+          "cells": {
+            "items": {
+              "$ref": "#/components/schemas/PeakCell"
+            },
+            "type": "array",
+            "title": "Cells"
+          }
+        },
+        "type": "object",
+        "required": [
+          "window_from",
+          "window_to",
+          "timezone",
+          "max_entries"
+        ],
+        "title": "PeakMatrix",
+        "description": "Weekday × hour visitor matrix (docs/30) — \"when is the store busy\". Sparse\ncells; the frontend lays them out on a 7×24 grid coloured by `max_entries`."
+      },
       "PendingInvite": {
         "properties": {
           "id": {
@@ -10932,7 +15134,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "exclusiveMinimum": 0.0
+                "exclusiveMinimum": 0
               },
               {
                 "type": "null"
@@ -10944,7 +15146,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "exclusiveMinimum": 0.0
+                "exclusiveMinimum": 0
               },
               {
                 "type": "null"
@@ -10966,7 +15168,7 @@
           },
           "max_redemptions": {
             "type": "integer",
-            "exclusiveMinimum": 0.0,
+            "exclusiveMinimum": 0,
             "title": "Max Redemptions",
             "default": 1
           },
@@ -11307,8 +15509,8 @@
           },
           "k": {
             "type": "integer",
-            "maximum": 10.0,
-            "minimum": 1.0,
+            "maximum": 10,
+            "minimum": 1,
             "title": "K",
             "default": 3
           }
@@ -11345,6 +15547,70 @@
           "bonus"
         ],
         "title": "SequenceInfo"
+      },
+      "StoreAdminRow": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "organization_id": {
+            "type": "string",
+            "title": "Organization Id"
+          },
+          "organization_name": {
+            "type": "string",
+            "title": "Organization Name"
+          },
+          "camera_count": {
+            "type": "integer",
+            "title": "Camera Count",
+            "default": 0
+          },
+          "agent_stream_push_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Stream Push Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "organization_id",
+          "organization_name"
+        ],
+        "title": "StoreAdminRow",
+        "description": "One store with its org name + camera count — drives the superadmin store\npickers (e.g. the per-store edge-config editor). Cross-org: super-admin only."
+      },
+      "StoreAdminUpdate": {
+        "properties": {
+          "agent_stream_push_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Stream Push Url"
+          }
+        },
+        "type": "object",
+        "title": "StoreAdminUpdate",
+        "description": "Superadmin partial store edit. Only the per-store push target for now;\nempty string clears it (back to the global env URL)."
       },
       "StoreBillingLine": {
         "properties": {
@@ -11567,6 +15833,17 @@
           "expires_in": {
             "type": "integer",
             "title": "Expires In"
+          },
+          "hls_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hls Url"
           }
         },
         "type": "object",
@@ -11581,7 +15858,7 @@
         "properties": {
           "amount_mnt": {
             "type": "integer",
-            "exclusiveMinimum": 0.0,
+            "exclusiveMinimum": 0,
             "title": "Amount Mnt"
           },
           "note": {
@@ -11602,6 +15879,87 @@
           "amount_mnt"
         ],
         "title": "TopupRequest"
+      },
+      "TrafficPoint": {
+        "properties": {
+          "hour": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Hour"
+          },
+          "entries": {
+            "type": "integer",
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hour",
+          "entries"
+        ],
+        "title": "TrafficPoint",
+        "description": "Visitors counted in one hour bucket."
+      },
+      "TrafficSummary": {
+        "properties": {
+          "window_from": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Window From"
+          },
+          "window_to": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Window To"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "peak_hour": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peak Hour"
+          },
+          "peak_entries": {
+            "type": "integer",
+            "title": "Peak Entries",
+            "default": 0
+          },
+          "avg_dwell_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Dwell Seconds"
+          },
+          "series": {
+            "items": {
+              "$ref": "#/components/schemas/TrafficPoint"
+            },
+            "type": "array",
+            "title": "Series"
+          }
+        },
+        "type": "object",
+        "required": [
+          "window_from",
+          "window_to",
+          "total"
+        ],
+        "title": "TrafficSummary",
+        "description": "Visitor traffic over a window (docs/30 F3). `series` is one point per\nhour that had any traffic; `peak_hour` is the busiest of them (null if none)."
       },
       "UserAdminUpdate": {
         "properties": {
@@ -11741,7 +16099,7 @@
         "properties": {
           "count": {
             "type": "integer",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Count",
             "default": 0
           },
@@ -11749,7 +16107,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0.0
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -11761,7 +16119,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0.0
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -11796,7 +16154,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0.0
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -11808,8 +16166,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 100.0,
-                "minimum": 0.0
+                "maximum": 100,
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -11873,6 +16231,68 @@
         ],
         "title": "Zone",
         "description": "A per-camera detection zone (docs/29) — a polygon in NORMALIZED image space\n(every coord in 0-1), drawn on the agent-pc and consumed by the behavior\nengine (exit_after_concealment / repeated_shelf_visit). Normalized so one\ndefinition works across the agent's draw resolution and the cloud worker's\nstream size. Distinct from the deprecated single-bbox `shelf_zone_json`."
+      },
+      "ZoneActivity": {
+        "properties": {
+          "fixture_id": {
+            "type": "string",
+            "title": "Fixture Id"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "samples": {
+            "type": "integer",
+            "title": "Samples"
+          },
+          "share": {
+            "type": "number",
+            "title": "Share"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fixture_id",
+          "type",
+          "samples",
+          "share"
+        ],
+        "title": "ZoneActivity",
+        "description": "Footfall activity attributed to one plan fixture/zone (docs/30 F4)."
+      },
+      "ZoneBreakdown": {
+        "properties": {
+          "window_from": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Window From"
+          },
+          "window_to": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Window To"
+          },
+          "total_samples": {
+            "type": "integer",
+            "title": "Total Samples"
+          },
+          "zones": {
+            "items": {
+              "$ref": "#/components/schemas/ZoneActivity"
+            },
+            "type": "array",
+            "title": "Zones"
+          }
+        },
+        "type": "object",
+        "required": [
+          "window_from",
+          "window_to",
+          "total_samples"
+        ],
+        "title": "ZoneBreakdown",
+        "description": "Per-zone activity table for a store over a window, busiest first."
       }
     }
   }

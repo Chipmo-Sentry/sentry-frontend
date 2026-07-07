@@ -132,6 +132,130 @@ export interface paths {
         patch: operations["update_store_api_v1_stores__store_id__patch"];
         trace?: never;
     };
+    "/api/v1/stores/{store_id}/floor-plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Store Floor Plan */
+        get: operations["get_store_floor_plan_api_v1_stores__store_id__floor_plan_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stores/{store_id}/analytics/footfall": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Store Footfall
+         * @description Dwell heatmap: person-frame samples per plan grid-cell over the last
+         *     `hours` (default 24). Sparse — only non-zero cells are returned.
+         */
+        get: operations["get_store_footfall_api_v1_stores__store_id__analytics_footfall_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stores/{store_id}/analytics/traffic": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Store Traffic
+         * @description Visitor count per hour over the last `hours` (default 24) — the headline
+         *     "зочид" KPI + peak hour + an hourly series for the traffic chart.
+         */
+        get: operations["get_store_traffic_api_v1_stores__store_id__analytics_traffic_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stores/{store_id}/analytics/zones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Store Zones
+         * @description Attribute the dwell heatmap to each drawn zone: for every plan fixture,
+         *     sum the footfall samples whose grid-cell centre falls inside it. Reuses the
+         *     F2 grid + the plan polygons — no extra aggregation path.
+         */
+        get: operations["get_store_zones_api_v1_stores__store_id__analytics_zones_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stores/{store_id}/analytics/flow": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Store Flow
+         * @description Movement graph: the busiest transitions between coarse plan cells over the
+         *     last `hours`. Edge endpoints are cell centres normalized to [0,1] so the
+         *     frontend draws lines directly over the plan.
+         */
+        get: operations["get_store_flow_api_v1_stores__store_id__analytics_flow_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stores/{store_id}/analytics/peak": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Store Peak
+         * @description When is the store busy? Visitors bucketed by (weekday, hour) in the
+         *     store's local timezone over the last `days` (default 28 = 4 weeks).
+         */
+        get: operations["get_store_peak_api_v1_stores__store_id__analytics_peak_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cameras": {
         parameters: {
             query?: never;
@@ -545,6 +669,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Alerts Admin
+         * @description Recent alerts across ALL orgs for the superadmin pipeline ("Урсгал") page.
+         *
+         *     Each row is one problematic clip's end-to-end journey — camera → behaviours
+         *     (triggered_*) → VLM (reasoning/confidence/model) → decision (alert_level/
+         *     category) → review (feedback_verdict) — enriched with org/store/camera display
+         *     names. Newest first. Filtering is done client-side over the fetched window.
+         */
+        get: operations["list_alerts_admin_api_v1_admin_alerts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/analytics/feedback": {
         parameters: {
             query?: never;
@@ -561,6 +710,64 @@ export interface paths {
          *     suggestion (weight/threshold change) stays a human action for now.
          */
         get: operations["feedback_analytics_api_v1_admin_analytics_feedback_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/analytics/quality": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Quality Analytics
+         * @description Detection-QUALITY metrics derived from staff feedback — answers «how
+         *     ACCURATE are we?», not just «how many alerts fired». Read-only.
+         *
+         *     - precision = TP / (TP + FP) over labelled alerts (unclear excluded), overall
+         *       and per VLM category.
+         *     - coverage = labelled alerts / all alerts in range — precision is only as
+         *       trustworthy as how much got reviewed, so we surface it explicitly.
+         *     - confidence calibration: TP-rate per confidence bucket — validates whether
+         *       the alert-level thresholds (0.30 / 0.70 / 0.85) actually track correctness.
+         *     - false_alerts_per_day = FP-labelled notify/review alerts ÷ days — the
+         *       alert-fatigue number (the #1 reason staff stop trusting the system).
+         *
+         *     Uses the LATEST verdict per alert (an alert can be reviewed more than once),
+         *     scoped by alert creation time so it reflects the model's recent behaviour.
+         */
+        get: operations["quality_analytics_api_v1_admin_analytics_quality_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/eval/dataset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Eval Dataset
+         * @description Export feedback-labelled alerts as an eval manifest (score mode) for the
+         *     sentry-ai harness: `python -m sentry_ai.eval score dataset.json`. Staff verdict
+         *     is the ground-truth label (true_positive→theft, false_positive→benign, unclear
+         *     dropped); the VLM category is the prediction — so it scores PRECISION on real
+         *     production data with no model run. (Recall needs a curated clip set — see the
+         *     harness README.) Latest verdict per alert.
+         */
+        get: operations["eval_dataset_api_v1_admin_eval_dataset_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -781,11 +988,87 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete Ai Node
+         * @description Hard-delete a node — removes it from the superadmin + org node lists.
+         *     Revoke only deactivates (row stays); this removes the row entirely for a
+         *     decommissioned node. Metrics cascade; pairing codes/event-log survive.
+         */
+        delete: operations["delete_ai_node_api_v1_admin_ai_nodes__node_id__delete"];
         options?: never;
         head?: never;
         /** Update Ai Node */
         patch: operations["update_ai_node_api_v1_admin_ai_nodes__node_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/stores": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Stores Admin
+         * @description Every store across ALL orgs with its org name + camera count — drives the
+         *     superadmin store pickers (e.g. the per-store edge-config editor).
+         */
+        get: operations["list_stores_admin_api_v1_admin_stores_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/stores/{store_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Store Admin
+         * @description Superadmin edit of a store's cloud push target. Repoints where the store's
+         *     agent pushes (e.g. after a vast.ai instance restart changes the IP/port) with
+         *     no backend redeploy. Empty string clears it back to the global env URL.
+         */
+        patch: operations["update_store_admin_api_v1_admin_stores__store_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/edge-config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Global Edge Config
+         * @description The ONE global edge tunable overrides + version + the effective merged
+         *     config every store's agents receive (ADR-0029 I3; global per founder request).
+         */
+        get: operations["get_global_edge_config_api_v1_admin_edge_config_get"];
+        /**
+         * Set Global Edge Config
+         * @description Set the global edge tunable overrides (partial); bumps `version` so ALL
+         *     store agents re-apply. An empty body resets to the agent defaults (the version
+         *     still bumps, so the agents pick up the reset).
+         */
+        put: operations["set_global_edge_config_api_v1_admin_edge_config_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/billing": {
@@ -1234,10 +1517,119 @@ export interface paths {
          *     push_enabled=True → cloud topology: the agent runs ffmpeg relays pushing
          *     each LAN camera to `push_rtsp_base/<mediamtx_path>`. False → MediaMTX pulls
          *     cameras directly (local/on-LAN) and the agent pushes nothing.
+         *
+         *     The per-store `agent_stream_push_url` (editable from superadmin) wins over the
+         *     global env, so a vast.ai restart can be repointed without a backend redeploy.
          */
         get: operations["agent_stream_config_api_v1_agent_stream_config_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/edge-config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Agent Edge Config
+         * @description Edge Stage-1 tunables for the store agent's config-poller (ADR-0029 I3).
+         *
+         *     Returns the ONE GLOBAL overrides merged over the defaults (the config is
+         *     platform-wide now, not per store), with a monotonic `version` the agent uses
+         *     to re-apply only on a real change. No config set → defaults at version 1. The
+         *     agent's `from_dict` keeps its own defaults for any omitted field, so this stays
+         *     forward-compatible. The agent token is still required (authenticated poll).
+         */
+        get: operations["agent_edge_config_api_v1_agent_edge_config_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/floor-plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Agent Get Floor Plan
+         * @description The store's top-down floor plan (docs/30), or an empty plan if none drawn.
+         */
+        get: operations["agent_get_floor_plan_api_v1_agent_floor_plan_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Agent Update Floor Plan
+         * @description Replace the store's floor plan (full-document write). The agent derives each
+         *     camera's Camera.zones from this + that camera's homography and PATCHes them
+         *     separately, so the behavior-engine pipeline is untouched (docs/30).
+         */
+        patch: operations["agent_update_floor_plan_api_v1_agent_floor_plan_patch"];
+        trace?: never;
+    };
+    "/api/v1/agent/edge/clips": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Agent Edge Clip
+         * @description Edge Stage-1 (ADR-0029): the store agent ran YOLO + behaviour LOCALLY and
+         *     uploads ONE suspicious clip. We store it, get the VLM verdict from sentry-ai
+         *     (bytes-forward — the GPU node can't read this host's disk), and create the
+         *     alert. If the VLM is unavailable we still create a log-level behaviour alert
+         *     so a flagged event is never lost (ADR §8.4); the clip is stored either way.
+         */
+        post: operations["agent_edge_clip_api_v1_agent_edge_clips_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/live-metadata": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Agent Live Metadata
+         * @description Edge Stage-1 live overlay feed (ADR-0029, edge-first). The agent's edge
+         *     engine POSTs per-frame tracks so the browser live overlay shows EDGE boxes
+         *     when the node runs no live analysis.
+         *
+         *     Publishes to the WS live broker ONLY — deliberately NOT through the threshold
+         *     handler (which `/internal/live-metadata` runs) — so the EDGE alone, via
+         *     `/agent/edge/clips` → VLM, decides alerts; this overlay path NEVER creates one.
+         *     The agent JWT scopes trust to its store; `camera_id` is the mediamtx_path.
+         *
+         *     SECURITY: frames are filtered to mediamtx_paths owned by the agent's store, so
+         *     a paired agent can't inject overlay boxes onto another tenant's live view.
+         */
+        post: operations["agent_live_metadata_api_v1_agent_live_metadata_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1307,6 +1699,162 @@ export interface paths {
         };
         /** Ai Node Config */
         get: operations["ai_node_config_api_v1_ai_nodes_config_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/nodes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Org Nodes
+         * @description AI nodes that serve at least one of this org's cameras, projected to the
+         *     org's cameras only. Any org member (read access) may view node health.
+         */
+        get: operations["list_org_nodes_api_v1_nodes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/nodes/agent-push": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Org Agent Push
+         * @description Per-camera ffmpeg push-relay state across this org's store agents, keyed by
+         *     mediamtx_path. Drives the 'Камер' pipeline stage: a down relay shows the real
+         *     reason (last_error) instead of just 'кадр зогссон'. Cameras whose agent never
+         *     reported push (pull/on-LAN topology, older agent) simply don't appear here, so
+         *     the frontend keeps its WS-based fallback for them.
+         */
+        get: operations["org_agent_push_api_v1_nodes_agent_push_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/nodes/{node_id}/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Org Node Metrics
+         * @description Resource time-series (CPU/RAM/GPU/VRAM/FPS) for a node THIS org owns.
+         *
+         *     Org ownership is derived (same as the node list): the node must report at
+         *     least one of the caller-org's cameras. A node the org doesn't own returns
+         *     404 (not 403) so node existence isn't leaked across tenants.
+         *     `range` = 1h | 6h | 24h | 7d | 30d.
+         */
+        get: operations["org_node_metrics_api_v1_nodes__node_id__metrics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/live/{path}/hls/{filename}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Hls Proxy
+         * @description Proxy one HLS playlist/segment for `path` from its node's MediaMTX, over
+         *     HTTPS. Playlists are rewritten to keep the token on every nested request.
+         */
+        get: operations["hls_proxy_api_v1_live__path__hls__filename__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/internal/node-diag": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Push Node Diag
+         * @description Store the latest diagnostics snapshot for the calling node (identified by
+         *     its ai_node JWT). Body is the node's free-form diag JSON.
+         */
+        post: operations["push_node_diag_api_v1_internal_node_diag_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/nodes/{node_id}/diag": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Node Diag
+         * @description Latest diagnostics for a node THIS org owns. `available=false` when the
+         *     node has never pushed a diag (e.g. running an older build).
+         */
+        get: operations["get_node_diag_api_v1_nodes__node_id__diag_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ingest/paths": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Ingest Paths
+         * @description Runtime publish state of THIS org's camera paths at the cloud ingest.
+         *
+         *     Any org member (read access) may view. `available=False` ⇒ MediaMTX API
+         *     disabled/unreachable (stage 2 stays "unknown", never a fake "0 ready").
+         */
+        get: operations["list_ingest_paths_api_v1_ingest_paths_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1454,6 +2002,69 @@ export interface components {
             password: string;
         };
         /**
+         * AdminAlertRow
+         * @description One alert enriched with org/store/camera display names for the superadmin
+         *     pipeline ("Урсгал") page. Each row is one problematic clip's full journey:
+         *     camera → behaviours (triggered_*) → VLM (reasoning/confidence/model) →
+         *     decision (alert_level/category) → review (feedback_verdict).
+         */
+        AdminAlertRow: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Clip Id
+             * Format: uuid
+             */
+            clip_id: string;
+            /** Edge Clip Id */
+            edge_clip_id?: string | null;
+            /**
+             * Organization Id
+             * Format: uuid
+             */
+            organization_id: string;
+            /** Store Id */
+            store_id: string | null;
+            /** Camera Id */
+            camera_id: string | null;
+            category: components["schemas"]["AlertCategory"];
+            /** Actions */
+            actions?: string[] | null;
+            /** Confidence */
+            confidence: number;
+            /** Reasoning */
+            reasoning: string;
+            /** Model Name */
+            model_name: string;
+            alert_level: components["schemas"]["AlertLevel"];
+            /** Inference Latency Ms */
+            inference_latency_ms: number;
+            /** Created At */
+            created_at: string;
+            /** @default manual_upload */
+            triggered_by: components["schemas"]["AlertTrigger"];
+            /** Person Id */
+            person_id?: number | null;
+            /** Peak Risk Pct */
+            peak_risk_pct?: number | null;
+            /** Triggered Behaviors */
+            triggered_behaviors?: string[] | null;
+            /** Triggered Sequences */
+            triggered_sequences?: string[] | null;
+            /** Triggered Behavior Detail */
+            triggered_behavior_detail?: components["schemas"]["BehaviorDetailItem"][] | null;
+            feedback_verdict?: components["schemas"]["FeedbackVerdict"] | null;
+            /** Organization Name */
+            organization_name: string;
+            /** Store Name */
+            store_name?: string | null;
+            /** Camera Name */
+            camera_name?: string | null;
+        };
+        /**
          * AdminStats
          * @description Top-level counts for the super-admin dashboard.
          */
@@ -1506,6 +2117,8 @@ export interface components {
              * @default 11
              */
             risk_threshold: number;
+            /** @default cloud */
+            compute_tier: components["schemas"]["ComputeTier"];
             /** Zones */
             zones?: components["schemas"]["Zone"][] | null;
         };
@@ -1524,8 +2137,20 @@ export interface components {
             rtsp_url?: string | null;
             /** Risk Threshold */
             risk_threshold?: number | null;
+            compute_tier?: components["schemas"]["ComputeTier"] | null;
             /** Zones */
             zones?: components["schemas"]["Zone"][] | null;
+        };
+        /**
+         * AgentHeartbeat
+         * @description Optional heartbeat body. Empty body (older agent) is still valid — it just
+         *     refreshes liveness and leaves any stored push status untouched.
+         */
+        AgentHeartbeat: {
+            /** Push */
+            push?: components["schemas"]["AgentPushEntry"][] | null;
+            /** Hls Tunnel Base */
+            hls_tunnel_base?: string | null;
         };
         /** AgentPairRequest */
         AgentPairRequest: {
@@ -1587,6 +2212,68 @@ export interface components {
             created_at: string;
         };
         /**
+         * AgentPushEntry
+         * @description One camera's ffmpeg push-relay state, as reported by the agent heartbeat.
+         */
+        AgentPushEntry: {
+            /** Path */
+            path: string;
+            /**
+             * Running
+             * @default false
+             */
+            running: boolean;
+            /**
+             * Restarts
+             * @default 0
+             */
+            restarts: number;
+            /** Last Error */
+            last_error?: string | null;
+        };
+        /**
+         * AgentPushPath
+         * @description A push entry projected to the org pipeline view, with which agent owns it
+         *     and whether that agent is currently online (heartbeat fresh).
+         */
+        AgentPushPath: {
+            /** Path */
+            path: string;
+            /**
+             * Running
+             * @default false
+             */
+            running: boolean;
+            /**
+             * Restarts
+             * @default 0
+             */
+            restarts: number;
+            /** Last Error */
+            last_error?: string | null;
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /** Agent Name */
+            agent_name?: string | null;
+            /**
+             * Agent Online
+             * @default true
+             */
+            agent_online: boolean;
+        };
+        /**
+         * AgentPushStatusResponse
+         * @description Per-camera (mediamtx_path) push state across an org's agents. The frontend
+         *     matches `path` to its cameras to drive the 'Камер' pipeline stage.
+         */
+        AgentPushStatusResponse: {
+            /** Paths */
+            paths: components["schemas"]["AgentPushPath"][];
+        };
+        /**
          * AgentStreamConfig
          * @description Where the agent should publish its camera streams (cloud topology).
          *
@@ -1619,6 +2306,36 @@ export interface components {
              * @default node_push
              */
             breach_mode: string;
+            /**
+             * Person Conf
+             * @default 0.35
+             */
+            person_conf: number;
+            /**
+             * Item Conf
+             * @default 0.4
+             */
+            item_conf: number;
+            /**
+             * Item Every N
+             * @default 5
+             */
+            item_every_n: number;
+            /**
+             * Scan Interval Sec
+             * @default 3
+             */
+            scan_interval_sec: number;
+            /**
+             * Frames Per Clip
+             * @default 1
+             */
+            frames_per_clip: number;
+            /**
+             * Frame Max Dim
+             * @default 320
+             */
+            frame_max_dim: number;
         };
         /**
          * AiNodeHeartbeat
@@ -1639,6 +2356,12 @@ export interface components {
             health?: {
                 [key: string]: boolean;
             } | null;
+            /** Ollama Required */
+            ollama_required?: boolean | null;
+            /** Mediamtx Hls Base */
+            mediamtx_hls_base?: string | null;
+            /** Mediamtx Paths */
+            mediamtx_paths?: string[] | null;
             /** Cpu Pct */
             cpu_pct?: number | null;
             /** Ram Used Mb */
@@ -1744,6 +2467,18 @@ export interface components {
             frame_skip: number;
             /** Breach Mode */
             breach_mode: string;
+            /** Person Conf */
+            person_conf: number;
+            /** Item Conf */
+            item_conf: number;
+            /** Item Every N */
+            item_every_n: number;
+            /** Scan Interval Sec */
+            scan_interval_sec: number;
+            /** Frames Per Clip */
+            frames_per_clip: number;
+            /** Frame Max Dim */
+            frame_max_dim: number;
             /** Created At */
             created_at: string | null;
             /**
@@ -1794,6 +2529,18 @@ export interface components {
             frame_skip?: number | null;
             /** Breach Mode */
             breach_mode?: ("node_push" | "off") | null;
+            /** Person Conf */
+            person_conf?: number | null;
+            /** Item Conf */
+            item_conf?: number | null;
+            /** Item Every N */
+            item_every_n?: number | null;
+            /** Scan Interval Sec */
+            scan_interval_sec?: number | null;
+            /** Frames Per Clip */
+            frames_per_clip?: number | null;
+            /** Frame Max Dim */
+            frame_max_dim?: number | null;
         };
         /**
          * AlertCategory
@@ -1883,7 +2630,7 @@ export interface components {
          * AlertTrigger
          * @enum {string}
          */
-        AlertTrigger: "manual_upload" | "live_threshold";
+        AlertTrigger: "manual_upload" | "live_threshold" | "edge_pc_upload";
         /** BehaviorConfig */
         BehaviorConfig: {
             /** Dimensions */
@@ -2054,6 +2801,43 @@ export interface components {
             /** Stores */
             stores: components["schemas"]["StoreBillingLine"][];
         };
+        /** Body_agent_edge_clip_api_v1_agent_edge_clips_post */
+        Body_agent_edge_clip_api_v1_agent_edge_clips_post: {
+            /**
+             * Clip
+             * Format: binary
+             */
+            clip: string;
+            /**
+             * Camera Uuid
+             * Format: uuid
+             */
+            camera_uuid: string;
+            /**
+             * Risk Pct
+             * @default 0
+             */
+            risk_pct: number;
+            /**
+             * Behaviors
+             * @default
+             */
+            behaviors: string;
+            /**
+             * Started At
+             * @default 0
+             */
+            started_at: number;
+            /**
+             * Ended At
+             * @default 0
+             */
+            ended_at: number;
+            /** Edge Behavior Detail */
+            edge_behavior_detail?: string | null;
+            /** Clip Id */
+            clip_id?: string | null;
+        };
         /** Body_upload_clip_api_v1_clips_post */
         Body_upload_clip_api_v1_clips_post: {
             /**
@@ -2099,6 +2883,22 @@ export interface components {
             /** Triggered Behaviors */
             triggered_behaviors?: string[] | null;
         };
+        /**
+         * CalibPoint
+         * @description One calibration pair: a NORMALIZED 0-1 camera-image point ↔ a plan point.
+         */
+        CalibPoint: {
+            /** Img */
+            img: [
+                number,
+                number
+            ];
+            /** Plan */
+            plan: [
+                number,
+                number
+            ];
+        };
         /** CameraCreate */
         CameraCreate: {
             /**
@@ -2131,6 +2931,8 @@ export interface components {
              * @default 11
              */
             risk_threshold: number;
+            /** @default cloud */
+            compute_tier: components["schemas"]["ComputeTier"];
             /** Zones */
             zones?: components["schemas"]["Zone"][] | null;
         };
@@ -2193,6 +2995,13 @@ export interface components {
              * @default 11
              */
             risk_threshold: number;
+            /** @default cloud */
+            compute_tier: components["schemas"]["ComputeTier"];
+            /**
+             * Topology Mode
+             * @default cloud
+             */
+            topology_mode: string;
             /** Zones */
             zones?: components["schemas"]["Zone"][] | null;
         };
@@ -2214,6 +3023,7 @@ export interface components {
             mediamtx_path?: string | null;
             /** Risk Threshold */
             risk_threshold?: number | null;
+            compute_tier?: components["schemas"]["ComputeTier"] | null;
             /** Zones */
             zones?: components["schemas"]["Zone"][] | null;
         };
@@ -2270,6 +3080,21 @@ export interface components {
             /** Ram Mb */
             ram_mb?: number | null;
         };
+        /**
+         * ComputeTier
+         * @description Where this camera's Stage-1 (YOLO + behaviour) runs — the billing + topology
+         *     primitive (ADR-0029). Stored as a plain string column (not a PG enum) so adding
+         *     a tier later needs no type migration.
+         *
+         *     - ``cloud`` — sentry-ai on the GPU node runs Stage-1 + Stage-2 from a pulled RTSP
+         *       stream. The default; the existing path, unchanged.
+         *     - ``edge_pc`` — the store PC (sentry-agent-pc) runs Stage-1 locally and uploads
+         *       only suspicious clips for the cloud VLM verdict.
+         *     - ``edge_device`` — a future on-prem edge box (Orange Pi 5, sentry-agent-pi5).
+         *       Reserved; not built yet.
+         * @enum {string}
+         */
+        ComputeTier: "cloud" | "edge_pc" | "edge_device";
         /** CreditRequest */
         CreditRequest: {
             /**
@@ -2325,6 +3150,303 @@ export interface components {
             params?: {
                 [key: string]: number;
             } | null;
+        };
+        /**
+         * EdgeConfigAdminView
+         * @description Superadmin read view: the raw overrides + version + the effective merged
+         *     config the agent would receive.
+         */
+        EdgeConfigAdminView: {
+            /** Store Id */
+            store_id: string;
+            /** Version */
+            version: number;
+            /** Overrides */
+            overrides: {
+                [key: string]: unknown;
+            };
+            /** Updated At */
+            updated_at?: string | null;
+            effective: components["schemas"]["EdgeConfigPayload"];
+        };
+        /**
+         * EdgeConfigOverridesIn
+         * @description Superadmin write body (I3/I9): a PARTIAL set of edge tunables. Unset fields
+         *     (None) are left at the agent default; unknown keys are rejected. Stored as the
+         *     per-store ``overrides`` dict via ``model_dump(exclude_none=True)``.
+         */
+        EdgeConfigOverridesIn: {
+            /** Person Conf */
+            person_conf?: number | null;
+            /** Item Conf */
+            item_conf?: number | null;
+            /** Frame Skip */
+            frame_skip?: number | null;
+            /** W Holding */
+            w_holding?: number | null;
+            /** W Conceal */
+            w_conceal?: number | null;
+            /** W Wrist Torso */
+            w_wrist_torso?: number | null;
+            /** W Exit After Conceal */
+            w_exit_after_conceal?: number | null;
+            /** W Repeated Shelf */
+            w_repeated_shelf?: number | null;
+            /** Repeated Shelf Threshold */
+            repeated_shelf_threshold?: number | null;
+            /** Interval Holding */
+            interval_holding?: number | null;
+            /** Mindur Holding */
+            mindur_holding?: number | null;
+            /** Interval Wrist Torso */
+            interval_wrist_torso?: number | null;
+            /** Mindur Wrist Torso */
+            mindur_wrist_torso?: number | null;
+            /** Interval Conceal */
+            interval_conceal?: number | null;
+            /** Mindur Conceal */
+            mindur_conceal?: number | null;
+            /** Interval Repeated Shelf */
+            interval_repeated_shelf?: number | null;
+            /** Mindur Repeated Shelf */
+            mindur_repeated_shelf?: number | null;
+            /** Interval Exit After Conceal */
+            interval_exit_after_conceal?: number | null;
+            /** Mindur Exit After Conceal */
+            mindur_exit_after_conceal?: number | null;
+            /** Reach Frac */
+            reach_frac?: number | null;
+            /** Near Frac */
+            near_frac?: number | null;
+            /** Min Kp Conf */
+            min_kp_conf?: number | null;
+            /** Decay */
+            decay?: number | null;
+            /** Open Risk */
+            open_risk?: number | null;
+            /** Close Risk */
+            close_risk?: number | null;
+            /** Post Quiet Sec */
+            post_quiet_sec?: number | null;
+            /** Drop After Sec */
+            drop_after_sec?: number | null;
+            /** Iou Match */
+            iou_match?: number | null;
+            /** Band Yellow */
+            band_yellow?: number | null;
+            /** Band Red */
+            band_red?: number | null;
+            /** Pre Sec */
+            pre_sec?: number | null;
+            /** Post Sec */
+            post_sec?: number | null;
+            /** Segment Sec */
+            segment_sec?: number | null;
+            /** Keep Sec */
+            keep_sec?: number | null;
+            /** Max Clips */
+            max_clips?: number | null;
+            /** Max Age Sec */
+            max_age_sec?: number | null;
+            /** Upload Clips */
+            upload_clips?: boolean | null;
+        };
+        /**
+         * EdgeConfigPayload
+         * @description The 24 edge tunables + a monotonic version. v1 serves the defaults below;
+         *     a per-store override + version bump arrives with the superadmin EdgeConfig CRUD.
+         */
+        EdgeConfigPayload: {
+            /**
+             * Version
+             * @default 1
+             */
+            version: number;
+            /**
+             * Person Conf
+             * @default 0.35
+             */
+            person_conf: number;
+            /**
+             * Item Conf
+             * @default 0.4
+             */
+            item_conf: number;
+            /**
+             * Frame Skip
+             * @default 3
+             */
+            frame_skip: number;
+            /**
+             * W Holding
+             * @default 5
+             */
+            w_holding: number;
+            /**
+             * W Conceal
+             * @default 14
+             */
+            w_conceal: number;
+            /**
+             * W Wrist Torso
+             * @default 3
+             */
+            w_wrist_torso: number;
+            /**
+             * W Exit After Conceal
+             * @default 40
+             */
+            w_exit_after_conceal: number;
+            /**
+             * W Repeated Shelf
+             * @default 3
+             */
+            w_repeated_shelf: number;
+            /**
+             * Repeated Shelf Threshold
+             * @default 3
+             */
+            repeated_shelf_threshold: number;
+            /**
+             * Interval Holding
+             * @default 2
+             */
+            interval_holding: number;
+            /**
+             * Mindur Holding
+             * @default 0.5
+             */
+            mindur_holding: number;
+            /**
+             * Interval Wrist Torso
+             * @default 3
+             */
+            interval_wrist_torso: number;
+            /**
+             * Mindur Wrist Torso
+             * @default 1.5
+             */
+            mindur_wrist_torso: number;
+            /**
+             * Interval Conceal
+             * @default 0.5
+             */
+            interval_conceal: number;
+            /**
+             * Mindur Conceal
+             * @default 0.6
+             */
+            mindur_conceal: number;
+            /**
+             * Interval Repeated Shelf
+             * @default 0
+             */
+            interval_repeated_shelf: number;
+            /**
+             * Mindur Repeated Shelf
+             * @default 0.5
+             */
+            mindur_repeated_shelf: number;
+            /**
+             * Interval Exit After Conceal
+             * @default 0
+             */
+            interval_exit_after_conceal: number;
+            /**
+             * Mindur Exit After Conceal
+             * @default 0.3
+             */
+            mindur_exit_after_conceal: number;
+            /**
+             * Reach Frac
+             * @default 0.35
+             */
+            reach_frac: number;
+            /**
+             * Near Frac
+             * @default 0.18
+             */
+            near_frac: number;
+            /**
+             * Min Kp Conf
+             * @default 0.3
+             */
+            min_kp_conf: number;
+            /**
+             * Decay
+             * @default 0.92
+             */
+            decay: number;
+            /**
+             * Open Risk
+             * @default 60
+             */
+            open_risk: number;
+            /**
+             * Close Risk
+             * @default 30
+             */
+            close_risk: number;
+            /**
+             * Post Quiet Sec
+             * @default 2
+             */
+            post_quiet_sec: number;
+            /**
+             * Drop After Sec
+             * @default 1.5
+             */
+            drop_after_sec: number;
+            /**
+             * Iou Match
+             * @default 0.3
+             */
+            iou_match: number;
+            /**
+             * Band Yellow
+             * @default 40
+             */
+            band_yellow: number;
+            /**
+             * Band Red
+             * @default 70
+             */
+            band_red: number;
+            /**
+             * Pre Sec
+             * @default 3
+             */
+            pre_sec: number;
+            /**
+             * Post Sec
+             * @default 3
+             */
+            post_sec: number;
+            /**
+             * Segment Sec
+             * @default 1
+             */
+            segment_sec: number;
+            /**
+             * Keep Sec
+             * @default 45
+             */
+            keep_sec: number;
+            /**
+             * Max Clips
+             * @default 50
+             */
+            max_clips: number;
+            /**
+             * Max Age Sec
+             * @default 604800
+             */
+            max_age_sec: number;
+            /**
+             * Upload Clips
+             * @default true
+             */
+            upload_clips: boolean;
         };
         /** EventLogPublic */
         EventLogPublic: {
@@ -2418,10 +3540,192 @@ export interface components {
          * @enum {string}
          */
         FeedbackVerdict: "true_positive" | "false_positive" | "unclear";
+        /**
+         * FloorCamera
+         * @description A camera placed on the plan + its homography (set during calibration).
+         */
+        FloorCamera: {
+            /** Camera Id */
+            camera_id: string;
+            /** Pos */
+            pos: [
+                number,
+                number
+            ];
+            /**
+             * Dir Deg
+             * @default 0
+             */
+            dir_deg: number;
+            /** Homography */
+            homography?: number[][] | null;
+            /** Reproj Err */
+            reproj_err?: number | null;
+            /** Calib Points */
+            calib_points?: components["schemas"]["CalibPoint"][] | null;
+        };
+        /**
+         * FloorFixture
+         * @description A drawn zone on the plan (shelf/exit/entrance/checkout), PLAN coords.
+         */
+        FloorFixture: {
+            /** Id */
+            id?: string | null;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "shelf" | "exit" | "entrance" | "checkout";
+            /** Points */
+            points: [
+                number,
+                number
+            ][];
+        };
+        /**
+         * FloorPlan
+         * @description The full per-store plan. Empty default = nothing drawn yet.
+         */
+        FloorPlan: {
+            /**
+             * Version
+             * @default 1
+             */
+            version: number;
+            /**
+             * Size
+             * @default [
+             *       1000,
+             *       800
+             *     ]
+             */
+            size: [
+                number,
+                number
+            ];
+            /** Walls */
+            walls?: components["schemas"]["FloorWall"][];
+            /** Fixtures */
+            fixtures?: components["schemas"]["FloorFixture"][];
+            /** Cameras */
+            cameras?: components["schemas"]["FloorCamera"][];
+        };
+        /**
+         * FloorWall
+         * @description A wall / fixture outline polyline in PLAN coordinates (not 0-1).
+         */
+        FloorWall: {
+            /** Points */
+            points: [
+                number,
+                number
+            ][];
+        };
+        /**
+         * FlowEdge
+         * @description One movement edge between two coarse grid cells (docs/30 F4 flow).
+         *     Coords are cell CENTRES normalized to the plan [0,1]² for direct drawing.
+         */
+        FlowEdge: {
+            /** X1 */
+            x1: number;
+            /** Y1 */
+            y1: number;
+            /** X2 */
+            x2: number;
+            /** Y2 */
+            y2: number;
+            /** Count */
+            count: number;
+        };
+        /**
+         * FlowSummary
+         * @description Movement-flow graph for a store over a window.
+         */
+        FlowSummary: {
+            /** Grid Size */
+            grid_size: number;
+            /**
+             * Window From
+             * Format: date-time
+             */
+            window_from: string;
+            /**
+             * Window To
+             * Format: date-time
+             */
+            window_to: string;
+            /** Max Count */
+            max_count: number;
+            /** Edges */
+            edges?: components["schemas"]["FlowEdge"][];
+        };
+        /**
+         * FootfallGrid
+         * @description Aggregated dwell heatmap for one store over a time window.
+         *
+         *     `cells` are sparse — only non-zero cells are returned, each as [gx, gy, n].
+         *     The frontend normalizes intensity by `max_samples` and lays cells out over
+         *     the plan using `grid_size` and `size` (the plan's logical dimensions).
+         */
+        FootfallGrid: {
+            /** Grid Size */
+            grid_size: number;
+            /** Size */
+            size: [
+                number,
+                number
+            ];
+            /**
+             * Window From
+             * Format: date-time
+             */
+            window_from: string;
+            /**
+             * Window To
+             * Format: date-time
+             */
+            window_to: string;
+            /** Max Samples */
+            max_samples: number;
+            /** Total Samples */
+            total_samples: number;
+            /** Cells */
+            cells?: [
+                number,
+                number,
+                number
+            ][];
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * IngestPath
+         * @description Runtime state of one MediaMTX path (one camera's cloud stream).
+         */
+        IngestPath: {
+            /** Path */
+            path: string;
+            /** Name */
+            name: string;
+            /** Ready */
+            ready: boolean;
+            /** Readers */
+            readers: number;
+        };
+        /**
+         * IngestPathsResponse
+         * @description `available` is False when MediaMTX's control API is not configured or
+         *     unreachable — the canvas renders stage 2 as "unknown" rather than "0 ready".
+         */
+        IngestPathsResponse: {
+            /** Available */
+            available: boolean;
+            /** Paths */
+            paths: components["schemas"]["IngestPath"][];
         };
         /**
          * InviteCreate
@@ -2617,6 +3921,10 @@ export interface components {
             triggered_sequences?: string[] | null;
             /** Triggered Behavior Detail */
             triggered_behavior_detail?: components["schemas"]["BehaviorDetailItem"][] | null;
+            /** Pose Sequence */
+            pose_sequence?: {
+                [key: string]: unknown;
+            }[] | null;
         };
         /**
          * LiveFrame
@@ -2826,6 +4134,73 @@ export interface components {
             role: components["schemas"]["OrgRole"];
         };
         /**
+         * OrgNodePublic
+         * @description Org-scoped, camera-PROJECTED view of an AI node for the customer app.
+         *
+         *     AiNode has no organization_id — a node serves cameras across orgs and is
+         *     linked to an org ONLY through telemetry.cameras[].camera_id == Camera
+         *     .mediamtx_path. So this view (built by `build_org_node`) deliberately:
+         *       • returns ONLY the caller-org's cameras out of a (possibly shared) node,
+         *       • NEVER exposes the raw telemetry string (it carries other tenants'
+         *         camera ids) — only the safe whole-node gauges are projected through.
+         *     Contrast AiNodePublic (superadmin), which returns everything verbatim.
+         */
+        OrgNodePublic: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string | null;
+            /** Is Online */
+            is_online: boolean;
+            /** Last Seen At */
+            last_seen_at: string | null;
+            /** Version */
+            version: string | null;
+            /** Gpu */
+            gpu: string | null;
+            /** Provider */
+            provider: string;
+            /** Provider Effective */
+            provider_effective: string | null;
+            /** Provider Ready */
+            provider_ready: boolean | null;
+            /** Provider Error */
+            provider_error: string | null;
+            /** Breach Mode */
+            breach_mode: string;
+            /** Breach Mode Effective */
+            breach_mode_effective: string | null;
+            /** Fps Inference */
+            fps_inference: number | null;
+            /** Active Cameras */
+            active_cameras: number | null;
+            /** Cpu Pct */
+            cpu_pct: number | null;
+            /** Ram Used Mb */
+            ram_used_mb: number | null;
+            /** Ram Total Mb */
+            ram_total_mb: number | null;
+            /** Gpu Pct */
+            gpu_pct: number | null;
+            /** Vram Used Mb */
+            vram_used_mb: number | null;
+            /** Vram Total Mb */
+            vram_total_mb: number | null;
+            /** Gpu Temp C */
+            gpu_temp_c: number | null;
+            vlm_activity: components["schemas"]["VlmActivity"] | null;
+            vlm: components["schemas"]["VlmStatus"] | null;
+            /** Health */
+            health: {
+                [key: string]: boolean;
+            } | null;
+            /** Cameras */
+            cameras: components["schemas"]["CameraHealth"][];
+        };
+        /**
          * OrgRole
          * @enum {string}
          */
@@ -2871,6 +4246,41 @@ export interface components {
              * Format: date-time
              */
             expires_at: string;
+        };
+        /**
+         * PeakCell
+         * @description Visitors in one (weekday, hour) slot. dow 1-7 = Mon-Sun (local time).
+         */
+        PeakCell: {
+            /** Dow */
+            dow: number;
+            /** Hour */
+            hour: number;
+            /** Entries */
+            entries: number;
+        };
+        /**
+         * PeakMatrix
+         * @description Weekday × hour visitor matrix (docs/30) — "when is the store busy". Sparse
+         *     cells; the frontend lays them out on a 7×24 grid coloured by `max_entries`.
+         */
+        PeakMatrix: {
+            /**
+             * Window From
+             * Format: date-time
+             */
+            window_from: string;
+            /**
+             * Window To
+             * Format: date-time
+             */
+            window_to: string;
+            /** Timezone */
+            timezone: string;
+            /** Max Entries */
+            max_entries: number;
+            /** Cells */
+            cells?: components["schemas"]["PeakCell"][];
         };
         /** PendingInvite */
         PendingInvite: {
@@ -3028,6 +4438,37 @@ export interface components {
             bonus: number;
         };
         /**
+         * StoreAdminRow
+         * @description One store with its org name + camera count — drives the superadmin store
+         *     pickers (e.g. the per-store edge-config editor). Cross-org: super-admin only.
+         */
+        StoreAdminRow: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Organization Id */
+            organization_id: string;
+            /** Organization Name */
+            organization_name: string;
+            /**
+             * Camera Count
+             * @default 0
+             */
+            camera_count: number;
+            /** Agent Stream Push Url */
+            agent_stream_push_url?: string | null;
+        };
+        /**
+         * StoreAdminUpdate
+         * @description Superadmin partial store edit. Only the per-store push target for now;
+         *     empty string clears it (back to the global env URL).
+         */
+        StoreAdminUpdate: {
+            /** Agent Stream Push Url */
+            agent_stream_push_url?: string | null;
+        };
+        /**
          * StoreBillingLine
          * @description Per-store breakdown shown on the customer billing page.
          */
@@ -3110,6 +4551,8 @@ export interface components {
             token: string;
             /** Expires In */
             expires_in: number;
+            /** Hls Url */
+            hls_url?: string | null;
         };
         /** TopupRequest */
         TopupRequest: {
@@ -3117,6 +4560,49 @@ export interface components {
             amount_mnt: number;
             /** Note */
             note?: string | null;
+        };
+        /**
+         * TrafficPoint
+         * @description Visitors counted in one hour bucket.
+         */
+        TrafficPoint: {
+            /**
+             * Hour
+             * Format: date-time
+             */
+            hour: string;
+            /** Entries */
+            entries: number;
+        };
+        /**
+         * TrafficSummary
+         * @description Visitor traffic over a window (docs/30 F3). `series` is one point per
+         *     hour that had any traffic; `peak_hour` is the busiest of them (null if none).
+         */
+        TrafficSummary: {
+            /**
+             * Window From
+             * Format: date-time
+             */
+            window_from: string;
+            /**
+             * Window To
+             * Format: date-time
+             */
+            window_to: string;
+            /** Total */
+            total: number;
+            /** Peak Hour */
+            peak_hour?: string | null;
+            /**
+             * Peak Entries
+             * @default 0
+             */
+            peak_entries: number;
+            /** Avg Dwell Seconds */
+            avg_dwell_seconds?: number | null;
+            /** Series */
+            series?: components["schemas"]["TrafficPoint"][];
         };
         /**
          * UserAdminUpdate
@@ -3234,6 +4720,40 @@ export interface components {
                 number,
                 number
             ][];
+        };
+        /**
+         * ZoneActivity
+         * @description Footfall activity attributed to one plan fixture/zone (docs/30 F4).
+         */
+        ZoneActivity: {
+            /** Fixture Id */
+            fixture_id: string;
+            /** Type */
+            type: string;
+            /** Samples */
+            samples: number;
+            /** Share */
+            share: number;
+        };
+        /**
+         * ZoneBreakdown
+         * @description Per-zone activity table for a store over a window, busiest first.
+         */
+        ZoneBreakdown: {
+            /**
+             * Window From
+             * Format: date-time
+             */
+            window_from: string;
+            /**
+             * Window To
+             * Format: date-time
+             */
+            window_to: string;
+            /** Total Samples */
+            total_samples: number;
+            /** Zones */
+            zones?: components["schemas"]["ZoneActivity"][];
         };
     };
     responses: never;
@@ -3561,6 +5081,232 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StorePublic"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_store_floor_plan_api_v1_stores__store_id__floor_plan_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Org-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                store_id: string;
+            };
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FloorPlan"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_store_footfall_api_v1_stores__store_id__analytics_footfall_get: {
+        parameters: {
+            query?: {
+                hours?: number;
+            };
+            header?: {
+                "X-Org-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                store_id: string;
+            };
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FootfallGrid"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_store_traffic_api_v1_stores__store_id__analytics_traffic_get: {
+        parameters: {
+            query?: {
+                hours?: number;
+            };
+            header?: {
+                "X-Org-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                store_id: string;
+            };
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrafficSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_store_zones_api_v1_stores__store_id__analytics_zones_get: {
+        parameters: {
+            query?: {
+                hours?: number;
+            };
+            header?: {
+                "X-Org-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                store_id: string;
+            };
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ZoneBreakdown"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_store_flow_api_v1_stores__store_id__analytics_flow_get: {
+        parameters: {
+            query?: {
+                hours?: number;
+            };
+            header?: {
+                "X-Org-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                store_id: string;
+            };
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FlowSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_store_peak_api_v1_stores__store_id__analytics_peak_get: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: {
+                "X-Org-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                store_id: string;
+            };
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PeakMatrix"];
                 };
             };
             /** @description Validation Error */
@@ -4439,7 +6185,117 @@ export interface operations {
             };
         };
     };
+    list_alerts_admin_api_v1_admin_alerts_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminAlertRow"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     feedback_analytics_api_v1_admin_analytics_feedback_get: {
+        parameters: {
+            query?: {
+                range?: string;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    quality_analytics_api_v1_admin_analytics_quality_get: {
+        parameters: {
+            query?: {
+                range?: string;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_dataset_api_v1_admin_eval_dataset_get: {
         parameters: {
             query?: {
                 range?: string;
@@ -4972,6 +6828,39 @@ export interface operations {
             };
         };
     };
+    delete_ai_node_api_v1_admin_ai_nodes__node_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                node_id: string;
+            };
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     update_ai_node_api_v1_admin_ai_nodes__node_id__patch: {
         parameters: {
             query?: never;
@@ -4998,6 +6887,148 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AiNodePublic"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_stores_admin_api_v1_admin_stores_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreAdminRow"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_store_admin_api_v1_admin_stores__store_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                store_id: string;
+            };
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StoreAdminUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreAdminRow"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_global_edge_config_api_v1_admin_edge_config_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EdgeConfigAdminView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_global_edge_config_api_v1_admin_edge_config_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EdgeConfigOverridesIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EdgeConfigAdminView"];
                 };
             };
             /** @description Validation Error */
@@ -6028,7 +8059,7 @@ export interface operations {
             };
         };
     };
-    agent_heartbeat_api_v1_agent_heartbeat_post: {
+    agent_edge_config_api_v1_agent_edge_config_get: {
         parameters: {
             query?: never;
             header?: {
@@ -6038,6 +8069,179 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EdgeConfigPayload"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    agent_get_floor_plan_api_v1_agent_floor_plan_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FloorPlan"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    agent_update_floor_plan_api_v1_agent_floor_plan_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FloorPlan"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FloorPlan"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    agent_edge_clip_api_v1_agent_edge_clips_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_agent_edge_clip_api_v1_agent_edge_clips_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertPublic"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    agent_live_metadata_api_v1_agent_live_metadata_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LiveMetadataBatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: number;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    agent_heartbeat_api_v1_agent_heartbeat_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["AgentHeartbeat"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             204: {
@@ -6143,6 +8347,256 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AiNodeConfig"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_org_nodes_api_v1_nodes_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Org-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgNodePublic"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    org_agent_push_api_v1_nodes_agent_push_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Org-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentPushStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    org_node_metrics_api_v1_nodes__node_id__metrics_get: {
+        parameters: {
+            query?: {
+                range?: string;
+                bucket?: string;
+            };
+            header?: {
+                "X-Org-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                node_id: string;
+            };
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    hls_proxy_api_v1_live__path__hls__filename__get: {
+        parameters: {
+            query?: {
+                jwt?: string;
+            };
+            header?: never;
+            path: {
+                path: string;
+                filename: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    push_node_diag_api_v1_internal_node_diag_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_node_diag_api_v1_nodes__node_id__diag_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Org-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                node_id: string;
+            };
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_ingest_paths_api_v1_ingest_paths_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Org-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IngestPathsResponse"];
                 };
             };
             /** @description Validation Error */

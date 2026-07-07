@@ -11,12 +11,18 @@ import type {
   CameraPublic,
   ClipPublic,
   EventLogPublic,
+  FloorPlan,
+  FlowSummary,
+  FootfallGrid,
   LoginResponse,
   OrganizationPublic,
   OrgRole,
   PairingCodePublic,
+  PeakMatrix,
   StorePublic,
+  TrafficSummary,
   UserPublic,
+  ZoneBreakdown,
 } from "./types";
 
 // Default to "" so the browser only ever talks to THIS origin and the Next
@@ -156,6 +162,36 @@ export const stores = {
     }),
   remove: (id: string) =>
     request<void>(`/api/v1/stores/${id}`, { method: "DELETE" }),
+  /** docs/30 floor plan (agent-authored, org-scoped read-only). Empty plan =
+   * nothing drawn yet — the /insights viewport shows an empty state. */
+  floorPlan: (id: string) =>
+    request<FloorPlan>(`/api/v1/stores/${id}/floor-plan`),
+  /** docs/30 F2 dwell heatmap: person-frame samples per plan grid-cell over the
+   * last `hours` (default 24). Sparse — only non-zero cells returned. */
+  footfall: (id: string, hours = 24) =>
+    request<FootfallGrid>(
+      `/api/v1/stores/${id}/analytics/footfall?hours=${hours}`,
+    ),
+  /** docs/30 F3 visitor traffic: hourly entries + peak over the last `hours`. */
+  traffic: (id: string, hours = 24) =>
+    request<TrafficSummary>(
+      `/api/v1/stores/${id}/analytics/traffic?hours=${hours}`,
+    ),
+  /** docs/30 F4 zone breakdown: footfall attributed to each plan fixture. */
+  zones: (id: string, hours = 24) =>
+    request<ZoneBreakdown>(
+      `/api/v1/stores/${id}/analytics/zones?hours=${hours}`,
+    ),
+  /** docs/30 F4 movement flow: busiest transitions between coarse plan cells. */
+  flow: (id: string, hours = 24) =>
+    request<FlowSummary>(
+      `/api/v1/stores/${id}/analytics/flow?hours=${hours}`,
+    ),
+  /** docs/30 peak matrix: visitors by weekday × hour over the last `days`. */
+  peak: (id: string, days = 28) =>
+    request<PeakMatrix>(
+      `/api/v1/stores/${id}/analytics/peak?days=${days}`,
+    ),
 };
 
 // === Cameras ===
