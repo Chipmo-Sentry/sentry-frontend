@@ -48,6 +48,28 @@ export type OrganizationPublic = Schemas["OrganizationPublic"];
 export type PairingCodePublic = Schemas["PairingCodePublic"];
 export type AgentPublic = Schemas["AgentPublic"];
 
+// === Floor plan + analytics (docs/30) ===
+// All derived from the backend OpenAPI schema (regenerated via `npm run
+// codegen`). The list-valued fields (walls/fixtures/cells/edges/…) come through
+// as optional because the backend defaults them via `default_factory`; the
+// analytics endpoints always return them, so `Required<…>` here restores the
+// non-optional shape the /insights components rely on.
+export type FloorFixture = Schemas["FloorFixture"];
+export type FloorFixtureType = FloorFixture["type"];
+export type FloorWall = Schemas["FloorWall"];
+export type FloorCamera = Schemas["FloorCamera"];
+export type FloorPlan = Required<Schemas["FloorPlan"]>;
+
+export type FootfallGrid = Required<Schemas["FootfallGrid"]>;
+export type TrafficPoint = Schemas["TrafficPoint"];
+export type TrafficSummary = Required<Schemas["TrafficSummary"]>;
+export type ZoneActivity = Schemas["ZoneActivity"];
+export type ZoneBreakdown = Required<Schemas["ZoneBreakdown"]>;
+export type FlowEdge = Schemas["FlowEdge"];
+export type FlowSummary = Required<Schemas["FlowSummary"]>;
+export type PeakCell = Schemas["PeakCell"];
+export type PeakMatrix = Required<Schemas["PeakMatrix"]>;
+
 // === Behaviors ===
 export type BehaviorDimension = Schemas["BehaviorDimension"];
 export type BehaviorConfig = Schemas["BehaviorConfig"];

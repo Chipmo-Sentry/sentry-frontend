@@ -21,6 +21,7 @@ import {
   Spinner,
 } from "@chipmo-sentry/ui-kit";
 import {
+  BarChart3,
   Cctv,
   Clock,
   Laptop,
@@ -30,6 +31,7 @@ import {
   Store as StoreIcon,
   Trash2,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import {
@@ -46,6 +48,7 @@ import type { AgentPublic, StorePublic } from "@/lib/types";
 
 export default function StoresPage() {
   const { toast } = useToast();
+  const router = useRouter();
   const [list, setList] = useState<StorePublic[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -198,6 +201,12 @@ export default function StoresPage() {
                       </Button>
                     </DropdownTrigger>
                     <DropdownContent align="end">
+                      <DropdownItem
+                        onClick={() => router.push(`/stores/${s.id}/insights`)}
+                      >
+                        <BarChart3 className="h-4 w-4" />
+                        Аналитик
+                      </DropdownItem>
                       <DropdownItem onClick={() => setConnectStore(s)}>
                         <Laptop className="h-4 w-4" />
                         Компьютер холбох

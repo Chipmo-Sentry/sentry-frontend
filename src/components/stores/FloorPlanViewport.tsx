@@ -1,0 +1,203 @@
+"use client";
+
+import { useMemo, useState } from "react";
+
+import type {
+  FloorFixture,
+  FloorFixtureType,
+  FloorPlan,
+} from "@/lib/types";
+
+const FIXTURE_STYLE: Record<
+  FloorFixtureType,
+  { fill: string; stroke: string; label: string }
+> = {
+  shelf: {
+    fill: "rgba(37, 99, 235, 0.10)",
+    stroke: "rgba(37, 99, 235, 0.65)",
+    label: "Тавиур",
+  },
+  exit: {
+    fill: "rgba(220, 38, 38, 0.10)",
+    stroke: "rgba(220, 38, 38, 0.70)",
+    label: "Орц/Гарц",
+  },
+  entrance: {
+    fill: "rgba(34, 197, 94, 0.10)",
+    stroke: "rgba(34, 197, 94, 0.70)",
+    label: "Орц",
+  },
+  checkout: {
+    fill: "rgba(234, 179, 8, 0.10)",
+    stroke: "rgba(234, 179, 8, 0.75)",
+    label: "Касс",
+  },
+};
+
+interface Props {
+  plan: FloorPlan;
+  /** Optional: overlay children rendered inside the same SVG viewport
+   * (heatmap, flow lines, live points — added in F2+). */
+  overlay?: React.ReactNode;
+}
+
+/**
+ * SVG viewport for a docs/30 floor plan. Renders in the plan's own logical
+ * coordinate system (0..size[0], 0..size[1]) — no transform math on the caller.
+ * Walls are polylines, fixtures are colour-coded polygons, cameras are icons
+ * with a translucent FOV cone (dir_deg → 60° wedge, cosmetic only until Phase B
+ * homography lands).
+ */
+export function FloorPlanViewport({ plan, overlay }: Props) {
+  const [w, h] = plan.size;
+  const [hover, setHover] = useState<string | null>(null);
+
+  // Group fixtures by type for a compact legend in the corner.
+  const legend = useMemo(() => {
+    const counts = new Map<FloorFixtureType, number>();
+    for (const f of plan.fixtures) {
+      counts.set(f.type, (counts.get(f.type) ?? 0) + 1);
+    }
+    return Array.from(counts.entries());
+  }, [plan.fixtures]);
+
+  const isEmpty =
+    plan.walls.length === 0 &&
+    plan.fixtures.length === 0 &&
+    plan.cameras.length === 0;
+
+  return (
+    <div className="relative rounded-lg border border-(--color-border) bg-(--color-surface)">
+      <svg
+        viewBox={`0 0 ${w} ${h}`}
+        className="block h-auto w-full"
+        preserveAspectRatio="xMidYMid meet"
+        role="img"
+        aria-label="Дэлгүүрийн план зураг"
+      >
+        {/* Subtle grid — every 50 plan-units — so an empty plan is still legible. */}
+        <defs>
+          <pattern id="fp-grid" width={50} height={50} patternUnits="userSpaceOnUse">
+            <path
+              d="M 50 0 L 0 0 0 50"
+              fill="none"
+              stroke="rgba(255,255,255,0.04)"
+              strokeWidth={1}
+            />
+          </pattern>
+        </defs>
+        <rect x={0} y={0} width={w} height={h} fill="url(#fp-grid)" />
+
+        {/* Fixtures (drawn first, walls sit on top) */}
+        {plan.fixtures.map((f, i) => (
+          <FixturePolygon
+            key={f.id ?? `f${i}`}
+            fixture={f}
+            hovered={hover === (f.id ?? `f${i}`)}
+            onHoverChange={(on) => setHover(on ? (f.id ?? `f${i}`) : null)}
+          />
+        ))}
+
+        {/* Walls */}
+        {plan.walls.map((wall, i) => (
+          <polyline
+            key={`w${i}`}
+            points={wall.points.map(([x, y]) => `${x},${y}`).join(" ")}
+            fill="none"
+            stroke="rgba(250,250,250,0.85)"
+            strokeWidth={4}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        ))}
+
+        {/* Cameras: FOV cone + body + label */}
+        {plan.cameras.map((c, i) => (
+          <CameraMarker key={c.camera_id + i} camera={c} />
+        ))}
+
+        {overlay}
+      </svg>
+
+      {isEmpty ? (
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 text-sm">
+          <span className="text-(--color-muted-foreground)">
+            Энэ дэлгүүрт хараахан план зураг зураагүй байна.
+          </span>
+          <span className="text-xs text-(--color-muted-foreground)">
+            agent-pc → «Plan зураг» хуудсанд зурж хадгална.
+          </span>
+        </div>
+      ) : null}
+
+      {/* Legend chip row */}
+      {legend.length > 0 ? (
+        <div className="absolute bottom-2 left-2 flex flex-wrap gap-1.5">
+          {legend.map(([type, n]) => {
+            const s = FIXTURE_STYLE[type];
+            return (
+              <span
+                key={type}
+                className="inline-flex items-center gap-1.5 rounded-md border border-(--color-border) bg-(--color-background)/85 px-2 py-0.5 text-[11px] text-(--color-muted-foreground)"
+              >
+                <span
+                  className="inline-block h-2 w-3 rounded-sm border"
+                  style={{ background: s.fill, borderColor: s.stroke }}
+                />
+                {s.label} · {n}
+              </span>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function FixturePolygon({
+  fixture,
+  hovered,
+  onHoverChange,
+}: {
+  fixture: FloorFixture;
+  hovered: boolean;
+  onHoverChange: (on: boolean) => void;
+}) {
+  const style = FIXTURE_STYLE[fixture.type];
+  return (
+    <polygon
+      points={fixture.points.map(([x, y]) => `${x},${y}`).join(" ")}
+      fill={style.fill}
+      stroke={style.stroke}
+      strokeWidth={hovered ? 3 : 2}
+      strokeLinejoin="round"
+      onMouseEnter={() => onHoverChange(true)}
+      onMouseLeave={() => onHoverChange(false)}
+    >
+      <title>{style.label}</title>
+    </polygon>
+  );
+}
+
+function CameraMarker({
+  camera,
+}: {
+  camera: { camera_id: string; pos: [number, number]; dir_deg: number };
+}) {
+  const [cx, cy] = camera.pos;
+  // 60° FOV wedge, radius 80 plan-units — cosmetic.
+  const R = 80;
+  const half = 30; // half-angle deg
+  const a1 = ((camera.dir_deg - half) * Math.PI) / 180;
+  const a2 = ((camera.dir_deg + half) * Math.PI) / 180;
+  const p1 = [cx + R * Math.cos(a1), cy + R * Math.sin(a1)];
+  const p2 = [cx + R * Math.cos(a2), cy + R * Math.sin(a2)];
+  const fovPath = `M ${cx} ${cy} L ${p1[0]} ${p1[1]} A ${R} ${R} 0 0 1 ${p2[0]} ${p2[1]} Z`;
+  return (
+    <g>
+      <path d={fovPath} fill="rgba(37,99,235,0.18)" stroke="rgba(37,99,235,0.45)" strokeWidth={1} />
+      <circle cx={cx} cy={cy} r={8} fill="#2563eb" stroke="#0a0a0a" strokeWidth={2} />
+      <title>{camera.camera_id}</title>
+    </g>
+  );
+}
