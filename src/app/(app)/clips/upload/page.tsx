@@ -67,7 +67,7 @@ export default function UploadPage() {
         <CardHeader>
           <CardTitle>MP4 клип илгээх</CardTitle>
           <CardDescription>
-            Сэжигтэй мөчийг агуулсан 5-10 секундын клипийг illgEEnee. AI-аас
+            Сэжигтэй мөчийг агуулсан 5-10 секундын клипийг илгээнэ. AI-аас
             үр дүнг 10-15 секундын дотор хүлээж авна.
           </CardDescription>
         </CardHeader>

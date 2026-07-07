@@ -271,7 +271,7 @@ export default function StoreInsightsPage() {
               label="Хүйс/нас"
               checked={layers.gender}
               disabled
-              hint="F5"
+              hint="Тун удахгүй"
               onChange={(v) => setLayers((s) => ({ ...s, gender: v }))}
             />
 

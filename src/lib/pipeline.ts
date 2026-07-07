@@ -1,6 +1,8 @@
 /** Pure per-camera pipeline status derivation, shared by the Pipeline Canvas
  * matrix and the per-stage detail pages. No React, no JSX. */
 
+import { RISK_COLORS } from "@chipmo-sentry/ui-kit";
+
 import type {
   AgentPushPath,
   IngestPathsResponse,
@@ -72,8 +74,14 @@ export const STATUS_COLOR: Record<CellStatus, string> = {
   unknown: "var(--color-muted-foreground)",
 };
 
-/** Risk ramp — must match LiveCameraTile's bounding-box colors. */
-export const RISK_HEX = { green: "#22c55e", yellow: "#eab308", red: "#ef4444" } as const;
+/** Risk ramp — derived from the ui-kit spec so /pipeline, the canvas and /live
+ * all speak ONE colour language (docs/36): low=green, medium=royal-blue,
+ * high=red. The wire band key "yellow" is the historical MEDIUM slot. */
+export const RISK_HEX = {
+  green: RISK_COLORS.low,
+  yellow: RISK_COLORS.medium,
+  red: RISK_COLORS.high,
+} as const;
 
 export type StageCell = {
   status: CellStatus;

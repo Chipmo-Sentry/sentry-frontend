@@ -12,6 +12,7 @@ import { useLiveMetadata } from "@/lib/live-ws";
 import {
   computeCameraRows,
   deriveCameraSig,
+  RISK_HEX,
   STAGE_LABEL,
   STAGE_ORDER,
   STATUS_COLOR,
@@ -33,8 +34,6 @@ const STAGE_ICON: Record<StageKey, typeof Cctv> = {
   vlm: Brain,
   decision: Bell,
 };
-
-const RISK_HEX = { green: "#22c55e", yellow: "#eab308", red: "#ef4444" } as const;
 
 /** One camera's whole pipeline in a single column: video + overlay, the 6
  * stages as a vertical lane, the per-person behavior breakdown, and a per-track

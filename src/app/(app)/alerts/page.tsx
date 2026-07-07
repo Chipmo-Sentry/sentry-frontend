@@ -179,28 +179,10 @@ export default function AlertsPage() {
     };
   }, []);
 
-  // Toast on each newly streamed alert (after the first render settles).
-  const announcedRef = useRef<Set<string>>(new Set());
-  const seededRef = useRef(false);
-  useEffect(() => {
-    if (all === null) return;
-    if (!seededRef.current) {
-      for (const a of all) announcedRef.current.add(a.id);
-      seededRef.current = true;
-    }
-    if (announcedRef.current.size > 2000) {
-      announcedRef.current = new Set(stream.alerts.map((a) => a.id));
-    }
-    for (const a of stream.alerts) {
-      if (announcedRef.current.has(a.id)) continue;
-      announcedRef.current.add(a.id);
-      toast({
-        title: `Шинэ сэрэмжлүүлэг — ${LEVEL_LABEL[a.alert_level]}`,
-        description: `${CATEGORY_LABEL[a.category]} · ${Math.round(a.confidence * 100)}%`,
-        tone: a.alert_level === "review" ? "danger" : "warning",
-      });
-    }
-  }, [stream.alerts, all, toast]);
+  // NOTE: new-alert toasts are fired ONCE, globally, by <NotificationListener>
+  // (mounted in AppShell). This page must NOT also toast, or every live alert
+  // double-pops while the operator is on /alerts. It only consumes the stream
+  // to keep the grid live (see `merged` below).
 
   const merged: AlertPublic[] = useMemo(() => {
     if (all === null) return stream.alerts;
