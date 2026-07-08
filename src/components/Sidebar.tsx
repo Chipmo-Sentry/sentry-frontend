@@ -3,6 +3,7 @@
 import { Logo } from "@chipmo-sentry/ui-kit";
 import {
   Activity,
+  BarChart3,
   Bell,
   Brain,
   Cctv,
@@ -57,6 +58,7 @@ export const NAV: readonly NavItem[] = [
   { href: "/alerts", label: "Эрсдэлтэй үйлдэл", icon: Video },
   { href: "/behaviors", label: "Эрсдэл шалгуур", icon: Brain },
   { href: "/stores", label: "Дэлгүүр", icon: Store },
+  { href: "/insights", label: "Аналитик", icon: BarChart3 },
   { href: "/cameras", label: "Камер", icon: Cctv },
   { href: "/team", label: "Хэрэглэгчид", icon: Users },
   { href: "/logs", label: "Лог", icon: ScrollText },

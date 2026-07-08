@@ -52,6 +52,16 @@ export function FloorPlanViewport({ plan, overlay }: Props) {
   const [w, h] = plan.size;
   const [hover, setHover] = useState<string | null>(null);
 
+  // All marks size RELATIVE to the plan's own dimensions, never in fixed
+  // plan-units. A camera drawn at a fixed r=8 looks like a tiny dot on a 200 m
+  // plan but a screen-filling blob on a 40-unit test plan (the "giant logo"
+  // bug). Deriving every radius/stroke from `base` keeps marks visually
+  // consistent whatever coordinate space a store's plan was drawn in.
+  const base = Math.min(w, h) || 100;
+  const wallStroke = base * 0.006;
+  const fixtureStroke = base * 0.004;
+  const gridStep = Math.max(w, h) / 24;
+
   // Group fixtures by type for a compact legend in the corner.
   const legend = useMemo(() => {
     const counts = new Map<FloorFixtureType, number>();
@@ -75,14 +85,19 @@ export function FloorPlanViewport({ plan, overlay }: Props) {
         role="img"
         aria-label="Дэлгүүрийн план зураг"
       >
-        {/* Subtle grid — every 50 plan-units — so an empty plan is still legible. */}
+        {/* Subtle grid — scaled to the plan so an empty plan is still legible. */}
         <defs>
-          <pattern id="fp-grid" width={50} height={50} patternUnits="userSpaceOnUse">
+          <pattern
+            id="fp-grid"
+            width={gridStep}
+            height={gridStep}
+            patternUnits="userSpaceOnUse"
+          >
             <path
-              d="M 50 0 L 0 0 0 50"
+              d={`M ${gridStep} 0 L 0 0 0 ${gridStep}`}
               fill="none"
               stroke="rgba(255,255,255,0.04)"
-              strokeWidth={1}
+              strokeWidth={base * 0.002}
             />
           </pattern>
         </defs>
@@ -93,6 +108,7 @@ export function FloorPlanViewport({ plan, overlay }: Props) {
           <FixturePolygon
             key={f.id ?? `f${i}`}
             fixture={f}
+            stroke={fixtureStroke}
             hovered={hover === (f.id ?? `f${i}`)}
             onHoverChange={(on) => setHover(on ? (f.id ?? `f${i}`) : null)}
           />
@@ -105,7 +121,7 @@ export function FloorPlanViewport({ plan, overlay }: Props) {
             points={wall.points.map(([x, y]) => `${x},${y}`).join(" ")}
             fill="none"
             stroke="rgba(250,250,250,0.85)"
-            strokeWidth={4}
+            strokeWidth={wallStroke}
             strokeLinecap="round"
             strokeLinejoin="round"
           />
@@ -113,7 +129,7 @@ export function FloorPlanViewport({ plan, overlay }: Props) {
 
         {/* Cameras: FOV cone + body + label */}
         {plan.cameras.map((c, i) => (
-          <CameraMarker key={c.camera_id + i} camera={c} />
+          <CameraMarker key={c.camera_id + i} camera={c} base={base} />
         ))}
 
         {overlay}
@@ -156,10 +172,12 @@ export function FloorPlanViewport({ plan, overlay }: Props) {
 
 function FixturePolygon({
   fixture,
+  stroke,
   hovered,
   onHoverChange,
 }: {
   fixture: FloorFixture;
+  stroke: number;
   hovered: boolean;
   onHoverChange: (on: boolean) => void;
 }) {
@@ -169,7 +187,7 @@ function FixturePolygon({
       points={fixture.points.map(([x, y]) => `${x},${y}`).join(" ")}
       fill={style.fill}
       stroke={style.stroke}
-      strokeWidth={hovered ? 3 : 2}
+      strokeWidth={hovered ? stroke * 1.6 : stroke}
       strokeLinejoin="round"
       onMouseEnter={() => onHoverChange(true)}
       onMouseLeave={() => onHoverChange(false)}
@@ -181,12 +199,17 @@ function FixturePolygon({
 
 function CameraMarker({
   camera,
+  base,
 }: {
   camera: { camera_id: string; pos: [number, number]; dir_deg: number };
+  /** Smaller plan dimension — all marks scale off it (see FloorPlanViewport). */
+  base: number;
 }) {
   const [cx, cy] = camera.pos;
-  // 60° FOV wedge, radius 80 plan-units — cosmetic.
-  const R = 80;
+  // 60° FOV wedge + camera dot, both sized as a fraction of the plan so they
+  // read the same on any store's plan (not fixed plan-units).
+  const R = base * 0.12;
+  const dot = base * 0.02;
   const half = 30; // half-angle deg
   const a1 = ((camera.dir_deg - half) * Math.PI) / 180;
   const a2 = ((camera.dir_deg + half) * Math.PI) / 180;
@@ -195,8 +218,20 @@ function CameraMarker({
   const fovPath = `M ${cx} ${cy} L ${p1[0]} ${p1[1]} A ${R} ${R} 0 0 1 ${p2[0]} ${p2[1]} Z`;
   return (
     <g>
-      <path d={fovPath} fill="rgba(37,99,235,0.18)" stroke="rgba(37,99,235,0.45)" strokeWidth={1} />
-      <circle cx={cx} cy={cy} r={8} fill="#2563eb" stroke="#0a0a0a" strokeWidth={2} />
+      <path
+        d={fovPath}
+        fill="rgba(37,99,235,0.18)"
+        stroke="rgba(37,99,235,0.45)"
+        strokeWidth={base * 0.003}
+      />
+      <circle
+        cx={cx}
+        cy={cy}
+        r={dot}
+        fill="#2563eb"
+        stroke="#0a0a0a"
+        strokeWidth={dot * 0.3}
+      />
       <title>{camera.camera_id}</title>
     </g>
   );
