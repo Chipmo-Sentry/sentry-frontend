@@ -173,8 +173,14 @@ function yoloCell(
   return { status: "down", short: "RTSP алдаа", reason: "Worker унтарсан / RTSP уншиж чадахгүй" };
 }
 
-function trackerCell(sig: CameraSig | undefined): StageCell {
+function trackerCell(sig: CameraSig | undefined, now: number): StageCell {
   if (!sig || !sig.connected) return { status: "unknown", short: "—" };
+  // A connected WS alone proves nothing — with the AI node down the socket
+  // stays open but no frames flow, and this stage showed a false "Хэвийн"
+  // while the Камер stage was already warning "кадр зогссон".
+  const fresh = sig.lastFrameAt != null && now - sig.lastFrameAt < FRESH_MS;
+  if (!fresh)
+    return { status: "unknown", short: "—", reason: "AI кадр ирэхгүй — tracker дүгнэх юмгүй" };
   const risk = sig.maxRisk > 0 ? ` · ${Math.round(sig.maxRisk)}%` : "";
   return { status: "ok", short: `${sig.trackCount} хүн${risk}` };
 }
@@ -203,11 +209,24 @@ function vlmCell(
   return { status: "ok", short: lastAgo != null ? `${lastAgo}с өмнө` : "хүлээгдэж" };
 }
 
-function decisionCell(camId: string, alerts: AlertPublic[], now: number): StageCell {
+function decisionCell(
+  camId: string,
+  alerts: AlertPublic[],
+  sig: CameraSig | undefined,
+  now: number,
+): StageCell {
   const mine = alerts.filter((a) => a.camera_id === camId);
   const lastHour = mine.filter((a) => now - new Date(a.created_at).getTime() < 3600_000).length;
   const last = mine[0];
-  if (!last) return { status: "ok", short: "—" };
+  if (!last) {
+    // "No alerts" is healthy ONLY while the AI metadata is actually flowing —
+    // with the pipeline dead there is no decision-making to be healthy about.
+    const fresh =
+      sig?.connected && sig.lastFrameAt != null && now - sig.lastFrameAt < FRESH_MS;
+    return fresh
+      ? { status: "ok", short: "—" }
+      : { status: "unknown", short: "—", reason: "AI урсгал алга — шийдвэр гарах нөхцөлгүй" };
+  }
   return {
     status: "ok",
     short: `${lastHour}/цаг · ${CATEGORY_LABEL[last.category]}`,
@@ -238,9 +257,9 @@ export function computeCameraRows(
         camera: cameraCell(sig, push[cam.path], now),
         ingest: ingestCell(cam.path, ingest),
         yolo: yoloCell(node, health),
-        tracker: trackerCell(sig),
+        tracker: trackerCell(sig, now),
         vlm: vlmCell(node, sig),
-        decision: decisionCell(cam.id, alerts, now),
+        decision: decisionCell(cam.id, alerts, sig, now),
       },
     };
   });
