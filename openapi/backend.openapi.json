@@ -13694,7 +13694,8 @@
               "exit",
               "entrance",
               "checkout",
-              "furniture"
+              "furniture",
+              "fridge"
             ],
             "title": "Type"
           },
@@ -16726,7 +16727,8 @@
               "shelf",
               "checkout",
               "entrance",
-              "furniture"
+              "furniture",
+              "fridge"
             ],
             "title": "Type"
           },

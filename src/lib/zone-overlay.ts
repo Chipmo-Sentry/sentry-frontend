@@ -18,6 +18,7 @@ const ZONE_STYLE: Record<string, { color: string; label: string }> = {
   shelf: { color: "#3DD56D", label: "Тавиур" },
   checkout: { color: "#E0A82E", label: "Касс" },
   entrance: { color: "#3B82F6", label: "Орц" },
+  fridge: { color: "#38BDF8", label: "Хөргүүр" },
   furniture: { color: "#A78BFA", label: "Тавилга" },
 };
 
