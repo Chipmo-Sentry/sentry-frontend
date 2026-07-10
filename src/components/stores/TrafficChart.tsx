@@ -104,20 +104,28 @@ export function TrafficChart({
   );
 }
 
+/** Intl throws RangeError on a garbage timeZone — fall back to the browser
+ * zone instead of crashing the whole dashboard on one bad store row. */
+function safeLocale(d: Date, opts: Intl.DateTimeFormatOptions, tz?: string): string {
+  try {
+    return d.toLocaleString("mn-MN", { ...opts, timeZone: tz });
+  } catch {
+    return d.toLocaleString("mn-MN", opts);
+  }
+}
+
 function fmtHour(ts: number, tz?: string): string {
-  return new Date(ts).toLocaleString("mn-MN", {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: tz,
-  });
+  return safeLocale(
+    new Date(ts),
+    { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" },
+    tz,
+  );
 }
 
 function fmtAxis(ts: number, tz: string | undefined, dayWindow: boolean): string {
   const d = new Date(ts);
   // 24h view: "14:00" reads better than "14 05"; longer views: "07-08" (date).
   return dayWindow
-    ? d.toLocaleString("mn-MN", { hour: "2-digit", minute: "2-digit", timeZone: tz })
-    : d.toLocaleString("mn-MN", { month: "2-digit", day: "2-digit", timeZone: tz });
+    ? safeLocale(d, { hour: "2-digit", minute: "2-digit" }, tz)
+    : safeLocale(d, { month: "2-digit", day: "2-digit" }, tz);
 }

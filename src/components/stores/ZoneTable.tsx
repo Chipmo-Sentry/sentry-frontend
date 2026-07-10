@@ -19,8 +19,11 @@ export function ZoneTable({ data }: { data: ZoneBreakdown }) {
     );
   }
 
-  // Number unnamed zones per type in display order.
+  // Number UNNAMED zones per type in display order — named zones don't consume
+  // a number, so «Тавиур 1» never goes missing because «Архины тавиур» came first.
   const seen: Record<string, number> = {};
+  const unnamedOfType = (t: string) =>
+    data.zones.filter((x) => x.type === t && !x.label).length;
 
   return (
     <div>
@@ -38,11 +41,10 @@ export function ZoneTable({ data }: { data: ZoneBreakdown }) {
       </div>
       <div className="space-y-2">
         {data.zones.map((z) => {
-          seen[z.type] = (seen[z.type] ?? 0) + 1;
-          const sameType = data.zones.filter((x) => x.type === z.type).length;
+          if (!z.label) seen[z.type] = (seen[z.type] ?? 0) + 1;
           const label =
             z.label ||
-            zoneLabel(z.type) + (sameType > 1 ? ` ${seen[z.type]}` : "");
+            zoneLabel(z.type) + (unnamedOfType(z.type) > 1 ? ` ${seen[z.type]}` : "");
           const pct = Math.round(z.share * 100);
           return (
             <div key={z.fixture_id} className="flex items-center gap-3">

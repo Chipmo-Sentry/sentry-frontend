@@ -235,6 +235,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/stores/{store_id}/analytics/demographics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Store Demographics
+         * @description Gender + age-band split of classified visitors over the last `hours`.
+         *     Counts come from optional per-track classifier attributes on the live
+         *     stream (LiveTrack.gender/age_band); a store whose node runs no
+         *     demographics model returns total=0.
+         */
+        get: operations["get_store_demographics_api_v1_stores__store_id__analytics_demographics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/stores/{store_id}/analytics/peak": {
         parameters: {
             query?: never;
@@ -3136,6 +3159,44 @@ export interface components {
             /** Note */
             note?: string | null;
         };
+        /**
+         * DemographicSlice
+         * @description One demographic bucket's share of the window (docs/30 F5).
+         */
+        DemographicSlice: {
+            /** Key */
+            key: string;
+            /** Count */
+            count: number;
+            /** Share */
+            share: number;
+        };
+        /**
+         * DemographicsSummary
+         * @description Gender/age structure of classified visitors over a window (docs/30 F5).
+         *
+         *     `total` counts CLASSIFIED tracks only — a store whose AI node runs no
+         *     demographics model reports 0 and the frontend shows its own empty state.
+         *     Slices are sorted by count, zero buckets omitted.
+         */
+        DemographicsSummary: {
+            /**
+             * Window From
+             * Format: date-time
+             */
+            window_from: string;
+            /**
+             * Window To
+             * Format: date-time
+             */
+            window_to: string;
+            /** Total */
+            total: number;
+            /** Gender */
+            gender?: components["schemas"]["DemographicSlice"][];
+            /** Age */
+            age?: components["schemas"]["DemographicSlice"][];
+        };
         /** DimensionCreate */
         DimensionCreate: {
             /** Key */
@@ -4105,6 +4166,10 @@ export interface components {
             store_person_id?: number | null;
             /** Store Risk Pct */
             store_risk_pct?: number | null;
+            /** Gender */
+            gender?: string | null;
+            /** Age Band */
+            age_band?: string | null;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -4850,7 +4915,7 @@ export interface components {
              * Type
              * @enum {string}
              */
-            type: "exit" | "shelf" | "checkout" | "entrance";
+            type: "exit" | "shelf" | "checkout" | "entrance" | "furniture";
             /** Points */
             points: [
                 number,
@@ -5407,6 +5472,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FlowSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_store_demographics_api_v1_stores__store_id__analytics_demographics_get: {
+        parameters: {
+            query?: {
+                hours?: number;
+            };
+            header?: {
+                "X-Org-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                store_id: string;
+            };
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DemographicsSummary"];
                 };
             };
             /** @description Validation Error */

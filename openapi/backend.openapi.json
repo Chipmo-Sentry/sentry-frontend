@@ -1187,6 +1187,110 @@
         }
       }
     },
+    "/api/v1/stores/{store_id}/analytics/demographics": {
+      "get": {
+        "tags": [
+          "stores"
+        ],
+        "summary": "Get Store Demographics",
+        "description": "Gender + age-band split of classified visitors over the last `hours`.\nCounts come from optional per-track classifier attributes on the live\nstream (LiveTrack.gender/age_band); a store whose node runs no\ndemographics model returns total=0.",
+        "operationId": "get_store_demographics_api_v1_stores__store_id__analytics_demographics_get",
+        "parameters": [
+          {
+            "name": "store_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Store Id"
+            }
+          },
+          {
+            "name": "hours",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 2160,
+              "minimum": 1,
+              "default": 24,
+              "title": "Hours"
+            }
+          },
+          {
+            "name": "X-Org-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Org-Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "sentry_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sentry Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemographicsSummary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/stores/{store_id}/analytics/peak": {
       "get": {
         "tags": [
@@ -12363,6 +12467,70 @@
         ],
         "title": "CreditRequest"
       },
+      "DemographicSlice": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "share": {
+            "type": "number",
+            "title": "Share"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "count",
+          "share"
+        ],
+        "title": "DemographicSlice",
+        "description": "One demographic bucket's share of the window (docs/30 F5)."
+      },
+      "DemographicsSummary": {
+        "properties": {
+          "window_from": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Window From"
+          },
+          "window_to": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Window To"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "gender": {
+            "items": {
+              "$ref": "#/components/schemas/DemographicSlice"
+            },
+            "type": "array",
+            "title": "Gender"
+          },
+          "age": {
+            "items": {
+              "$ref": "#/components/schemas/DemographicSlice"
+            },
+            "type": "array",
+            "title": "Age"
+          }
+        },
+        "type": "object",
+        "required": [
+          "window_from",
+          "window_to",
+          "total"
+        ],
+        "title": "DemographicsSummary",
+        "description": "Gender/age structure of classified visitors over a window (docs/30 F5).\n\n`total` counts CLASSIFIED tracks only \u2014 a store whose AI node runs no\ndemographics model reports 0 and the frontend shows its own empty state.\nSlices are sorted by count, zero buckets omitted."
+      },
       "DimensionCreate": {
         "properties": {
           "key": {
@@ -14667,6 +14835,30 @@
               }
             ],
             "title": "Store Risk Pct"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gender"
+          },
+          "age_band": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age Band"
           }
         },
         "type": "object",
@@ -16533,7 +16725,8 @@
               "exit",
               "shelf",
               "checkout",
-              "entrance"
+              "entrance",
+              "furniture"
             ],
             "title": "Type"
           },

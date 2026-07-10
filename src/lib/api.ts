@@ -10,6 +10,7 @@ import type {
   BehaviorConfigPatch,
   CameraPublic,
   ClipPublic,
+  DemographicsSummary,
   EventLogPublic,
   FloorPlan,
   FlowSummary,
@@ -191,6 +192,12 @@ export const stores = {
   peak: (id: string, days = 28) =>
     request<PeakMatrix>(
       `/api/v1/stores/${id}/analytics/peak?days=${days}`,
+    ),
+  /** docs/30 F5 demographics: gender/age split of classified visitors. total=0
+   * until the store's AI node runs a demographics classifier. */
+  demographics: (id: string, hours = 24) =>
+    request<DemographicsSummary>(
+      `/api/v1/stores/${id}/analytics/demographics?hours=${hours}`,
     ),
 };
 
