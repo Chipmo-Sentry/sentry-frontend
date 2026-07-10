@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
+import { DemographicsPanel } from "@/components/stores/DemographicsPanel";
 import { FloorPlanViewport } from "@/components/stores/FloorPlanViewport";
 import { FlowLayer } from "@/components/stores/FlowLayer";
 import { HeatmapLayer } from "@/components/stores/HeatmapLayer";
@@ -20,6 +21,7 @@ import { TrafficChart } from "@/components/stores/TrafficChart";
 import { ZoneTable } from "@/components/stores/ZoneTable";
 import { stores } from "@/lib/api";
 import type {
+  DemographicsSummary,
   FloorPlan,
   FlowSummary,
   FootfallGrid,
@@ -61,7 +63,7 @@ export function RangeTabs({
   );
 }
 
-type LayerKey = "plan" | "dwell" | "flow" | "gender";
+type LayerKey = "plan" | "dwell" | "flow";
 
 /**
  * The retail-analytics dashboard for ONE store, self-contained by `storeId` +
@@ -82,8 +84,7 @@ export function StoreAnalytics({
   const [layers, setLayers] = useState<Record<LayerKey, boolean>>({
     plan: true,
     dwell: true,
-    flow: false,
-    gender: false,
+    flow: true,
   });
   const [heat, setHeat] = useState<FootfallGrid | null>(null);
   const [heatLoading, setHeatLoading] = useState(false);
@@ -91,6 +92,18 @@ export function StoreAnalytics({
   const [traffic, setTraffic] = useState<TrafficSummary | null>(null);
   const [zones, setZones] = useState<ZoneBreakdown | null>(null);
   const [peak, setPeak] = useState<PeakMatrixData | null>(null);
+  const [demo, setDemo] = useState<DemographicsSummary | null>(null);
+  // Which section loads FAILED (vs. merely empty) — a backend 500 must not be
+  // indistinguishable from "no data yet", or a broken deploy reads as a quiet
+  // store. Keyed per loader; each flag clears when its (re)load starts so a
+  // retry shows the loading state, not the stale error.
+  const [failed, setFailed] = useState<{
+    heat?: boolean;
+    traffic?: boolean;
+    peak?: boolean;
+    flow?: boolean;
+    demo?: boolean;
+  }>({});
 
   const loadPlan = useCallback(async () => {
     setError(null);
@@ -99,33 +112,45 @@ export function StoreAnalytics({
     } catch (e) {
       setError(e instanceof Error ? e.message : "Алдаа");
     }
+  }, [storeId]);
+
+  // Separate from loadPlan: the peak retry must not re-run the plan fetch (a
+  // plan hiccup would otherwise blank the whole dashboard into ErrorState).
+  const loadPeak = useCallback(async () => {
+    setFailed((f) => ({ ...f, peak: false }));
     try {
       setPeak(await stores.peak(storeId, 28));
     } catch {
       setPeak(null);
+      setFailed((f) => ({ ...f, peak: true }));
     }
   }, [storeId]);
 
   const loadHeat = useCallback(async () => {
     setHeatLoading(true);
+    setFailed((f) => ({ ...f, heat: false }));
     try {
       setHeat(await stores.footfall(storeId, hours));
     } catch {
       setHeat(null);
+      setFailed((f) => ({ ...f, heat: true }));
     } finally {
       setHeatLoading(false);
     }
   }, [storeId, hours]);
 
   const loadFlow = useCallback(async () => {
+    setFailed((f) => ({ ...f, flow: false }));
     try {
       setFlow(await stores.flow(storeId, hours));
     } catch {
       setFlow(null);
+      setFailed((f) => ({ ...f, flow: true }));
     }
   }, [storeId, hours]);
 
   const loadTraffic = useCallback(async () => {
+    setFailed((f) => ({ ...f, traffic: false }));
     try {
       const [t, z] = await Promise.all([
         stores.traffic(storeId, hours),
@@ -136,6 +161,17 @@ export function StoreAnalytics({
     } catch {
       setTraffic(null);
       setZones(null);
+      setFailed((f) => ({ ...f, traffic: true }));
+    }
+  }, [storeId, hours]);
+
+  const loadDemo = useCallback(async () => {
+    setFailed((f) => ({ ...f, demo: false }));
+    try {
+      setDemo(await stores.demographics(storeId, hours));
+    } catch {
+      setDemo(null);
+      setFailed((f) => ({ ...f, demo: true }));
     }
   }, [storeId, hours]);
 
@@ -143,14 +179,22 @@ export function StoreAnalytics({
     loadPlan();
   }, [loadPlan]);
   useEffect(() => {
+    loadPeak();
+  }, [loadPeak]);
+  useEffect(() => {
     if (layers.dwell) loadHeat();
   }, [layers.dwell, loadHeat]);
+  // Flow loads with the window (not on toggle) — the trails are a headline
+  // feature, so the data is ready the moment the layer is switched on.
   useEffect(() => {
-    if (layers.flow) loadFlow();
-  }, [layers.flow, loadFlow]);
+    loadFlow();
+  }, [loadFlow]);
   useEffect(() => {
     loadTraffic();
   }, [loadTraffic]);
+  useEffect(() => {
+    loadDemo();
+  }, [loadDemo]);
 
   if (error) {
     return <ErrorState message={error} onRetry={loadPlan} />;
@@ -165,6 +209,10 @@ export function StoreAnalytics({
 
   // Loaded traffic with zero visitors ⇒ cameras haven't produced footfall yet.
   const noData = traffic != null && traffic.total === 0;
+  // Store-local timezone (server computes the peak matrix in it). Charts + KPI
+  // times use the SAME zone so "ачаалалтай цаг 14:00" never disagrees with the
+  // matrix on a browser set to another timezone.
+  const tz = peak?.timezone;
 
   return (
     <div className="space-y-4">
@@ -173,23 +221,23 @@ export function StoreAnalytics({
         <KpiCard
           icon={Users}
           label="Зочид"
-          hint="Хугацаанд орж ирсэн хүн"
+          hint="Орц/гарцын бүсээр илэрсэн хүн"
           value={traffic ? traffic.total.toLocaleString() : "—"}
         />
         <KpiCard
           icon={TrendingUp}
           label="Ачаалалтай цаг"
-          hint="Хамгийн их зочидтой"
+          hint="Хамгийн олон зочинтой цаг"
           value={
             traffic?.peak_hour
-              ? `${fmtPeak(traffic.peak_hour)} · ${traffic.peak_entries}`
+              ? `${fmtPeak(traffic.peak_hour, tz)} · ${traffic.peak_entries} зочин`
               : "—"
           }
         />
         <KpiCard
           icon={Clock}
           label="Дундаж зогсолт"
-          hint="Нэг зочны хугацаа"
+          hint="Нэг зочны дэлгүүрт байсан хугацаа"
           value={
             traffic?.avg_dwell_seconds != null
               ? fmtDwell(traffic.avg_dwell_seconds)
@@ -198,8 +246,8 @@ export function StoreAnalytics({
         />
         <KpiCard
           icon={Footprints}
-          label="Хөдөлгөөн"
-          hint="Илрүүлсэн хэмжээ"
+          label="Идэвх"
+          hint="Бүртгэгдсэн байршлын цэг — харьцангуй индекс"
           value={heat ? heat.total_samples.toLocaleString() : "—"}
         />
       </div>
@@ -260,15 +308,43 @@ export function StoreAnalytics({
               <LayerRow
                 label="Хөдөлгөөний урсгал"
                 checked={layers.flow}
+                hint={failed.flow ? "алдаа" : undefined}
                 onChange={(v) => setLayers((s) => ({ ...s, flow: v }))}
               />
-              <LayerRow
-                label="Хүйс/нас"
-                checked={layers.gender}
-                disabled
-                hint="Тун удахгүй"
-                onChange={(v) => setLayers((s) => ({ ...s, gender: v }))}
-              />
+
+              {layers.flow ? (
+                <div className="mt-2 rounded-md border border-(--color-border) p-2 text-[10px] text-(--color-muted-foreground)">
+                  {failed.flow ? (
+                    <button
+                      onClick={loadFlow}
+                      className="text-(--color-primary) underline"
+                    >
+                      Урсгал ачаалж чадсангүй — дахин оролдох
+                    </button>
+                  ) : flow && flow.edges.length > 0 ? (
+                    <div className="flex items-center gap-2">
+                      <svg width="46" height="10" aria-hidden>
+                        <line
+                          x1="2"
+                          y1="5"
+                          x2="38"
+                          y2="5"
+                          stroke="rgba(96,165,250,0.9)"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                        />
+                        <path d="M 38 1 L 45 5 L 38 9 z" fill="rgba(96,165,250,0.9)" />
+                      </svg>
+                      <span>
+                        Явсан мөр: зузаан = олон хүн, сум = чиглэл (
+                        {flow.edges.length} шилжилт)
+                      </span>
+                    </div>
+                  ) : (
+                    "Явсан мөр: хүмүүс хөдөлж эхэлмэгц урсгалын шугамууд харагдана."
+                  )}
+                </div>
+              ) : null}
 
               {layers.dwell ? (
                 <div className="mt-3 rounded-md border border-(--color-border) p-2">
@@ -291,9 +367,18 @@ export function StoreAnalytics({
                     </>
                   ) : (
                     <div className="text-xs text-(--color-muted-foreground)">
-                      {heatLoading
-                        ? "Ачаалж байна…"
-                        : "Энэ хугацаанд хөдөлгөөний өгөгдөл алга."}
+                      {heatLoading ? (
+                        "Ачаалж байна…"
+                      ) : failed.heat ? (
+                        <button
+                          onClick={loadHeat}
+                          className="text-(--color-primary) underline"
+                        >
+                          Ачаалж чадсангүй — дахин оролдох
+                        </button>
+                      ) : (
+                        "Энэ хугацаанд хөдөлгөөний өгөгдөл алга."
+                      )}
                     </div>
                   )}
                 </div>
@@ -324,13 +409,15 @@ export function StoreAnalytics({
         <Card>
           <CardContent className="p-4">
             <SectionHead icon={TrendingUp} title="Цагийн зочид" inline>
-              Өдрийн турш зочдын урсгал
+              Өдрийн турш зочдын урсгал{tz ? ` — ${tz} цагаар` : ""}
             </SectionHead>
             {traffic && !noData ? (
-              <TrafficChart summary={traffic} />
+              <TrafficChart summary={traffic} tz={tz} />
             ) : (
               <EmptyBox
-                loading={!traffic}
+                loading={!traffic && !failed.traffic}
+                error={failed.traffic}
+                onRetry={loadTraffic}
                 text="Зочид бүртгэгдсэний дараа цагийн график харагдана."
               />
             )}
@@ -345,42 +432,82 @@ export function StoreAnalytics({
             {zones && !noData ? (
               <ZoneTable data={zones} />
             ) : (
-              <EmptyBox loading={!zones} text="Бүсийн идэвх хараахан алга." />
+              <EmptyBox
+                loading={!zones && !failed.traffic}
+                error={failed.traffic}
+                onRetry={loadTraffic}
+                text="Бүсийн идэвх хараахан алга."
+              />
             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Peak-hour matrix */}
-      <Card>
-        <CardContent className="p-4">
-          <SectionHead icon={CalendarClock} title="Ачааллын хуваарь" inline>
-            Гараг × цаг — сүүлийн 4 долоо хоног
-          </SectionHead>
-          {peak ? (
-            <PeakMatrix data={peak} />
-          ) : (
-            <EmptyBox loading text="" />
-          )}
-        </CardContent>
-      </Card>
+      {/* Peak-hour matrix + demographics */}
+      <div className="grid gap-4 lg:grid-cols-[1fr_400px]">
+        <Card>
+          <CardContent className="p-4">
+            <SectionHead icon={CalendarClock} title="Ачааллын хуваарь" inline>
+              Гараг × цаг — сүүлийн 4 долоо хоног
+            </SectionHead>
+            {peak ? (
+              <PeakMatrix data={peak} />
+            ) : (
+              <EmptyBox
+                loading={!failed.peak}
+                error={failed.peak}
+                onRetry={loadPeak}
+                text=""
+              />
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <SectionHead icon={Users} title="Хүйс, насны бүтэц" inline>
+              Ангилагдсан зочдын хуваарилалт
+            </SectionHead>
+            {demo ? (
+              <DemographicsPanel data={demo} />
+            ) : (
+              <EmptyBox
+                loading={!failed.demo}
+                error={failed.demo}
+                onRetry={loadDemo}
+                text=""
+              />
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
 
-function fmtPeak(iso: string): string {
-  return new Date(iso).toLocaleString("mn-MN", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+/** Store-local clock time; falls back to the browser zone until the peak
+ * matrix (which carries the store tz) has loaded — or when the stored tz
+ * string is garbage (Intl throws RangeError on unknown zones). */
+function fmtPeak(iso: string, tz?: string): string {
+  try {
+    return new Date(iso).toLocaleString("mn-MN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: tz,
+    });
+  } catch {
+    return new Date(iso).toLocaleString("mn-MN", { hour: "2-digit", minute: "2-digit" });
+  }
 }
 
+/** Duration in «мин»/«с» — NOT a bare «м», which reads as метр on a page that
+ * also shows floor-plan dimensions in metres. */
 function fmtDwell(seconds: number): string {
   const s = Math.round(seconds);
-  if (s < 60) return `${s}с`;
+  if (s < 60) return `${s} с`;
   const m = Math.floor(s / 60);
   const rem = s % 60;
-  return rem ? `${m}м ${rem}с` : `${m}м`;
+  return rem ? `${m} мин ${rem} с` : `${m} мин`;
 }
 
 function SectionHead({
@@ -409,10 +536,28 @@ function SectionHead({
   );
 }
 
-function EmptyBox({ loading, text }: { loading?: boolean; text: string }) {
+function EmptyBox({
+  loading,
+  error,
+  onRetry,
+  text,
+}: {
+  loading?: boolean;
+  error?: boolean;
+  onRetry?: () => void;
+  text: string;
+}) {
   return (
     <div className="flex h-32 items-center justify-center px-4 text-center text-xs text-(--color-muted-foreground)">
-      {loading ? <Spinner /> : text}
+      {loading ? (
+        <Spinner />
+      ) : error ? (
+        <button onClick={onRetry} className="text-(--color-primary) underline">
+          Ачаалж чадсангүй — дахин оролдох
+        </button>
+      ) : (
+        text
+      )}
     </div>
   );
 }

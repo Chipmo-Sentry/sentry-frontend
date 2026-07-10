@@ -6,25 +6,29 @@
  * zone editor (zone_geometry.py) so a zone reads the same in both places.
  */
 
-import type { Zone } from "@/lib/types";
-
-type ZoneType = Zone["type"];
-
-const ZONE_STYLE: Record<ZoneType, { color: string; label: string }> = {
-  exit: { color: "#E5484D", label: "Гарц" },
+// NB: the agent editor merged орц+гарц into ONE tool (type `exit`, docs/30
+// §3.5), so `exit` reads «Орц/Гарц» everywhere; `entrance` survives only on
+// legacy plans. This map is the single source for zone styling — /live overlay
+// AND /insights (FloorPlanViewport, ZoneTable) — so a zone drawn in the agent
+// editor looks identical across every surface. Keyed by string because it
+// covers Camera.zones types AND plan-only fixture types (furniture never
+// becomes a Camera.zone).
+const ZONE_STYLE: Record<string, { color: string; label: string }> = {
+  exit: { color: "#E5484D", label: "Орц/Гарц" },
   shelf: { color: "#3DD56D", label: "Тавиур" },
   checkout: { color: "#E0A82E", label: "Касс" },
   entrance: { color: "#3B82F6", label: "Орц" },
+  furniture: { color: "#A78BFA", label: "Тавилга" },
 };
 
 const FALLBACK = { color: "#9CA3AF", label: "Зон" };
 
 export function zoneColor(type: string): string {
-  return (ZONE_STYLE as Record<string, { color: string }>)[type]?.color ?? FALLBACK.color;
+  return ZONE_STYLE[type]?.color ?? FALLBACK.color;
 }
 
 export function zoneLabel(type: string): string {
-  return (ZONE_STYLE as Record<string, { label: string }>)[type]?.label ?? FALLBACK.label;
+  return ZONE_STYLE[type]?.label ?? FALLBACK.label;
 }
 
 /** Where the object-cover'd video image sits on the tile, in CSS pixels. The

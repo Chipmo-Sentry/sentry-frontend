@@ -69,6 +69,8 @@ export type FlowEdge = Schemas["FlowEdge"];
 export type FlowSummary = Required<Schemas["FlowSummary"]>;
 export type PeakCell = Schemas["PeakCell"];
 export type PeakMatrix = Required<Schemas["PeakMatrix"]>;
+export type DemographicSlice = Schemas["DemographicSlice"];
+export type DemographicsSummary = Required<Schemas["DemographicsSummary"]>;
 
 // === Behaviors ===
 export type BehaviorDimension = Schemas["BehaviorDimension"];

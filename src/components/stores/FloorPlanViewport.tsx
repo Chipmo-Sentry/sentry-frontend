@@ -2,37 +2,19 @@
 
 import { useMemo, useState } from "react";
 
+import { planExtent } from "@/lib/plan-extent";
 import type {
   FloorFixture,
   FloorFixtureType,
   FloorPlan,
 } from "@/lib/types";
+import { zoneColor, zoneLabel } from "@/lib/zone-overlay";
 
-const FIXTURE_STYLE: Record<
-  FloorFixtureType,
-  { fill: string; stroke: string; label: string }
-> = {
-  shelf: {
-    fill: "rgba(37, 99, 235, 0.10)",
-    stroke: "rgba(37, 99, 235, 0.65)",
-    label: "Тавиур",
-  },
-  exit: {
-    fill: "rgba(220, 38, 38, 0.10)",
-    stroke: "rgba(220, 38, 38, 0.70)",
-    label: "Орц/Гарц",
-  },
-  entrance: {
-    fill: "rgba(34, 197, 94, 0.10)",
-    stroke: "rgba(34, 197, 94, 0.70)",
-    label: "Орц",
-  },
-  checkout: {
-    fill: "rgba(234, 179, 8, 0.10)",
-    stroke: "rgba(234, 179, 8, 0.75)",
-    label: "Касс",
-  },
-};
+// Zone colours/labels come from the shared map (zone-overlay.ts) so a fixture
+// drawn in the agent editor reads identically on /live and here. The 6-digit
+// hex + alpha-suffix trick keeps fills translucent without an rgba() rewrite.
+const fixtureFill = (type: string) => zoneColor(type) + "1F"; // ~12 %
+const fixtureStrokeColor = (type: string) => zoneColor(type) + "B3"; // ~70 %
 
 interface Props {
   plan: FloorPlan;
@@ -49,18 +31,18 @@ interface Props {
  * homography lands).
  */
 export function FloorPlanViewport({ plan, overlay }: Props) {
-  const [w, h] = plan.size;
   const [hover, setHover] = useState<string | null>(null);
 
-  // All marks size RELATIVE to the plan's own dimensions, never in fixed
-  // plan-units. A camera drawn at a fixed r=8 looks like a tiny dot on a 200 m
-  // plan but a screen-filling blob on a 40-unit test plan (the "giant logo"
-  // bug). Deriving every radius/stroke from `base` keeps marks visually
-  // consistent whatever coordinate space a store's plan was drawn in.
-  const base = Math.min(w, h) || 100;
+  // Frame the DRAWN store, not the whole canvas: a ~10×10 m store on a 20-200 m
+  // canvas rendered as a speck with monstrous canvas-proportioned marks. The
+  // viewBox crops to the content extent and every mark (camera dot, FOV cone,
+  // strokes, grid) sizes off that extent, so marks stay visually consistent
+  // whatever canvas the store was drawn on.
+  const ext = useMemo(() => planExtent(plan), [plan]);
+  const base = Math.min(ext.w, ext.h) || 100;
   const wallStroke = base * 0.006;
   const fixtureStroke = base * 0.004;
-  const gridStep = Math.max(w, h) / 24;
+  const gridStep = Math.max(ext.w, ext.h) / 24;
 
   // Group fixtures by type for a compact legend in the corner.
   const legend = useMemo(() => {
@@ -79,7 +61,7 @@ export function FloorPlanViewport({ plan, overlay }: Props) {
   return (
     <div className="relative rounded-lg border border-(--color-border) bg-(--color-surface)">
       <svg
-        viewBox={`0 0 ${w} ${h}`}
+        viewBox={`${ext.x} ${ext.y} ${ext.w} ${ext.h}`}
         className="block h-auto w-full"
         preserveAspectRatio="xMidYMid meet"
         role="img"
@@ -101,7 +83,7 @@ export function FloorPlanViewport({ plan, overlay }: Props) {
             />
           </pattern>
         </defs>
-        <rect x={0} y={0} width={w} height={h} fill="url(#fp-grid)" />
+        <rect x={ext.x} y={ext.y} width={ext.w} height={ext.h} fill="url(#fp-grid)" />
 
         {/* Fixtures (drawn first, walls sit on top) */}
         {plan.fixtures.map((f, i) => (
@@ -149,21 +131,21 @@ export function FloorPlanViewport({ plan, overlay }: Props) {
       {/* Legend chip row */}
       {legend.length > 0 ? (
         <div className="absolute bottom-2 left-2 flex flex-wrap gap-1.5">
-          {legend.map(([type, n]) => {
-            const s = FIXTURE_STYLE[type];
-            return (
+          {legend.map(([type, n]) => (
+            <span
+              key={type}
+              className="inline-flex items-center gap-1.5 rounded-md border border-(--color-border) bg-(--color-background)/85 px-2 py-0.5 text-[11px] text-(--color-muted-foreground)"
+            >
               <span
-                key={type}
-                className="inline-flex items-center gap-1.5 rounded-md border border-(--color-border) bg-(--color-background)/85 px-2 py-0.5 text-[11px] text-(--color-muted-foreground)"
-              >
-                <span
-                  className="inline-block h-2 w-3 rounded-sm border"
-                  style={{ background: s.fill, borderColor: s.stroke }}
-                />
-                {s.label} · {n}
-              </span>
-            );
-          })}
+                className="inline-block h-2 w-3 rounded-sm border"
+                style={{
+                  background: fixtureFill(type),
+                  borderColor: fixtureStrokeColor(type),
+                }}
+              />
+              {zoneLabel(type)} · {n}
+            </span>
+          ))}
         </div>
       ) : null}
     </div>
@@ -181,18 +163,18 @@ function FixturePolygon({
   hovered: boolean;
   onHoverChange: (on: boolean) => void;
 }) {
-  const style = FIXTURE_STYLE[fixture.type];
   return (
     <polygon
       points={fixture.points.map(([x, y]) => `${x},${y}`).join(" ")}
-      fill={style.fill}
-      stroke={style.stroke}
+      fill={fixtureFill(fixture.type)}
+      stroke={fixtureStrokeColor(fixture.type)}
       strokeWidth={hovered ? stroke * 1.6 : stroke}
       strokeLinejoin="round"
       onMouseEnter={() => onHoverChange(true)}
       onMouseLeave={() => onHoverChange(false)}
     >
-      <title>{style.label}</title>
+      {/* Operator-named zones («Архины тавиур») read as themselves on hover. */}
+      <title>{fixture.label || zoneLabel(fixture.type)}</title>
     </polygon>
   );
 }
@@ -201,7 +183,12 @@ function CameraMarker({
   camera,
   base,
 }: {
-  camera: { camera_id: string; pos: [number, number]; dir_deg: number };
+  camera: {
+    camera_id: string;
+    name?: string | null;
+    pos: [number, number];
+    dir_deg: number;
+  };
   /** Smaller plan dimension — all marks scale off it (see FloorPlanViewport). */
   base: number;
 }) {
@@ -232,7 +219,8 @@ function CameraMarker({
         stroke="#0a0a0a"
         strokeWidth={dot * 0.3}
       />
-      <title>{camera.camera_id}</title>
+      {/* Friendly name over the raw mediamtx path when the agent supplied one. */}
+      <title>{camera.name || camera.camera_id}</title>
     </g>
   );
 }

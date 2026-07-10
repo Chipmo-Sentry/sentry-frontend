@@ -10,11 +10,13 @@ const DOW = ["Да", "Мя", "Лх", "Пү", "Ба", "Бя", "Ня"];
 /**
  * Weekday × hour visitor matrix (docs/30). 7 rows (Mon-Sun) × 24 cols (hour),
  * each cell tinted by relative intensity — the classic "when is my store busy"
- * retail view. Pure DOM grid; primary-blue alpha ramp so it reads on the dark
- * theme. Hover shows the exact count.
+ * retail view. Hours are STORE-local (`data.timezone`, computed server-side).
+ * Pure DOM grid; primary-blue alpha ramp so it reads on the dark theme. Hover
+ * shows the exact count; the single busiest cell gets a ring so the answer to
+ * "хэзээ хамгийн ачаалалтай вэ?" is visible without hovering.
  */
 export function PeakMatrix({ data }: { data: PeakMatrixData }) {
-  const grid = useMemo(() => {
+  const { grid, peak } = useMemo(() => {
     // [dowIndex 0-6][hour 0-23] → entries
     const m: number[][] = Array.from({ length: 7 }, () => new Array(24).fill(0));
     for (const c of data.cells) {
@@ -24,7 +26,13 @@ export function PeakMatrix({ data }: { data: PeakMatrixData }) {
         rowArr[c.hour] = (rowArr[c.hour] ?? 0) + c.entries;
       }
     }
-    return m;
+    let best: { r: number; h: number; v: number } | null = null;
+    m.forEach((rowVals, r) =>
+      rowVals.forEach((v, h) => {
+        if (v > 0 && (!best || v > best.v)) best = { r, h, v };
+      }),
+    );
+    return { grid: m, peak: best as { r: number; h: number; v: number } | null };
   }, [data]);
 
   const max = data.max_entries || 1;
@@ -39,45 +47,71 @@ export function PeakMatrix({ data }: { data: PeakMatrixData }) {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <div className="inline-block min-w-full">
-        {/* hour axis */}
-        <div className="flex pl-7 text-[9px] text-(--color-muted-foreground)">
-          {Array.from({ length: 24 }, (_, h) => (
-            <div key={h} className="flex-1 text-center" style={{ minWidth: 12 }}>
-              {h % 3 === 0 ? h : ""}
+    <div>
+      <div className="overflow-x-auto">
+        <div className="inline-block min-w-full">
+          {/* hour axis — store-local hours */}
+          <div className="flex pl-7 text-[9px] text-(--color-muted-foreground)">
+            {Array.from({ length: 24 }, (_, h) => (
+              <div key={h} className="flex-1 text-center" style={{ minWidth: 12 }}>
+                {h % 3 === 0 ? `${String(h).padStart(2, "0")}` : ""}
+              </div>
+            ))}
+          </div>
+          {grid.map((rowVals, r) => (
+            <div key={r} className="flex items-center">
+              <div className="w-7 shrink-0 text-[10px] text-(--color-muted-foreground)">
+                {DOW[r]}
+              </div>
+              {rowVals.map((v, h) => {
+                const t = v / max;
+                const isPeak = peak != null && peak.r === r && peak.h === h;
+                return (
+                  <div
+                    key={h}
+                    className="group relative flex-1 rounded-[2px]"
+                    style={{
+                      minWidth: 12,
+                      height: 16,
+                      margin: 1,
+                      background:
+                        v === 0
+                          ? "var(--color-muted)"
+                          : `rgba(37,99,235,${0.15 + 0.85 * t})`,
+                      boxShadow: isPeak ? "0 0 0 1.5px #fafafa" : undefined,
+                    }}
+                  >
+                    <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded bg-(--color-background) px-2 py-1 text-xs shadow group-hover:block">
+                      {DOW[r]} {String(h).padStart(2, "0")}:00 · {v} зочин
+                      {isPeak ? " · оргил" : ""}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           ))}
         </div>
-        {grid.map((rowVals, r) => (
-          <div key={r} className="flex items-center">
-            <div className="w-7 shrink-0 text-[10px] text-(--color-muted-foreground)">
-              {DOW[r]}
-            </div>
-            {rowVals.map((v, h) => {
-              const t = v / max;
-              return (
-                <div
-                  key={h}
-                  className="group relative flex-1 rounded-[2px]"
-                  style={{
-                    minWidth: 12,
-                    height: 16,
-                    margin: 1,
-                    background:
-                      v === 0
-                        ? "var(--color-muted)"
-                        : `rgba(37,99,235,${0.15 + 0.85 * t})`,
-                  }}
-                >
-                  <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded bg-(--color-background) px-2 py-1 text-xs shadow group-hover:block">
-                    {DOW[r]} {String(h).padStart(2, "0")}:00 · {v}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ))}
+      </div>
+      {/* legend + timezone note (the heatmap layer has one — this matches it) */}
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[10px] text-(--color-muted-foreground)">
+        <div className="flex items-center gap-1.5">
+          <span>Бага</span>
+          <span
+            className="h-2 w-24 rounded"
+            style={{
+              background:
+                "linear-gradient(90deg, rgba(37,99,235,0.15), rgba(37,99,235,1))",
+            }}
+          />
+          <span>Их</span>
+          {peak ? (
+            <span className="ml-2">
+              ⌀ оргил: {DOW[peak.r]} {String(peak.h).padStart(2, "0")}:00 (
+              {peak.v.toLocaleString()} зочин)
+            </span>
+          ) : null}
+        </div>
+        <span>Цаг — дэлгүүрийн цагаар ({data.timezone})</span>
       </div>
     </div>
   );

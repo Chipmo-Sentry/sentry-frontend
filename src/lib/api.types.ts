@@ -235,6 +235,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/stores/{store_id}/analytics/demographics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Store Demographics
+         * @description Gender + age-band split of classified visitors over the last `hours`.
+         *     Counts come from optional per-track classifier attributes on the live
+         *     stream (LiveTrack.gender/age_band); a store whose node runs no
+         *     demographics model returns total=0.
+         */
+        get: operations["get_store_demographics_api_v1_stores__store_id__analytics_demographics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/stores/{store_id}/analytics/peak": {
         parameters: {
             query?: never;
@@ -1064,6 +1087,33 @@ export interface paths {
          *     still bumps, so the agents pick up the reset).
          */
         put: operations["set_global_edge_config_api_v1_admin_edge_config_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/telegram-config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Telegram Config
+         * @description Whether a platform Telegram bot token is set (+ a last-4 hint). The full
+         *     secret is never returned.
+         */
+        get: operations["get_telegram_config_api_v1_admin_telegram_config_get"];
+        /**
+         * Set Telegram Config
+         * @description Set (non-empty) or clear (empty string) the platform Telegram bot token.
+         *     Encrypted at rest; wins over the env fallback. Per-store chat ids stay on
+         *     each store (frontend «Дэлгүүр засах»).
+         */
+        put: operations["set_telegram_config_api_v1_admin_telegram_config_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -2886,10 +2936,14 @@ export interface components {
         /**
          * CalibPoint
          * @description One calibration pair: a NORMALIZED 0-1 camera-image point ↔ a plan point.
+         *
+         *     NB: the field is `image` (not `img`) — the agent editor + `_compute_calibration`
+         *     both emit/read `image`. A `img` field silently 422'd every calibration save
+         *     (missing-required), so zones never persisted.
          */
         CalibPoint: {
-            /** Img */
-            img: [
+            /** Image */
+            image: [
                 number,
                 number
             ];
@@ -3104,6 +3158,44 @@ export interface components {
             until: string;
             /** Note */
             note?: string | null;
+        };
+        /**
+         * DemographicSlice
+         * @description One demographic bucket's share of the window (docs/30 F5).
+         */
+        DemographicSlice: {
+            /** Key */
+            key: string;
+            /** Count */
+            count: number;
+            /** Share */
+            share: number;
+        };
+        /**
+         * DemographicsSummary
+         * @description Gender/age structure of classified visitors over a window (docs/30 F5).
+         *
+         *     `total` counts CLASSIFIED tracks only — a store whose AI node runs no
+         *     demographics model reports 0 and the frontend shows its own empty state.
+         *     Slices are sorted by count, zero buckets omitted.
+         */
+        DemographicsSummary: {
+            /**
+             * Window From
+             * Format: date-time
+             */
+            window_from: string;
+            /**
+             * Window To
+             * Format: date-time
+             */
+            window_to: string;
+            /** Total */
+            total: number;
+            /** Gender */
+            gender?: components["schemas"]["DemographicSlice"][];
+            /** Age */
+            age?: components["schemas"]["DemographicSlice"][];
         };
         /** DimensionCreate */
         DimensionCreate: {
@@ -3547,6 +3639,8 @@ export interface components {
         FloorCamera: {
             /** Camera Id */
             camera_id: string;
+            /** Name */
+            name?: string | null;
             /** Pos */
             pos: [
                 number,
@@ -3575,7 +3669,9 @@ export interface components {
              * Type
              * @enum {string}
              */
-            type: "shelf" | "exit" | "entrance" | "checkout";
+            type: "shelf" | "exit" | "entrance" | "checkout" | "furniture";
+            /** Label */
+            label?: string | null;
             /** Points */
             points: [
                 number,
@@ -3595,8 +3691,8 @@ export interface components {
             /**
              * Size
              * @default [
-             *       1000,
-             *       800
+             *       20,
+             *       20
              *     ]
              */
             size: [
@@ -3961,6 +4057,44 @@ export interface components {
             fps_inference: number;
             /** Tracks */
             tracks?: components["schemas"]["LiveTrack"][];
+            /** Items */
+            items?: components["schemas"]["LiveItem"][];
+        };
+        /**
+         * LiveItem
+         * @description A detected item for the live overlay (mirrors sentry-ai's ItemPayload).
+         *
+         *     extra="ignore" would strip these on the parse+re-dump in receive_live_metadata,
+         *     so they must be declared here to reach the browser's held-item box + name.
+         */
+        LiveItem: {
+            /** Box */
+            box: [
+                number,
+                number,
+                number,
+                number
+            ];
+            /**
+             * Label
+             * @default
+             */
+            label: string;
+            /**
+             * Label Mn
+             * @default
+             */
+            label_mn: string;
+            /**
+             * Confidence
+             * @default 0
+             */
+            confidence: number;
+            /**
+             * Held
+             * @default false
+             */
+            held: boolean;
         };
         /**
          * LiveMetadataBatch
@@ -4032,6 +4166,10 @@ export interface components {
             store_person_id?: number | null;
             /** Store Risk Pct */
             store_risk_pct?: number | null;
+            /** Gender */
+            gender?: string | null;
+            /** Age Band */
+            age_band?: string | null;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -4554,6 +4692,27 @@ export interface components {
             /** Hls Url */
             hls_url?: string | null;
         };
+        /**
+         * TelegramConfigUpdate
+         * @description Set/clear the platform Telegram bot token. A non-empty ``bot_token`` sets
+         *     it; an empty string clears the integration. ``None`` is rejected (the field
+         *     must be present) so a save always has explicit intent.
+         */
+        TelegramConfigUpdate: {
+            /** Bot Token */
+            bot_token: string;
+        };
+        /**
+         * TelegramConfigView
+         * @description Superadmin read view of the platform Telegram bot config. The full token
+         *     is NEVER returned — only whether one is set + a last-4 hint.
+         */
+        TelegramConfigView: {
+            /** Configured */
+            configured: boolean;
+            /** Token Hint */
+            token_hint?: string | null;
+        };
         /** TopupRequest */
         TopupRequest: {
             /** Amount Mnt */
@@ -4605,6 +4764,35 @@ export interface components {
             series?: components["schemas"]["TrafficPoint"][];
         };
         /**
+         * UserAdminRow
+         * @description A user enriched with their org memberships for the superadmin Users list.
+         *     ``memberships`` is empty for a user who belongs to no organization (e.g. a
+         *     pure super-admin).
+         */
+        UserAdminRow: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Is Super Admin */
+            is_super_admin: boolean;
+            /** Is Active */
+            is_active: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Memberships */
+            memberships?: components["schemas"]["UserMembershipRow"][];
+        };
+        /**
          * UserAdminUpdate
          * @description Partial update of a user's super-admin / active flags.
          *
@@ -4636,6 +4824,19 @@ export interface components {
              * @default false
              */
             is_super_admin: boolean;
+        };
+        /**
+         * UserMembershipRow
+         * @description One org membership (name + role) for a user, shown in the superadmin
+         *     Users table so an org ``admin``/``owner``/``staff`` is no longer rendered as
+         *     an indistinct "Хэрэглэгч".
+         */
+        UserMembershipRow: {
+            /** Organization Id */
+            organization_id: string;
+            /** Organization Name */
+            organization_name: string;
+            role: components["schemas"]["OrgRole"];
         };
         /** UserPublic */
         UserPublic: {
@@ -4714,7 +4915,7 @@ export interface components {
              * Type
              * @enum {string}
              */
-            type: "exit" | "shelf" | "checkout" | "entrance";
+            type: "exit" | "shelf" | "checkout" | "entrance" | "furniture";
             /** Points */
             points: [
                 number,
@@ -4730,6 +4931,8 @@ export interface components {
             fixture_id: string;
             /** Type */
             type: string;
+            /** Label */
+            label?: string | null;
             /** Samples */
             samples: number;
             /** Share */
@@ -5269,6 +5472,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FlowSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_store_demographics_api_v1_stores__store_id__analytics_demographics_get: {
+        parameters: {
+            query?: {
+                hours?: number;
+            };
+            header?: {
+                "X-Org-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                store_id: string;
+            };
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DemographicsSummary"];
                 };
             };
             /** @description Validation Error */
@@ -6524,7 +6765,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserPublic"][];
+                    "application/json": components["schemas"]["UserAdminRow"][];
                 };
             };
             /** @description Validation Error */
@@ -7029,6 +7270,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EdgeConfigAdminView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_telegram_config_api_v1_admin_telegram_config_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelegramConfigView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_telegram_config_api_v1_admin_telegram_config_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                sentry_access?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelegramConfigUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelegramConfigView"];
                 };
             };
             /** @description Validation Error */
