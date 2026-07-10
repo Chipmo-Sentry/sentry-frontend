@@ -29,20 +29,28 @@ Next.js 15 (App Router) · React 19 · TypeScript (strict) · Tailwind v4 · [se
 ## Routes
 
 ```
-/                  → redirects to /dashboard
-/login             email + password
-/accept-invite     set a password + join an org from an invite link
-/dashboard         alert counts by level + 7-day trend + recent review
-/live              camera grid (WHEP/HLS + canvas overlay)
-/live/[cameraId]   single-camera detailed view
-/clips/upload      drag-drop mp4 upload
-/alerts            SSE-driven list + filter + search + pagination
-/alerts/[id]       clip player + TP/FP/unclear feedback
-/behaviors         risk dimensions + thresholds (read-only)
-/stores            store CRUD
-/cameras           camera CRUD
-/team              members, invites, lock/unlock (owner/admin)
-/admin             org + user management (super-admin)
+/                        → redirects to /dashboard
+/login                   email + password
+/accept-invite           set a password + join an org from an invite link
+/dashboard               alert counts by level + 7-day trend + recent review
+/live                    camera grid (WHEP/HLS + canvas overlay)
+/live/[cameraId]         single-camera detailed view
+/health                  node/camera health
+/health/node/[nodeId]    single-node health detail
+/pipeline                stage matrix + per-camera pipeline
+/pipeline/stage/[stage]  per-stage detail
+/pipeline/camera/[path]  per-camera pipeline trace
+/clips/upload            drag-drop mp4 upload
+/alerts                  SSE-driven list + filter + search + pagination
+/alerts/[id]             clip player + TP/FP/unclear feedback
+/behaviors               risk dimensions + thresholds (read-only)
+/stores                  store CRUD
+/stores/[id]/insights    per-store insights
+/cameras                 camera CRUD
+/team                    members, invites, lock/unlock (owner/admin)
+/logs                    activity / audit event log
+/billing                 billing
+/admin                   org + user management (super-admin)
 ```
 
 ---
@@ -65,7 +73,7 @@ Next.js 15 (App Router) · React 19 · TypeScript (strict) · Tailwind v4 · [se
 ```
 src/
 ├── app/                 — App Router routes (see above)
-├── components/          — AppShell, Topbar, Sidebar, Toaster, NotificationListener, LiveCameraTile, Field
+├── components/          — AppShell, Topbar, Sidebar, Toaster, NotificationListener, LiveCameraTile, NotificationBell
 ├── lib/                 — api, api.types (generated), types, sse, alert-stream-context,
 │                          live-ws, whep, hls, live-video, time, notif-prefs
 └── middleware.ts        — cookie gate
