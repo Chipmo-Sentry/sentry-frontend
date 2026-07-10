@@ -91,6 +91,14 @@ export function StoreAnalytics({
   const [traffic, setTraffic] = useState<TrafficSummary | null>(null);
   const [zones, setZones] = useState<ZoneBreakdown | null>(null);
   const [peak, setPeak] = useState<PeakMatrixData | null>(null);
+  // Which section loads FAILED (vs. merely empty) — a backend 500 must not be
+  // indistinguishable from "no data yet", or a broken deploy reads as a quiet
+  // store. Keyed per loader so each section shows its own retry.
+  const [failed, setFailed] = useState<{
+    heat?: boolean;
+    traffic?: boolean;
+    peak?: boolean;
+  }>({});
 
   const loadPlan = useCallback(async () => {
     setError(null);
@@ -101,8 +109,10 @@ export function StoreAnalytics({
     }
     try {
       setPeak(await stores.peak(storeId, 28));
+      setFailed((f) => ({ ...f, peak: false }));
     } catch {
       setPeak(null);
+      setFailed((f) => ({ ...f, peak: true }));
     }
   }, [storeId]);
 
@@ -110,8 +120,10 @@ export function StoreAnalytics({
     setHeatLoading(true);
     try {
       setHeat(await stores.footfall(storeId, hours));
+      setFailed((f) => ({ ...f, heat: false }));
     } catch {
       setHeat(null);
+      setFailed((f) => ({ ...f, heat: true }));
     } finally {
       setHeatLoading(false);
     }
@@ -121,7 +133,7 @@ export function StoreAnalytics({
     try {
       setFlow(await stores.flow(storeId, hours));
     } catch {
-      setFlow(null);
+      setFlow(null); // overlay-only — the layer simply stays empty
     }
   }, [storeId, hours]);
 
@@ -133,9 +145,11 @@ export function StoreAnalytics({
       ]);
       setTraffic(t);
       setZones(z);
+      setFailed((f) => ({ ...f, traffic: false }));
     } catch {
       setTraffic(null);
       setZones(null);
+      setFailed((f) => ({ ...f, traffic: true }));
     }
   }, [storeId, hours]);
 
@@ -165,6 +179,10 @@ export function StoreAnalytics({
 
   // Loaded traffic with zero visitors ⇒ cameras haven't produced footfall yet.
   const noData = traffic != null && traffic.total === 0;
+  // Store-local timezone (server computes the peak matrix in it). Charts + KPI
+  // times use the SAME zone so "ачаалалтай цаг 14:00" never disagrees with the
+  // matrix on a browser set to another timezone.
+  const tz = peak?.timezone;
 
   return (
     <div className="space-y-4">
@@ -173,23 +191,23 @@ export function StoreAnalytics({
         <KpiCard
           icon={Users}
           label="Зочид"
-          hint="Хугацаанд орж ирсэн хүн"
+          hint="Орц/гарцын бүсээр илэрсэн хүн"
           value={traffic ? traffic.total.toLocaleString() : "—"}
         />
         <KpiCard
           icon={TrendingUp}
           label="Ачаалалтай цаг"
-          hint="Хамгийн их зочидтой"
+          hint="Хамгийн олон зочинтой цаг"
           value={
             traffic?.peak_hour
-              ? `${fmtPeak(traffic.peak_hour)} · ${traffic.peak_entries}`
+              ? `${fmtPeak(traffic.peak_hour, tz)} · ${traffic.peak_entries} зочин`
               : "—"
           }
         />
         <KpiCard
           icon={Clock}
           label="Дундаж зогсолт"
-          hint="Нэг зочны хугацаа"
+          hint="Нэг зочны дэлгүүрт байсан хугацаа"
           value={
             traffic?.avg_dwell_seconds != null
               ? fmtDwell(traffic.avg_dwell_seconds)
@@ -198,8 +216,8 @@ export function StoreAnalytics({
         />
         <KpiCard
           icon={Footprints}
-          label="Хөдөлгөөн"
-          hint="Илрүүлсэн хэмжээ"
+          label="Идэвх"
+          hint="Бүртгэгдсэн байршлын цэг — харьцангуй индекс"
           value={heat ? heat.total_samples.toLocaleString() : "—"}
         />
       </div>
@@ -291,9 +309,18 @@ export function StoreAnalytics({
                     </>
                   ) : (
                     <div className="text-xs text-(--color-muted-foreground)">
-                      {heatLoading
-                        ? "Ачаалж байна…"
-                        : "Энэ хугацаанд хөдөлгөөний өгөгдөл алга."}
+                      {heatLoading ? (
+                        "Ачаалж байна…"
+                      ) : failed.heat ? (
+                        <button
+                          onClick={loadHeat}
+                          className="text-(--color-primary) underline"
+                        >
+                          Ачаалж чадсангүй — дахин оролдох
+                        </button>
+                      ) : (
+                        "Энэ хугацаанд хөдөлгөөний өгөгдөл алга."
+                      )}
                     </div>
                   )}
                 </div>
@@ -324,13 +351,15 @@ export function StoreAnalytics({
         <Card>
           <CardContent className="p-4">
             <SectionHead icon={TrendingUp} title="Цагийн зочид" inline>
-              Өдрийн турш зочдын урсгал
+              Өдрийн турш зочдын урсгал{tz ? ` — ${tz} цагаар` : ""}
             </SectionHead>
             {traffic && !noData ? (
-              <TrafficChart summary={traffic} />
+              <TrafficChart summary={traffic} tz={tz} />
             ) : (
               <EmptyBox
-                loading={!traffic}
+                loading={!traffic && !failed.traffic}
+                error={failed.traffic}
+                onRetry={loadTraffic}
                 text="Зочид бүртгэгдсэний дараа цагийн график харагдана."
               />
             )}
@@ -345,7 +374,12 @@ export function StoreAnalytics({
             {zones && !noData ? (
               <ZoneTable data={zones} />
             ) : (
-              <EmptyBox loading={!zones} text="Бүсийн идэвх хараахан алга." />
+              <EmptyBox
+                loading={!zones && !failed.traffic}
+                error={failed.traffic}
+                onRetry={loadTraffic}
+                text="Бүсийн идэвх хараахан алга."
+              />
             )}
           </CardContent>
         </Card>
@@ -360,7 +394,12 @@ export function StoreAnalytics({
           {peak ? (
             <PeakMatrix data={peak} />
           ) : (
-            <EmptyBox loading text="" />
+            <EmptyBox
+              loading={!failed.peak}
+              error={failed.peak}
+              onRetry={loadPlan}
+              text=""
+            />
           )}
         </CardContent>
       </Card>
@@ -368,19 +407,24 @@ export function StoreAnalytics({
   );
 }
 
-function fmtPeak(iso: string): string {
+/** Store-local clock time; falls back to the browser zone until the peak
+ * matrix (which carries the store tz) has loaded. */
+function fmtPeak(iso: string, tz?: string): string {
   return new Date(iso).toLocaleString("mn-MN", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: tz,
   });
 }
 
+/** Duration in «мин»/«с» — NOT a bare «м», which reads as метр on a page that
+ * also shows floor-plan dimensions in metres. */
 function fmtDwell(seconds: number): string {
   const s = Math.round(seconds);
-  if (s < 60) return `${s}с`;
+  if (s < 60) return `${s} с`;
   const m = Math.floor(s / 60);
   const rem = s % 60;
-  return rem ? `${m}м ${rem}с` : `${m}м`;
+  return rem ? `${m} мин ${rem} с` : `${m} мин`;
 }
 
 function SectionHead({
@@ -409,10 +453,28 @@ function SectionHead({
   );
 }
 
-function EmptyBox({ loading, text }: { loading?: boolean; text: string }) {
+function EmptyBox({
+  loading,
+  error,
+  onRetry,
+  text,
+}: {
+  loading?: boolean;
+  error?: boolean;
+  onRetry?: () => void;
+  text: string;
+}) {
   return (
     <div className="flex h-32 items-center justify-center px-4 text-center text-xs text-(--color-muted-foreground)">
-      {loading ? <Spinner /> : text}
+      {loading ? (
+        <Spinner />
+      ) : error ? (
+        <button onClick={onRetry} className="text-(--color-primary) underline">
+          Ачаалж чадсангүй — дахин оролдох
+        </button>
+      ) : (
+        text
+      )}
     </div>
   );
 }

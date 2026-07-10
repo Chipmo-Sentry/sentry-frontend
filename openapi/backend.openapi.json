@@ -777,7 +777,7 @@
           "stores"
         ],
         "summary": "Get Store Footfall",
-        "description": "Dwell heatmap: person-frame samples per plan grid-cell over the last\n`hours` (default 24). Sparse — only non-zero cells are returned.",
+        "description": "Dwell heatmap: person-frame samples per plan grid-cell over the last\n`hours` (default 24). Sparse \u2014 only non-zero cells are returned.",
         "operationId": "get_store_footfall_api_v1_stores__store_id__analytics_footfall_get",
         "parameters": [
           {
@@ -881,7 +881,7 @@
           "stores"
         ],
         "summary": "Get Store Traffic",
-        "description": "Visitor count per hour over the last `hours` (default 24) — the headline\n\"зочид\" KPI + peak hour + an hourly series for the traffic chart.",
+        "description": "Visitor count per hour over the last `hours` (default 24) \u2014 the headline\n\"\u0437\u043e\u0447\u0438\u0434\" KPI + peak hour + an hourly series for the traffic chart.",
         "operationId": "get_store_traffic_api_v1_stores__store_id__analytics_traffic_get",
         "parameters": [
           {
@@ -985,7 +985,7 @@
           "stores"
         ],
         "summary": "Get Store Zones",
-        "description": "Attribute the dwell heatmap to each drawn zone: for every plan fixture,\nsum the footfall samples whose grid-cell centre falls inside it. Reuses the\nF2 grid + the plan polygons — no extra aggregation path.",
+        "description": "Attribute the dwell heatmap to each drawn zone: for every plan fixture,\nsum the footfall samples whose grid-cell centre falls inside it. Reuses the\nF2 grid + the plan polygons \u2014 no extra aggregation path.",
         "operationId": "get_store_zones_api_v1_stores__store_id__analytics_zones_get",
         "parameters": [
           {
@@ -2725,7 +2725,7 @@
           "internal"
         ],
         "summary": "Mediamtx Auth",
-        "description": "MediaMTX authHTTP authorizer (replaces MediaMTX's open `user: any` read).\n\n- read/playback → require a valid per-camera stream token in the query\n- publish       → MediaMTX publish creds\n- api/metrics/pprof → MediaMTX control-API creds\nReturns 204 to allow, 401 to deny. Optionally gated by a shared secret so\nonly the MediaMTX host can call it.",
+        "description": "MediaMTX authHTTP authorizer (replaces MediaMTX's open `user: any` read).\n\n- read/playback \u2192 require a valid per-camera stream token in the query\n- publish       \u2192 MediaMTX publish creds\n- api/metrics/pprof \u2192 MediaMTX control-API creds\nReturns 204 to allow, 401 to deny. Optionally gated by a shared secret so\nonly the MediaMTX host can call it.",
         "operationId": "mediamtx_auth_api_v1_internal_mediamtx_auth_post",
         "parameters": [
           {
@@ -2778,7 +2778,7 @@
           "internal"
         ],
         "summary": "Create Alert From Ai",
-        "description": "sentry-ai POSTs here after VLM verification finishes.\n\nWe derive store/camera/org from the clip — sentry-ai doesn't need to\nknow the tenancy hierarchy.",
+        "description": "sentry-ai POSTs here after VLM verification finishes.\n\nWe derive store/camera/org from the clip \u2014 sentry-ai doesn't need to\nknow the tenancy hierarchy.",
         "operationId": "create_alert_from_ai_api_v1_internal_alerts_post",
         "parameters": [
           {
@@ -2838,7 +2838,7 @@
           "internal"
         ],
         "summary": "Create Live Alert From Node",
-        "description": "Node-push live alert. The AI node detected the breach, cut + VLM-verified\nthe clip locally, and POSTs the finished result here (outbound — reliable,\nunlike the old cloud→node /v1/cut-verify pull). camera_id = mediamtx_path.\n\nAuth: the paired AI node's own JWT (typ=ai_node) — the SAME token it uses for\nheartbeat/config. The node never holds a minted service token (pairing sets\nSENTRY_BACKEND_SERVICE_TOKEN to the ai_node JWT), so requiring one here 401'd\nevery node-push alert. Authenticating as the node also binds the post to a\nknown, active node row.",
+        "description": "Node-push live alert. The AI node detected the breach, cut + VLM-verified\nthe clip locally, and POSTs the finished result here (outbound \u2014 reliable,\nunlike the old cloud\u2192node /v1/cut-verify pull). camera_id = mediamtx_path.\n\nAuth: the paired AI node's own JWT (typ=ai_node) \u2014 the SAME token it uses for\nheartbeat/config. The node never holds a minted service token (pairing sets\nSENTRY_BACKEND_SERVICE_TOKEN to the ai_node JWT), so requiring one here 401'd\nevery node-push alert. Authenticating as the node also binds the post to a\nknown, active node row.",
         "operationId": "create_live_alert_from_node_api_v1_internal_live_alert_post",
         "parameters": [
           {
@@ -2898,7 +2898,7 @@
           "internal"
         ],
         "summary": "Report Breach Cleared",
-        "description": "Observability for breaches the node dropped without alerting (VLM cleared\n/ clip-cut failed). Writes a risk_episode row so the miss is VISIBLE on the\nactivity timeline instead of silently lost. camera_id = mediamtx_path.\n\nAuth: the paired AI node's own JWT (typ=ai_node) — same as /live-alert.",
+        "description": "Observability for breaches the node dropped without alerting (VLM cleared\n/ clip-cut failed). Writes a risk_episode row so the miss is VISIBLE on the\nactivity timeline instead of silently lost. camera_id = mediamtx_path.\n\nAuth: the paired AI node's own JWT (typ=ai_node) \u2014 same as /live-alert.",
         "operationId": "report_breach_cleared_api_v1_internal_breach_cleared_post",
         "parameters": [
           {
@@ -3079,7 +3079,7 @@
           "internal"
         ],
         "summary": "Rag Similar",
-        "description": "Top-k past verified cases most similar to the query embedding — the AI\nnode injects these into the VLM verify prompt as few-shot examples.",
+        "description": "Top-k past verified cases most similar to the query embedding \u2014 the AI\nnode injects these into the VLM verify prompt as few-shot examples.",
         "operationId": "rag_similar_api_v1_internal_rag_similar_post",
         "parameters": [
           {
@@ -3208,7 +3208,7 @@
           "admin"
         ],
         "summary": "Alert Analytics",
-        "description": "Alert breakdown for the observability dashboard (docs/19 Phase 2): how\nmany suspicion alerts fired in `range`, split by VLM category, by review\nlevel, and by day — so you see WHAT the system is catching, over time.",
+        "description": "Alert breakdown for the observability dashboard (docs/19 Phase 2): how\nmany suspicion alerts fired in `range`, split by VLM category, by review\nlevel, and by day \u2014 so you see WHAT the system is catching, over time.",
         "operationId": "alert_analytics_api_v1_admin_analytics_alerts_get",
         "parameters": [
           {
@@ -3286,7 +3286,7 @@
           "admin"
         ],
         "summary": "List Alerts Admin",
-        "description": "Recent alerts across ALL orgs for the superadmin pipeline (\"Урсгал\") page.\n\nEach row is one problematic clip's end-to-end journey — camera → behaviours\n(triggered_*) → VLM (reasoning/confidence/model) → decision (alert_level/\ncategory) → review (feedback_verdict) — enriched with org/store/camera display\nnames. Newest first. Filtering is done client-side over the fetched window.",
+        "description": "Recent alerts across ALL orgs for the superadmin pipeline (\"\u0423\u0440\u0441\u0433\u0430\u043b\") page.\n\nEach row is one problematic clip's end-to-end journey \u2014 camera \u2192 behaviours\n(triggered_*) \u2192 VLM (reasoning/confidence/model) \u2192 decision (alert_level/\ncategory) \u2192 review (feedback_verdict) \u2014 enriched with org/store/camera display\nnames. Newest first. Filtering is done client-side over the fetched window.",
         "operationId": "list_alerts_admin_api_v1_admin_alerts_get",
         "parameters": [
           {
@@ -3379,7 +3379,7 @@
           "admin"
         ],
         "summary": "Feedback Analytics",
-        "description": "Close the feedback loop (docs/19 Phase 3). Joins staff verdicts (Feedback)\nto the alert's VLM category and reports, per category, how many were marked\ntrue_positive / false_positive / unclear + the false-alarm rate — plus\nread-only TUNING SUGGESTIONS for noisy categories (high FP rate). Applying a\nsuggestion (weight/threshold change) stays a human action for now.",
+        "description": "Close the feedback loop (docs/19 Phase 3). Joins staff verdicts (Feedback)\nto the alert's VLM category and reports, per category, how many were marked\ntrue_positive / false_positive / unclear + the false-alarm rate \u2014 plus\nread-only TUNING SUGGESTIONS for noisy categories (high FP rate). Applying a\nsuggestion (weight/threshold change) stays a human action for now.",
         "operationId": "feedback_analytics_api_v1_admin_analytics_feedback_get",
         "parameters": [
           {
@@ -3457,7 +3457,7 @@
           "admin"
         ],
         "summary": "Quality Analytics",
-        "description": "Detection-QUALITY metrics derived from staff feedback — answers «how\nACCURATE are we?», not just «how many alerts fired». Read-only.\n\n- precision = TP / (TP + FP) over labelled alerts (unclear excluded), overall\n  and per VLM category.\n- coverage = labelled alerts / all alerts in range — precision is only as\n  trustworthy as how much got reviewed, so we surface it explicitly.\n- confidence calibration: TP-rate per confidence bucket — validates whether\n  the alert-level thresholds (0.30 / 0.70 / 0.85) actually track correctness.\n- false_alerts_per_day = FP-labelled notify/review alerts ÷ days — the\n  alert-fatigue number (the #1 reason staff stop trusting the system).\n\nUses the LATEST verdict per alert (an alert can be reviewed more than once),\nscoped by alert creation time so it reflects the model's recent behaviour.",
+        "description": "Detection-QUALITY metrics derived from staff feedback \u2014 answers \u00abhow\nACCURATE are we?\u00bb, not just \u00abhow many alerts fired\u00bb. Read-only.\n\n- precision = TP / (TP + FP) over labelled alerts (unclear excluded), overall\n  and per VLM category.\n- coverage = labelled alerts / all alerts in range \u2014 precision is only as\n  trustworthy as how much got reviewed, so we surface it explicitly.\n- confidence calibration: TP-rate per confidence bucket \u2014 validates whether\n  the alert-level thresholds (0.30 / 0.70 / 0.85) actually track correctness.\n- false_alerts_per_day = FP-labelled notify/review alerts \u00f7 days \u2014 the\n  alert-fatigue number (the #1 reason staff stop trusting the system).\n\nUses the LATEST verdict per alert (an alert can be reviewed more than once),\nscoped by alert creation time so it reflects the model's recent behaviour.",
         "operationId": "quality_analytics_api_v1_admin_analytics_quality_get",
         "parameters": [
           {
@@ -3535,7 +3535,7 @@
           "admin"
         ],
         "summary": "Eval Dataset",
-        "description": "Export feedback-labelled alerts as an eval manifest (score mode) for the\nsentry-ai harness: `python -m sentry_ai.eval score dataset.json`. Staff verdict\nis the ground-truth label (true_positive→theft, false_positive→benign, unclear\ndropped); the VLM category is the prediction — so it scores PRECISION on real\nproduction data with no model run. (Recall needs a curated clip set — see the\nharness README.) Latest verdict per alert.",
+        "description": "Export feedback-labelled alerts as an eval manifest (score mode) for the\nsentry-ai harness: `python -m sentry_ai.eval score dataset.json`. Staff verdict\nis the ground-truth label (true_positive\u2192theft, false_positive\u2192benign, unclear\ndropped); the VLM category is the prediction \u2014 so it scores PRECISION on real\nproduction data with no model run. (Recall needs a curated clip set \u2014 see the\nharness README.) Latest verdict per alert.",
         "operationId": "eval_dataset_api_v1_admin_eval_dataset_get",
         "parameters": [
           {
@@ -3828,7 +3828,7 @@
           "admin"
         ],
         "summary": "Delete Org",
-        "description": "Delete a tenant entirely (T15 #3 — the privacy policy's deletion promise).\n\nEvery org-scoped row cascades in the DB; the org's clip evidence FILES are\nunlinked from disk first (a cascade can't reach the filesystem).",
+        "description": "Delete a tenant entirely (T15 #3 \u2014 the privacy policy's deletion promise).\n\nEvery org-scoped row cascades in the DB; the org's clip evidence FILES are\nunlinked from disk first (a cascade can't reach the filesystem).",
         "operationId": "delete_org_api_v1_admin_orgs__org_id__delete",
         "parameters": [
           {
@@ -4019,7 +4019,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/UserPublic"
+                    "$ref": "#/components/schemas/UserAdminRow"
                   },
                   "title": "Response List Users Api V1 Admin Users Get"
                 }
@@ -4511,7 +4511,7 @@
           "admin"
         ],
         "summary": "Ai Node Metrics",
-        "description": "Resource time-series (CPU/RAM/GPU) for the observability dashboard.\n\n`range` = 1h | 6h | 24h | 7d | 30d. `bucket` = auto | raw | hour (auto picks\nraw for ≤24h, hourly averages for wider ranges to keep the payload small).",
+        "description": "Resource time-series (CPU/RAM/GPU) for the observability dashboard.\n\n`range` = 1h | 6h | 24h | 7d | 30d. `bucket` = auto | raw | hour (auto picks\nraw for \u226424h, hourly averages for wider ranges to keep the payload small).",
         "operationId": "ai_node_metrics_api_v1_admin_ai_nodes__node_id__metrics_get",
         "parameters": [
           {
@@ -4680,7 +4680,7 @@
           "admin"
         ],
         "summary": "Delete Ai Node",
-        "description": "Hard-delete a node — removes it from the superadmin + org node lists.\nRevoke only deactivates (row stays); this removes the row entirely for a\ndecommissioned node. Metrics cascade; pairing codes/event-log survive.",
+        "description": "Hard-delete a node \u2014 removes it from the superadmin + org node lists.\nRevoke only deactivates (row stays); this removes the row entirely for a\ndecommissioned node. Metrics cascade; pairing codes/event-log survive.",
         "operationId": "delete_ai_node_api_v1_admin_ai_nodes__node_id__delete",
         "parameters": [
           {
@@ -4832,7 +4832,7 @@
           "admin"
         ],
         "summary": "List Stores Admin",
-        "description": "Every store across ALL orgs with its org name + camera count — drives the\nsuperadmin store pickers (e.g. the per-store edge-config editor).",
+        "description": "Every store across ALL orgs with its org name + camera count \u2014 drives the\nsuperadmin store pickers (e.g. the per-store edge-config editor).",
         "operationId": "list_stores_admin_api_v1_admin_stores_get",
         "parameters": [
           {
@@ -5105,6 +5105,146 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/EdgeConfigAdminView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/telegram-config": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Get Telegram Config",
+        "description": "Whether a platform Telegram bot token is set (+ a last-4 hint). The full\nsecret is never returned.",
+        "operationId": "get_telegram_config_api_v1_admin_telegram_config_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "sentry_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sentry Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramConfigView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Set Telegram Config",
+        "description": "Set (non-empty) or clear (empty string) the platform Telegram bot token.\nEncrypted at rest; wins over the env fallback. Per-store chat ids stay on\neach store (frontend \u00ab\u0414\u044d\u043b\u0433\u04af\u04af\u0440 \u0437\u0430\u0441\u0430\u0445\u00bb).",
+        "operationId": "set_telegram_config_api_v1_admin_telegram_config_put",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "sentry_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sentry Access"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TelegramConfigUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramConfigView"
                 }
               }
             }
@@ -6198,7 +6338,7 @@
           "org"
         ],
         "summary": "Delete My Org",
-        "description": "Owner deletes their own organization (T15 #3 — privacy policy promise).\n\nOwner-only (admins manage the team; only the owner can erase the tenant).\nThe caller must retype the org slug (`confirm_slug`) so a stray DELETE can't\nwipe everything. All org data cascades in the DB; clip evidence files are\nremoved from disk first. Members keep their user accounts but lose all\norg-scoped access the moment the membership rows cascade away.",
+        "description": "Owner deletes their own organization (T15 #3 \u2014 privacy policy promise).\n\nOwner-only (admins manage the team; only the owner can erase the tenant).\nThe caller must retype the org slug (`confirm_slug`) so a stray DELETE can't\nwipe everything. All org data cascades in the DB; clip evidence files are\nremoved from disk first. Members keep their user accounts but lose all\norg-scoped access the moment the membership rows cascade away.",
         "operationId": "delete_my_org_api_v1_org_delete",
         "parameters": [
           {
@@ -6727,7 +6867,7 @@
           "org"
         ],
         "summary": "Accept Invite",
-        "description": "Public — the invitee sets their password to create the account + join.",
+        "description": "Public \u2014 the invitee sets their password to create the account + join.",
         "operationId": "accept_invite_api_v1_org_accept_invite_post",
         "requestBody": {
           "content": {
@@ -7142,7 +7282,7 @@
           "agents"
         ],
         "summary": "Agent Update Camera",
-        "description": "Edit a camera's connection (rtsp_url), display name, or risk threshold.\n\nUsed by the desktop agent's 'Засах' (edit) flow when a camera's IP or\ncredentials change — so the user can fix the connection without delete +\nre-add (which would churn the UUID + mediamtx_path). When the rtsp_url\nchanges we re-provision the live worker so the AI pulls the new source.",
+        "description": "Edit a camera's connection (rtsp_url), display name, or risk threshold.\n\nUsed by the desktop agent's '\u0417\u0430\u0441\u0430\u0445' (edit) flow when a camera's IP or\ncredentials change \u2014 so the user can fix the connection without delete +\nre-add (which would churn the UUID + mediamtx_path). When the rtsp_url\nchanges we re-provision the live worker so the AI pulls the new source.",
         "operationId": "agent_update_camera_api_v1_agent_cameras__camera_id__patch",
         "parameters": [
           {
@@ -7262,7 +7402,7 @@
           "agents"
         ],
         "summary": "Agent Stream Config",
-        "description": "Tell a paired agent where (and whether) to publish its camera streams.\n\npush_enabled=True → cloud topology: the agent runs ffmpeg relays pushing\neach LAN camera to `push_rtsp_base/<mediamtx_path>`. False → MediaMTX pulls\ncameras directly (local/on-LAN) and the agent pushes nothing.\n\nThe per-store `agent_stream_push_url` (editable from superadmin) wins over the\nglobal env, so a vast.ai restart can be repointed without a backend redeploy.",
+        "description": "Tell a paired agent where (and whether) to publish its camera streams.\n\npush_enabled=True \u2192 cloud topology: the agent runs ffmpeg relays pushing\neach LAN camera to `push_rtsp_base/<mediamtx_path>`. False \u2192 MediaMTX pulls\ncameras directly (local/on-LAN) and the agent pushes nothing.\n\nThe per-store `agent_stream_push_url` (editable from superadmin) wins over the\nglobal env, so a vast.ai restart can be repointed without a backend redeploy.",
         "operationId": "agent_stream_config_api_v1_agent_stream_config_get",
         "parameters": [
           {
@@ -7312,7 +7452,7 @@
           "agents"
         ],
         "summary": "Agent Edge Config",
-        "description": "Edge Stage-1 tunables for the store agent's config-poller (ADR-0029 I3).\n\nReturns the ONE GLOBAL overrides merged over the defaults (the config is\nplatform-wide now, not per store), with a monotonic `version` the agent uses\nto re-apply only on a real change. No config set → defaults at version 1. The\nagent's `from_dict` keeps its own defaults for any omitted field, so this stays\nforward-compatible. The agent token is still required (authenticated poll).",
+        "description": "Edge Stage-1 tunables for the store agent's config-poller (ADR-0029 I3).\n\nReturns the ONE GLOBAL overrides merged over the defaults (the config is\nplatform-wide now, not per store), with a monotonic `version` the agent uses\nto re-apply only on a real change. No config set \u2192 defaults at version 1. The\nagent's `from_dict` keeps its own defaults for any omitted field, so this stays\nforward-compatible. The agent token is still required (authenticated poll).",
         "operationId": "agent_edge_config_api_v1_agent_edge_config_get",
         "parameters": [
           {
@@ -7470,7 +7610,7 @@
           "agents"
         ],
         "summary": "Agent Edge Clip",
-        "description": "Edge Stage-1 (ADR-0029): the store agent ran YOLO + behaviour LOCALLY and\nuploads ONE suspicious clip. We store it, get the VLM verdict from sentry-ai\n(bytes-forward — the GPU node can't read this host's disk), and create the\nalert. If the VLM is unavailable we still create a log-level behaviour alert\nso a flagged event is never lost (ADR §8.4); the clip is stored either way.",
+        "description": "Edge Stage-1 (ADR-0029): the store agent ran YOLO + behaviour LOCALLY and\nuploads ONE suspicious clip. We store it, get the VLM verdict from sentry-ai\n(bytes-forward \u2014 the GPU node can't read this host's disk), and create the\nalert. If the VLM is unavailable we still create a log-level behaviour alert\nso a flagged event is never lost (ADR \u00a78.4); the clip is stored either way.",
         "operationId": "agent_edge_clip_api_v1_agent_edge_clips_post",
         "parameters": [
           {
@@ -7530,7 +7670,7 @@
           "agents"
         ],
         "summary": "Agent Live Metadata",
-        "description": "Edge Stage-1 live overlay feed (ADR-0029, edge-first). The agent's edge\nengine POSTs per-frame tracks so the browser live overlay shows EDGE boxes\nwhen the node runs no live analysis.\n\nPublishes to the WS live broker ONLY — deliberately NOT through the threshold\nhandler (which `/internal/live-metadata` runs) — so the EDGE alone, via\n`/agent/edge/clips` → VLM, decides alerts; this overlay path NEVER creates one.\nThe agent JWT scopes trust to its store; `camera_id` is the mediamtx_path.\n\nSECURITY: frames are filtered to mediamtx_paths owned by the agent's store, so\na paired agent can't inject overlay boxes onto another tenant's live view.",
+        "description": "Edge Stage-1 live overlay feed (ADR-0029, edge-first). The agent's edge\nengine POSTs per-frame tracks so the browser live overlay shows EDGE boxes\nwhen the node runs no live analysis.\n\nPublishes to the WS live broker ONLY \u2014 deliberately NOT through the threshold\nhandler (which `/internal/live-metadata` runs) \u2014 so the EDGE alone, via\n`/agent/edge/clips` \u2192 VLM, decides alerts; this overlay path NEVER creates one.\nThe agent JWT scopes trust to its store; `camera_id` is the mediamtx_path.\n\nSECURITY: frames are filtered to mediamtx_paths owned by the agent's store, so\na paired agent can't inject overlay boxes onto another tenant's live view.",
         "operationId": "agent_live_metadata_api_v1_agent_live_metadata_post",
         "parameters": [
           {
@@ -7889,7 +8029,7 @@
           "nodes"
         ],
         "summary": "Org Agent Push",
-        "description": "Per-camera ffmpeg push-relay state across this org's store agents, keyed by\nmediamtx_path. Drives the 'Камер' pipeline stage: a down relay shows the real\nreason (last_error) instead of just 'кадр зогссон'. Cameras whose agent never\nreported push (pull/on-LAN topology, older agent) simply don't appear here, so\nthe frontend keeps its WS-based fallback for them.",
+        "description": "Per-camera ffmpeg push-relay state across this org's store agents, keyed by\nmediamtx_path. Drives the '\u041a\u0430\u043c\u0435\u0440' pipeline stage: a down relay shows the real\nreason (last_error) instead of just '\u043a\u0430\u0434\u0440 \u0437\u043e\u0433\u0441\u0441\u043e\u043d'. Cameras whose agent never\nreported push (pull/on-LAN topology, older agent) simply don't appear here, so\nthe frontend keeps its WS-based fallback for them.",
         "operationId": "org_agent_push_api_v1_nodes_agent_push_get",
         "parameters": [
           {
@@ -8297,7 +8437,7 @@
           "ingest"
         ],
         "summary": "List Ingest Paths",
-        "description": "Runtime publish state of THIS org's camera paths at the cloud ingest.\n\nAny org member (read access) may view. `available=False` ⇒ MediaMTX API\ndisabled/unreachable (stage 2 stays \"unknown\", never a fake \"0 ready\").",
+        "description": "Runtime publish state of THIS org's camera paths at the cloud ingest.\n\nAny org member (read access) may view. `available=False` \u21d2 MediaMTX API\ndisabled/unreachable (stage 2 stays \"unknown\", never a fake \"0 ready\").",
         "operationId": "list_ingest_paths_api_v1_ingest_paths_get",
         "parameters": [
           {
@@ -9211,7 +9351,7 @@
           "password"
         ],
         "title": "AcceptInvite",
-        "description": "Public — the invitee sets their own password to activate the account."
+        "description": "Public \u2014 the invitee sets their own password to activate the account."
       },
       "AdminAlertRow": {
         "properties": {
@@ -9427,7 +9567,7 @@
           "organization_name"
         ],
         "title": "AdminAlertRow",
-        "description": "One alert enriched with org/store/camera display names for the superadmin\npipeline (\"Урсгал\") page. Each row is one problematic clip's full journey:\ncamera → behaviours (triggered_*) → VLM (reasoning/confidence/model) →\ndecision (alert_level/category) → review (feedback_verdict)."
+        "description": "One alert enriched with org/store/camera display names for the superadmin\npipeline (\"\u0423\u0440\u0441\u0433\u0430\u043b\") page. Each row is one problematic clip's full journey:\ncamera \u2192 behaviours (triggered_*) \u2192 VLM (reasoning/confidence/model) \u2192\ndecision (alert_level/category) \u2192 review (feedback_verdict)."
       },
       "AdminStats": {
         "properties": {
@@ -9510,10 +9650,10 @@
           },
           "risk_threshold": {
             "type": "number",
-            "maximum": 100,
-            "minimum": 0,
+            "maximum": 100.0,
+            "minimum": 0.0,
             "title": "Risk Threshold",
-            "default": 11
+            "default": 11.0
           },
           "compute_tier": {
             "$ref": "#/components/schemas/ComputeTier",
@@ -9574,8 +9714,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 100,
-                "minimum": 0
+                "maximum": 100.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -9611,7 +9751,7 @@
         },
         "type": "object",
         "title": "AgentCameraUpdate",
-        "description": "Partial camera update from a paired agent (edit connection / settings).\n\nAll fields optional — only the provided ones change. mediamtx_path is NOT\neditable here: it is the stream identity the live pipeline keys on, so the\nagent edits the connection (rtsp_url) and name, never the path."
+        "description": "Partial camera update from a paired agent (edit connection / settings).\n\nAll fields optional \u2014 only the provided ones change. mediamtx_path is NOT\neditable here: it is the stream identity the live pipeline keys on, so the\nagent edits the connection (rtsp_url) and name, never the path."
       },
       "AgentHeartbeat": {
         "properties": {
@@ -9645,7 +9785,7 @@
         },
         "type": "object",
         "title": "AgentHeartbeat",
-        "description": "Optional heartbeat body. Empty body (older agent) is still valid — it just\nrefreshes liveness and leaves any stored push status untouched."
+        "description": "Optional heartbeat body. Empty body (older agent) is still valid \u2014 it just\nrefreshes liveness and leaves any stored push status untouched."
       },
       "AgentPairRequest": {
         "properties": {
@@ -9783,7 +9923,7 @@
           },
           "restarts": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Restarts",
             "default": 0
           },
@@ -9822,7 +9962,7 @@
           },
           "restarts": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Restarts",
             "default": 0
           },
@@ -9883,7 +10023,7 @@
           "paths"
         ],
         "title": "AgentPushStatusResponse",
-        "description": "Per-camera (mediamtx_path) push state across an org's agents. The frontend\nmatches `path` to its cameras to drive the 'Камер' pipeline stage."
+        "description": "Per-camera (mediamtx_path) push state across an org's agents. The frontend\nmatches `path` to its cameras to drive the '\u041a\u0430\u043c\u0435\u0440' pipeline stage."
       },
       "AgentStreamConfig": {
         "properties": {
@@ -9969,7 +10109,7 @@
           "scan_interval_sec": {
             "type": "number",
             "title": "Scan Interval Sec",
-            "default": 3
+            "default": 3.0
           },
           "frames_per_clip": {
             "type": "integer",
@@ -10008,7 +10148,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -10107,8 +10247,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 100,
-                "minimum": 0
+                "maximum": 100.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -10120,7 +10260,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -10132,7 +10272,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -10144,8 +10284,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 100,
-                "minimum": 0
+                "maximum": 100.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -10157,7 +10297,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -10169,7 +10309,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -10192,8 +10332,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 100,
-                "minimum": 0
+                "maximum": 100.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -10205,7 +10345,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -10217,7 +10357,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -10597,7 +10737,7 @@
               }
             ],
             "title": "Cameras",
-            "description": "Per-camera stream health parsed from the latest heartbeat telemetry\n(audit T12 #3). None for old node versions / no telemetry yet — the\nsuperadmin UI can distinguish \"unknown\" from \"no cameras\" ([]).",
+            "description": "Per-camera stream health parsed from the latest heartbeat telemetry\n(audit T12 #3). None for old node versions / no telemetry yet \u2014 the\nsuperadmin UI can distinguish \"unknown\" from \"no cameras\" ([]).",
             "readOnly": true
           },
           "provider_effective": {
@@ -10654,7 +10794,7 @@
           "is_online": {
             "type": "boolean",
             "title": "Is Online",
-            "description": "Server-computed online status — independent of the viewer's clock.",
+            "description": "Server-computed online status \u2014 independent of the viewer's clock.",
             "readOnly": true
           }
         },
@@ -10730,8 +10870,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 30,
-                "minimum": 0
+                "maximum": 30.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -10784,8 +10924,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 30,
-                "minimum": 1
+                "maximum": 30.0,
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -10797,7 +10937,7 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 60,
+                "maximum": 60.0,
                 "minimum": 0.5
               },
               {
@@ -10810,8 +10950,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 8,
-                "minimum": 1
+                "maximum": 8.0,
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -10823,8 +10963,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 1280,
-                "minimum": 160
+                "maximum": 1280.0,
+                "minimum": 160.0
               },
               {
                 "type": "null"
@@ -10860,8 +11000,8 @@
           },
           "confidence": {
             "type": "number",
-            "maximum": 1,
-            "minimum": 0,
+            "maximum": 1.0,
+            "minimum": 0.0,
             "title": "Confidence"
           },
           "reasoning": {
@@ -10878,7 +11018,7 @@
           },
           "inference_latency_ms": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Inference Latency Ms"
           }
         },
@@ -10892,7 +11032,7 @@
           "inference_latency_ms"
         ],
         "title": "AlertCreateInternal",
-        "description": "POST /api/v1/internal/alerts — sentry-ai service posts this."
+        "description": "POST /api/v1/internal/alerts \u2014 sentry-ai service posts this."
       },
       "AlertLevel": {
         "type": "string",
@@ -11141,9 +11281,9 @@
             "type": "object",
             "title": "Color Labels",
             "default": {
-              "green": "Хэвийн",
-              "yellow": "Анхаар",
-              "red": "Сэжигтэй"
+              "green": "\u0425\u044d\u0432\u0438\u0439\u043d",
+              "yellow": "\u0410\u043d\u0445\u0430\u0430\u0440",
+              "red": "\u0421\u044d\u0436\u0438\u0433\u0442\u044d\u0439"
             }
           },
           "level_labels": {
@@ -11153,10 +11293,10 @@
             "type": "object",
             "title": "Level Labels",
             "default": {
-              "LOW": "Бага",
-              "MEDIUM": "Дунд",
-              "HIGH": "Өндөр",
-              "CRITICAL": "Ноцтой"
+              "LOW": "\u0411\u0430\u0433\u0430",
+              "MEDIUM": "\u0414\u0443\u043d\u0434",
+              "HIGH": "\u04e8\u043d\u0434\u04e9\u0440",
+              "CRITICAL": "\u041d\u043e\u0446\u0442\u043e\u0439"
             }
           }
         },
@@ -11214,7 +11354,7 @@
         },
         "type": "object",
         "title": "BehaviorConfigPatch",
-        "description": "Bulk update — weights (existing keys only), thresholds, and/or engine knobs."
+        "description": "Bulk update \u2014 weights (existing keys only), thresholds, and/or engine knobs."
       },
       "BehaviorDetailItem": {
         "properties": {
@@ -11490,7 +11630,7 @@
           "risk_pct": {
             "type": "number",
             "title": "Risk Pct",
-            "default": 0
+            "default": 0.0
           },
           "behaviors": {
             "type": "string",
@@ -11500,12 +11640,12 @@
           "started_at": {
             "type": "number",
             "title": "Started At",
-            "default": 0
+            "default": 0.0
           },
           "ended_at": {
             "type": "number",
             "title": "Ended At",
-            "default": 0
+            "default": 0.0
           },
           "edge_behavior_detail": {
             "anyOf": [
@@ -11576,7 +11716,7 @@
           "duration_sec": {
             "type": "number",
             "title": "Duration Sec",
-            "default": 0
+            "default": 0.0
           }
         },
         "type": "object",
@@ -11603,8 +11743,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 100,
-                "minimum": 0
+                "maximum": 100.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -11637,8 +11777,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 1,
-                "minimum": 0
+                "maximum": 1.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -11667,11 +11807,11 @@
           "reason"
         ],
         "title": "BreachClearedCreate",
-        "description": "POST /api/v1/internal/breach-cleared — observability for breaches the node\ndetected but did NOT turn into an alert (VLM cleared it as browsing / low\nconfidence, or the clip-cut failed). Without this the drop is silent: the\noperator sees nothing and can't tell a miss from \"nothing happened\". We log\nit on the activity timeline so the detection funnel is visible + tunable."
+        "description": "POST /api/v1/internal/breach-cleared \u2014 observability for breaches the node\ndetected but did NOT turn into an alert (VLM cleared it as browsing / low\nconfidence, or the clip-cut failed). Without this the drop is silent: the\noperator sees nothing and can't tell a miss from \"nothing happened\". We log\nit on the activity timeline so the detection funnel is visible + tunable."
       },
       "CalibPoint": {
         "properties": {
-          "img": {
+          "image": {
             "prefixItems": [
               {
                 "type": "number"
@@ -11683,7 +11823,7 @@
             "type": "array",
             "maxItems": 2,
             "minItems": 2,
-            "title": "Img"
+            "title": "Image"
           },
           "plan": {
             "prefixItems": [
@@ -11702,11 +11842,11 @@
         },
         "type": "object",
         "required": [
-          "img",
+          "image",
           "plan"
         ],
         "title": "CalibPoint",
-        "description": "One calibration pair: a NORMALIZED 0-1 camera-image point ↔ a plan point."
+        "description": "One calibration pair: a NORMALIZED 0-1 camera-image point \u2194 a plan point.\n\nNB: the field is `image` (not `img`) \u2014 the agent editor + `_compute_calibration`\nboth emit/read `image`. A `img` field silently 422'd every calibration save\n(missing-required), so zones never persisted."
       },
       "CameraCreate": {
         "properties": {
@@ -11747,8 +11887,8 @@
           },
           "stage2_threshold": {
             "type": "number",
-            "maximum": 1,
-            "minimum": 0,
+            "maximum": 1.0,
+            "minimum": 0.0,
             "title": "Stage2 Threshold",
             "default": 0.5
           },
@@ -11771,10 +11911,10 @@
           },
           "risk_threshold": {
             "type": "number",
-            "maximum": 100,
-            "minimum": 0,
+            "maximum": 100.0,
+            "minimum": 0.0,
             "title": "Risk Threshold",
-            "default": 11
+            "default": 11.0
           },
           "compute_tier": {
             "$ref": "#/components/schemas/ComputeTier",
@@ -11815,7 +11955,7 @@
             "anyOf": [
               {
                 "type": "number",
-                "minimum": 0
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -11900,7 +12040,7 @@
           "risk_threshold": {
             "type": "number",
             "title": "Risk Threshold",
-            "default": 11
+            "default": 11.0
           },
           "compute_tier": {
             "$ref": "#/components/schemas/ComputeTier",
@@ -11938,7 +12078,7 @@
           "created_at"
         ],
         "title": "CameraPublic",
-        "description": "Public Camera — `rtsp_url` NEVER exposed; only a boolean `has_rtsp_url`."
+        "description": "Public Camera \u2014 `rtsp_url` NEVER exposed; only a boolean `has_rtsp_url`."
       },
       "CameraUpdate": {
         "properties": {
@@ -11983,8 +12123,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 1,
-                "minimum": 0
+                "maximum": 1.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -12019,8 +12159,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 100,
-                "minimum": 0
+                "maximum": 100.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -12159,7 +12299,7 @@
             "anyOf": [
               {
                 "type": "number",
-                "minimum": 0
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -12171,7 +12311,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -12185,7 +12325,7 @@
           "name"
         ],
         "title": "ComponentUsage",
-        "description": "Per-component CPU/RAM (sentry-ai / Ollama / MediaMTX / Tunnel) — the\nresource breakdown shown in the dashboard. Stored in telemetry JSON."
+        "description": "Per-component CPU/RAM (sentry-ai / Ollama / MediaMTX / Tunnel) \u2014 the\nresource breakdown shown in the dashboard. Stored in telemetry JSON."
       },
       "ComputeTier": {
         "type": "string",
@@ -12195,7 +12335,7 @@
           "edge_device"
         ],
         "title": "ComputeTier",
-        "description": "Where this camera's Stage-1 (YOLO + behaviour) runs — the billing + topology\nprimitive (ADR-0029). Stored as a plain string column (not a PG enum) so adding\na tier later needs no type migration.\n\n- ``cloud`` — sentry-ai on the GPU node runs Stage-1 + Stage-2 from a pulled RTSP\n  stream. The default; the existing path, unchanged.\n- ``edge_pc`` — the store PC (sentry-agent-pc) runs Stage-1 locally and uploads\n  only suspicious clips for the cloud VLM verdict.\n- ``edge_device`` — a future on-prem edge box (Orange Pi 5, sentry-agent-pi5).\n  Reserved; not built yet."
+        "description": "Where this camera's Stage-1 (YOLO + behaviour) runs \u2014 the billing + topology\nprimitive (ADR-0029). Stored as a plain string column (not a PG enum) so adding\na tier later needs no type migration.\n\n- ``cloud`` \u2014 sentry-ai on the GPU node runs Stage-1 + Stage-2 from a pulled RTSP\n  stream. The default; the existing path, unchanged.\n- ``edge_pc`` \u2014 the store PC (sentry-agent-pc) runs Stage-1 locally and uploads\n  only suspicious clips for the cloud VLM verdict.\n- ``edge_device`` \u2014 a future on-prem edge box (Orange Pi 5, sentry-agent-pi5).\n  Reserved; not built yet."
       },
       "CreditRequest": {
         "properties": {
@@ -12245,9 +12385,9 @@
           },
           "weight": {
             "type": "number",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Weight",
-            "default": 1
+            "default": 1.0
           },
           "category": {
             "type": "string",
@@ -12256,8 +12396,8 @@
           },
           "level": {
             "type": "integer",
-            "maximum": 4,
-            "minimum": 1,
+            "maximum": 4.0,
+            "minimum": 1.0,
             "title": "Level",
             "default": 1
           }
@@ -12300,7 +12440,7 @@
             "anyOf": [
               {
                 "type": "number",
-                "minimum": 0
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -12334,8 +12474,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 4,
-                "minimum": 1
+                "maximum": 4.0,
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -12842,27 +12982,27 @@
           "w_holding": {
             "type": "number",
             "title": "W Holding",
-            "default": 5
+            "default": 5.0
           },
           "w_conceal": {
             "type": "number",
             "title": "W Conceal",
-            "default": 14
+            "default": 14.0
           },
           "w_wrist_torso": {
             "type": "number",
             "title": "W Wrist Torso",
-            "default": 3
+            "default": 3.0
           },
           "w_exit_after_conceal": {
             "type": "number",
             "title": "W Exit After Conceal",
-            "default": 40
+            "default": 40.0
           },
           "w_repeated_shelf": {
             "type": "number",
             "title": "W Repeated Shelf",
-            "default": 3
+            "default": 3.0
           },
           "repeated_shelf_threshold": {
             "type": "integer",
@@ -12872,7 +13012,7 @@
           "interval_holding": {
             "type": "number",
             "title": "Interval Holding",
-            "default": 2
+            "default": 2.0
           },
           "mindur_holding": {
             "type": "number",
@@ -12882,7 +13022,7 @@
           "interval_wrist_torso": {
             "type": "number",
             "title": "Interval Wrist Torso",
-            "default": 3
+            "default": 3.0
           },
           "mindur_wrist_torso": {
             "type": "number",
@@ -12902,7 +13042,7 @@
           "interval_repeated_shelf": {
             "type": "number",
             "title": "Interval Repeated Shelf",
-            "default": 0
+            "default": 0.0
           },
           "mindur_repeated_shelf": {
             "type": "number",
@@ -12912,7 +13052,7 @@
           "interval_exit_after_conceal": {
             "type": "number",
             "title": "Interval Exit After Conceal",
-            "default": 0
+            "default": 0.0
           },
           "mindur_exit_after_conceal": {
             "type": "number",
@@ -12942,17 +13082,17 @@
           "open_risk": {
             "type": "number",
             "title": "Open Risk",
-            "default": 60
+            "default": 60.0
           },
           "close_risk": {
             "type": "number",
             "title": "Close Risk",
-            "default": 30
+            "default": 30.0
           },
           "post_quiet_sec": {
             "type": "number",
             "title": "Post Quiet Sec",
-            "default": 2
+            "default": 2.0
           },
           "drop_after_sec": {
             "type": "number",
@@ -12967,32 +13107,32 @@
           "band_yellow": {
             "type": "number",
             "title": "Band Yellow",
-            "default": 40
+            "default": 40.0
           },
           "band_red": {
             "type": "number",
             "title": "Band Red",
-            "default": 70
+            "default": 70.0
           },
           "pre_sec": {
             "type": "number",
             "title": "Pre Sec",
-            "default": 3
+            "default": 3.0
           },
           "post_sec": {
             "type": "number",
             "title": "Post Sec",
-            "default": 3
+            "default": 3.0
           },
           "segment_sec": {
             "type": "number",
             "title": "Segment Sec",
-            "default": 1
+            "default": 1.0
           },
           "keep_sec": {
             "type": "number",
             "title": "Keep Sec",
-            "default": 45
+            "default": 45.0
           },
           "max_clips": {
             "type": "integer",
@@ -13002,7 +13142,7 @@
           "max_age_sec": {
             "type": "number",
             "title": "Max Age Sec",
-            "default": 604800
+            "default": 604800.0
           },
           "upload_clips": {
             "type": "boolean",
@@ -13283,6 +13423,18 @@
             "minLength": 1,
             "title": "Camera Id"
           },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
           "pos": {
             "prefixItems": [
               {
@@ -13300,7 +13452,7 @@
           "dir_deg": {
             "type": "number",
             "title": "Dir Deg",
-            "default": 0
+            "default": 0.0
           },
           "homography": {
             "anyOf": [
@@ -13377,6 +13529,18 @@
             ],
             "title": "Type"
           },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
           "points": {
             "items": {
               "prefixItems": [
@@ -13424,8 +13588,8 @@
             "minItems": 2,
             "title": "Size",
             "default": [
-              1000,
-              800
+              200.0,
+              200.0
             ]
           },
           "walls": {
@@ -13516,7 +13680,7 @@
           "count"
         ],
         "title": "FlowEdge",
-        "description": "One movement edge between two coarse grid cells (docs/30 F4 flow).\nCoords are cell CENTRES normalized to the plan [0,1]² for direct drawing."
+        "description": "One movement edge between two coarse grid cells (docs/30 F4 flow).\nCoords are cell CENTRES normalized to the plan [0,1]\u00b2 for direct drawing."
       },
       "FlowSummary": {
         "properties": {
@@ -13625,7 +13789,7 @@
           "total_samples"
         ],
         "title": "FootfallGrid",
-        "description": "Aggregated dwell heatmap for one store over a time window.\n\n`cells` are sparse — only non-zero cells are returned, each as [gx, gy, n].\nThe frontend normalizes intensity by `max_samples` and lays cells out over\nthe plan using `grid_size` and `size` (the plan's logical dimensions)."
+        "description": "Aggregated dwell heatmap for one store over a time window.\n\n`cells` are sparse \u2014 only non-zero cells are returned, each as [gx, gy, n].\nThe frontend normalizes intensity by `max_samples` and lays cells out over\nthe plan using `grid_size` and `size` (the plan's logical dimensions)."
       },
       "HTTPValidationError": {
         "properties": {
@@ -13689,7 +13853,7 @@
           "paths"
         ],
         "title": "IngestPathsResponse",
-        "description": "`available` is False when MediaMTX's control API is not configured or\nunreachable — the canvas renders stage 2 as \"unknown\" rather than \"0 ready\"."
+        "description": "`available` is False when MediaMTX's control API is not configured or\nunreachable \u2014 the canvas renders stage 2 as \"unknown\" rather than \"0 ready\"."
       },
       "InviteCreate": {
         "properties": {
@@ -13885,8 +14049,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 100000,
-                "minimum": 0
+                "maximum": 100000.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -13918,7 +14082,7 @@
           "email"
         ],
         "title": "LeadCreate",
-        "description": "Public landing-page submission.\n\n`website` is a honeypot — a hidden field real users never fill. Bots that\nblindly fill every input trip it; the endpoint silently drops those."
+        "description": "Public landing-page submission.\n\n`website` is a honeypot \u2014 a hidden field real users never fill. Bots that\nblindly fill every input trip it; the endpoint silently drops those."
       },
       "LeadPublic": {
         "properties": {
@@ -14063,7 +14227,7 @@
         },
         "type": "object",
         "title": "LeadUpdate",
-        "description": "Super-admin triage — change status and/or attach notes."
+        "description": "Super-admin triage \u2014 change status and/or attach notes."
       },
       "LedgerAccount": {
         "type": "string",
@@ -14101,8 +14265,8 @@
           },
           "confidence": {
             "type": "number",
-            "maximum": 1,
-            "minimum": 0,
+            "maximum": 1.0,
+            "minimum": 0.0,
             "title": "Confidence"
           },
           "reasoning": {
@@ -14119,7 +14283,7 @@
           },
           "inference_latency_ms": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Inference Latency Ms"
           },
           "clip_b64": {
@@ -14129,12 +14293,12 @@
           },
           "file_size_bytes": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "File Size Bytes"
           },
           "duration_sec_clip": {
             "type": "number",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Duration Sec Clip"
           },
           "captured_at": {
@@ -14250,7 +14414,7 @@
           "captured_at"
         ],
         "title": "LiveAlertCreate",
-        "description": "POST /api/v1/internal/live-alert — node-push path (ADR live-alert).\n\nThe AI node detected a sustained risk breach, cut the clip + ran VLM\nLOCALLY, and posts the finished alert here (outbound, reliable). camera_id\nis the Camera.mediamtx_path; the backend resolves org/store. The node only\nposts non-ignore verdicts (it applies the VLM gate itself)."
+        "description": "POST /api/v1/internal/live-alert \u2014 node-push path (ADR live-alert).\n\nThe AI node detected a sustained risk breach, cut the clip + ran VLM\nLOCALLY, and posts the finished alert here (outbound, reliable). camera_id\nis the Camera.mediamtx_path; the backend resolves org/store. The node only\nposts non-ignore verdicts (it applies the VLM gate itself)."
       },
       "LiveFrame": {
         "properties": {
@@ -14283,7 +14447,7 @@
           "fps_inference": {
             "type": "number",
             "title": "Fps Inference",
-            "default": 0
+            "default": 0.0
           },
           "tracks": {
             "items": {
@@ -14291,6 +14455,13 @@
             },
             "type": "array",
             "title": "Tracks"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LiveItem"
+            },
+            "type": "array",
+            "title": "Items"
           }
         },
         "type": "object",
@@ -14298,7 +14469,59 @@
           "camera_id"
         ],
         "title": "LiveFrame",
-        "description": "Per-analyzed-frame metadata from the sentry-ai live worker\n(REV.1 — mirrors sentry-ai's FrameMetadata)."
+        "description": "Per-analyzed-frame metadata from the sentry-ai live worker\n(REV.1 \u2014 mirrors sentry-ai's FrameMetadata)."
+      },
+      "LiveItem": {
+        "properties": {
+          "box": {
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array",
+            "maxItems": 4,
+            "minItems": 4,
+            "title": "Box"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "default": ""
+          },
+          "label_mn": {
+            "type": "string",
+            "title": "Label Mn",
+            "default": ""
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "default": 0.0
+          },
+          "held": {
+            "type": "boolean",
+            "title": "Held",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "box"
+        ],
+        "title": "LiveItem",
+        "description": "A detected item for the live overlay (mirrors sentry-ai's ItemPayload).\n\nextra=\"ignore\" would strip these on the parse+re-dump in receive_live_metadata,\nso they must be declared here to reach the browser's held-item box + name."
       },
       "LiveMetadataBatch": {
         "properties": {
@@ -14348,13 +14571,13 @@
           "det_confidence": {
             "type": "number",
             "title": "Det Confidence",
-            "default": 0
+            "default": 0.0
           },
           "risk_pct": {
             "type": "number",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Risk Pct",
-            "default": 0
+            "default": 0.0
           },
           "color": {
             "type": "string",
@@ -14451,7 +14674,7 @@
           "box"
         ],
         "title": "LiveTrack",
-        "description": "One detected person in one frame (REV.1 — mirrors sentry-ai's\nTrackPayload). Lenient: unknown keys ignored, display fields defaulted so a\nschema addition on the AI side never 422s the whole batch."
+        "description": "One detected person in one frame (REV.1 \u2014 mirrors sentry-ai's\nTrackPayload). Lenient: unknown keys ignored, display fields defaulted so a\nschema addition on the AI side never 422s the whole batch."
       },
       "LoginRequest": {
         "properties": {
@@ -14630,7 +14853,7 @@
           "confirm_slug"
         ],
         "title": "OrgDeleteConfirm",
-        "description": "Owner deletes their own org — must retype the org slug to confirm.\n\nGuards against an accidental DELETE (fat-finger, replayed request) wiping a\nwhole tenant: the slug is something only a deliberate caller types in."
+        "description": "Owner deletes their own org \u2014 must retype the org slug to confirm.\n\nGuards against an accidental DELETE (fat-finger, replayed request) wiping a\nwhole tenant: the slug is something only a deliberate caller types in."
       },
       "OrgMemberPublic": {
         "properties": {
@@ -14926,7 +15149,7 @@
           "cameras"
         ],
         "title": "OrgNodePublic",
-        "description": "Org-scoped, camera-PROJECTED view of an AI node for the customer app.\n\nAiNode has no organization_id — a node serves cameras across orgs and is\nlinked to an org ONLY through telemetry.cameras[].camera_id == Camera\n.mediamtx_path. So this view (built by `build_org_node`) deliberately:\n  • returns ONLY the caller-org's cameras out of a (possibly shared) node,\n  • NEVER exposes the raw telemetry string (it carries other tenants'\n    camera ids) — only the safe whole-node gauges are projected through.\nContrast AiNodePublic (superadmin), which returns everything verbatim."
+        "description": "Org-scoped, camera-PROJECTED view of an AI node for the customer app.\n\nAiNode has no organization_id \u2014 a node serves cameras across orgs and is\nlinked to an org ONLY through telemetry.cameras[].camera_id == Camera\n.mediamtx_path. So this view (built by `build_org_node`) deliberately:\n  \u2022 returns ONLY the caller-org's cameras out of a (possibly shared) node,\n  \u2022 NEVER exposes the raw telemetry string (it carries other tenants'\n    camera ids) \u2014 only the safe whole-node gauges are projected through.\nContrast AiNodePublic (superadmin), which returns everything verbatim."
       },
       "OrgRole": {
         "type": "string",
@@ -15076,7 +15299,7 @@
           "max_entries"
         ],
         "title": "PeakMatrix",
-        "description": "Weekday × hour visitor matrix (docs/30) — \"when is the store busy\". Sparse\ncells; the frontend lays them out on a 7×24 grid coloured by `max_entries`."
+        "description": "Weekday \u00d7 hour visitor matrix (docs/30) \u2014 \"when is the store busy\". Sparse\ncells; the frontend lays them out on a 7\u00d724 grid coloured by `max_entries`."
       },
       "PendingInvite": {
         "properties": {
@@ -15134,7 +15357,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "exclusiveMinimum": 0
+                "exclusiveMinimum": 0.0
               },
               {
                 "type": "null"
@@ -15146,7 +15369,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "exclusiveMinimum": 0
+                "exclusiveMinimum": 0.0
               },
               {
                 "type": "null"
@@ -15168,7 +15391,7 @@
           },
           "max_redemptions": {
             "type": "integer",
-            "exclusiveMinimum": 0,
+            "exclusiveMinimum": 0.0,
             "title": "Max Redemptions",
             "default": 1
           },
@@ -15190,7 +15413,7 @@
           "kind"
         ],
         "title": "PromoCodeCreate",
-        "description": "code omitted/blank → auto-generated (8 chars A-Z0-9)."
+        "description": "code omitted/blank \u2192 auto-generated (8 chars A-Z0-9)."
       },
       "PromoCodePublic": {
         "properties": {
@@ -15509,8 +15732,8 @@
           },
           "k": {
             "type": "integer",
-            "maximum": 10,
-            "minimum": 1,
+            "maximum": 10.0,
+            "minimum": 1.0,
             "title": "K",
             "default": 3
           }
@@ -15591,7 +15814,7 @@
           "organization_name"
         ],
         "title": "StoreAdminRow",
-        "description": "One store with its org name + camera count — drives the superadmin store\npickers (e.g. the per-store edge-config editor). Cross-org: super-admin only."
+        "description": "One store with its org name + camera count \u2014 drives the superadmin store\npickers (e.g. the per-store edge-config editor). Cross-org: super-admin only."
       },
       "StoreAdminUpdate": {
         "properties": {
@@ -15852,13 +16075,53 @@
           "expires_in"
         ],
         "title": "StreamTokenResponse",
-        "description": "Short-lived per-camera WHEP/HLS read token (appended as ?jwt=…)."
+        "description": "Short-lived per-camera WHEP/HLS read token (appended as ?jwt=\u2026)."
+      },
+      "TelegramConfigUpdate": {
+        "properties": {
+          "bot_token": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Bot Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "bot_token"
+        ],
+        "title": "TelegramConfigUpdate",
+        "description": "Set/clear the platform Telegram bot token. A non-empty ``bot_token`` sets\nit; an empty string clears the integration. ``None`` is rejected (the field\nmust be present) so a save always has explicit intent."
+      },
+      "TelegramConfigView": {
+        "properties": {
+          "configured": {
+            "type": "boolean",
+            "title": "Configured"
+          },
+          "token_hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token Hint"
+          }
+        },
+        "type": "object",
+        "required": [
+          "configured"
+        ],
+        "title": "TelegramConfigView",
+        "description": "Superadmin read view of the platform Telegram bot config. The full token\nis NEVER returned \u2014 only whether one is set + a last-4 hint."
       },
       "TopupRequest": {
         "properties": {
           "amount_mnt": {
             "type": "integer",
-            "exclusiveMinimum": 0,
+            "exclusiveMinimum": 0.0,
             "title": "Amount Mnt"
           },
           "note": {
@@ -15961,6 +16224,50 @@
         "title": "TrafficSummary",
         "description": "Visitor traffic over a window (docs/30 F3). `series` is one point per\nhour that had any traffic; `peak_hour` is the busiest of them (null if none)."
       },
+      "UserAdminRow": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "is_super_admin": {
+            "type": "boolean",
+            "title": "Is Super Admin"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "memberships": {
+            "items": {
+              "$ref": "#/components/schemas/UserMembershipRow"
+            },
+            "type": "array",
+            "title": "Memberships"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "is_super_admin",
+          "is_active",
+          "created_at"
+        ],
+        "title": "UserAdminRow",
+        "description": "A user enriched with their org memberships for the superadmin Users list.\n``memberships`` is empty for a user who belongs to no organization (e.g. a\npure super-admin)."
+      },
       "UserAdminUpdate": {
         "properties": {
           "is_active": {
@@ -16025,6 +16332,29 @@
           "role"
         ],
         "title": "UserInvite"
+      },
+      "UserMembershipRow": {
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "title": "Organization Id"
+          },
+          "organization_name": {
+            "type": "string",
+            "title": "Organization Name"
+          },
+          "role": {
+            "$ref": "#/components/schemas/OrgRole"
+          }
+        },
+        "type": "object",
+        "required": [
+          "organization_id",
+          "organization_name",
+          "role"
+        ],
+        "title": "UserMembershipRow",
+        "description": "One org membership (name + role) for a user, shown in the superadmin\nUsers table so an org ``admin``/``owner``/``staff`` is no longer rendered as\nan indistinct \"\u0425\u044d\u0440\u044d\u0433\u043b\u044d\u0433\u0447\"."
       },
       "UserPublic": {
         "properties": {
@@ -16099,7 +16429,7 @@
         "properties": {
           "count": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Count",
             "default": 0
           },
@@ -16107,7 +16437,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -16119,7 +16449,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -16130,7 +16460,7 @@
         },
         "type": "object",
         "title": "VlmActivity",
-        "description": "VLM verify run history — proves the VLM HAS run on the GPU even though it's\nevent-driven (breach-only) and idle most of the time."
+        "description": "VLM verify run history \u2014 proves the VLM HAS run on the GPU even though it's\nevent-driven (breach-only) and idle most of the time."
       },
       "VlmStatus": {
         "properties": {
@@ -16154,7 +16484,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -16166,8 +16496,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 100,
-                "minimum": 0
+                "maximum": 100.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -16230,7 +16560,7 @@
           "points"
         ],
         "title": "Zone",
-        "description": "A per-camera detection zone (docs/29) — a polygon in NORMALIZED image space\n(every coord in 0-1), drawn on the agent-pc and consumed by the behavior\nengine (exit_after_concealment / repeated_shelf_visit). Normalized so one\ndefinition works across the agent's draw resolution and the cloud worker's\nstream size. Distinct from the deprecated single-bbox `shelf_zone_json`."
+        "description": "A per-camera detection zone (docs/29) \u2014 a polygon in NORMALIZED image space\n(every coord in 0-1), drawn on the agent-pc and consumed by the behavior\nengine (exit_after_concealment / repeated_shelf_visit). Normalized so one\ndefinition works across the agent's draw resolution and the cloud worker's\nstream size. Distinct from the deprecated single-bbox `shelf_zone_json`."
       },
       "ZoneActivity": {
         "properties": {
@@ -16241,6 +16571,17 @@
           "type": {
             "type": "string",
             "title": "Type"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
           },
           "samples": {
             "type": "integer",

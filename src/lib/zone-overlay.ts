@@ -10,8 +10,13 @@ import type { Zone } from "@/lib/types";
 
 type ZoneType = Zone["type"];
 
+// NB: the agent editor merged орц+гарц into ONE tool (type `exit`, docs/30
+// §3.5), so `exit` reads «Орц/Гарц» everywhere; `entrance` survives only on
+// legacy plans. This map is the single source for zone styling — /live overlay
+// AND /insights (FloorPlanViewport, ZoneTable) — so a zone drawn in the agent
+// editor looks identical across every surface.
 const ZONE_STYLE: Record<ZoneType, { color: string; label: string }> = {
-  exit: { color: "#E5484D", label: "Гарц" },
+  exit: { color: "#E5484D", label: "Орц/Гарц" },
   shelf: { color: "#3DD56D", label: "Тавиур" },
   checkout: { color: "#E0A82E", label: "Касс" },
   entrance: { color: "#3B82F6", label: "Орц" },

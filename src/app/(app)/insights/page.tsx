@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardContent, Spinner } from "@chipmo-sentry/ui-kit";
+import { Card, CardContent, Select, Spinner } from "@chipmo-sentry/ui-kit";
 import { BarChart3, Store } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -46,17 +46,17 @@ export default function InsightsPage() {
         {stores && stores.length > 1 ? (
           <label className="flex items-center gap-2 text-sm">
             <Store className="h-4 w-4 text-(--color-muted-foreground)" />
-            <select
+            <Select
               value={storeId}
               onChange={(e) => setStoreId(e.target.value)}
-              className="rounded-lg border border-(--color-border) bg-(--color-background) px-3 py-1.5 text-sm"
+              className="h-9 w-auto min-w-44"
             >
               {stores.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
         ) : null}
 
