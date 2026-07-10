@@ -3608,7 +3608,7 @@ export interface components {
              * Type
              * @enum {string}
              */
-            type: "shelf" | "exit" | "entrance" | "checkout";
+            type: "shelf" | "exit" | "entrance" | "checkout" | "furniture";
             /** Label */
             label?: string | null;
             /** Points */
@@ -3630,8 +3630,8 @@ export interface components {
             /**
              * Size
              * @default [
-             *       200,
-             *       200
+             *       20,
+             *       20
              *     ]
              */
             size: [

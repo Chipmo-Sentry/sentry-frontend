@@ -1,5 +1,6 @@
 "use client";
 
+import { planExtent } from "@/lib/plan-extent";
 import type { FloorPlan, FlowSummary } from "@/lib/types";
 
 /**
@@ -20,6 +21,10 @@ export function FlowLayer({
   topN?: number;
 }) {
   const [w, h] = plan.size;
+  // Thickness scales to the DRAWN store extent (like the viewport's marks),
+  // not the canvas — canvas-proportioned arrows dwarfed a small store.
+  const ext = planExtent(plan);
+  const thickBase = Math.min(ext.w, ext.h) / 100;
   const max = flow.max_count || 1;
   const edges = flow.edges.slice(0, topN);
   if (edges.length === 0) return null;
@@ -45,9 +50,7 @@ export function FlowLayer({
         const y1 = e.y1 * h;
         const x2 = e.x2 * w;
         const y2 = e.y2 * h;
-        // Thickness in plan units — scale to the plan's shorter side so it reads
-        // consistently regardless of plan dimensions.
-        const width = (0.4 + 2.6 * t) * (Math.min(w, h) / 100);
+        const width = (0.4 + 2.6 * t) * thickBase;
         return (
           <line
             key={i}

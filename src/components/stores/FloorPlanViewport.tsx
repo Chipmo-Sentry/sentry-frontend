@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 
+import { planExtent } from "@/lib/plan-extent";
 import type {
   FloorFixture,
   FloorFixtureType,
@@ -30,18 +31,18 @@ interface Props {
  * homography lands).
  */
 export function FloorPlanViewport({ plan, overlay }: Props) {
-  const [w, h] = plan.size;
   const [hover, setHover] = useState<string | null>(null);
 
-  // All marks size RELATIVE to the plan's own dimensions, never in fixed
-  // plan-units. A camera drawn at a fixed r=8 looks like a tiny dot on a 200 m
-  // plan but a screen-filling blob on a 40-unit test plan (the "giant logo"
-  // bug). Deriving every radius/stroke from `base` keeps marks visually
-  // consistent whatever coordinate space a store's plan was drawn in.
-  const base = Math.min(w, h) || 100;
+  // Frame the DRAWN store, not the whole canvas: a ~10×10 m store on a 20-200 m
+  // canvas rendered as a speck with monstrous canvas-proportioned marks. The
+  // viewBox crops to the content extent and every mark (camera dot, FOV cone,
+  // strokes, grid) sizes off that extent, so marks stay visually consistent
+  // whatever canvas the store was drawn on.
+  const ext = useMemo(() => planExtent(plan), [plan]);
+  const base = Math.min(ext.w, ext.h) || 100;
   const wallStroke = base * 0.006;
   const fixtureStroke = base * 0.004;
-  const gridStep = Math.max(w, h) / 24;
+  const gridStep = Math.max(ext.w, ext.h) / 24;
 
   // Group fixtures by type for a compact legend in the corner.
   const legend = useMemo(() => {
@@ -60,7 +61,7 @@ export function FloorPlanViewport({ plan, overlay }: Props) {
   return (
     <div className="relative rounded-lg border border-(--color-border) bg-(--color-surface)">
       <svg
-        viewBox={`0 0 ${w} ${h}`}
+        viewBox={`${ext.x} ${ext.y} ${ext.w} ${ext.h}`}
         className="block h-auto w-full"
         preserveAspectRatio="xMidYMid meet"
         role="img"
@@ -82,7 +83,7 @@ export function FloorPlanViewport({ plan, overlay }: Props) {
             />
           </pattern>
         </defs>
-        <rect x={0} y={0} width={w} height={h} fill="url(#fp-grid)" />
+        <rect x={ext.x} y={ext.y} width={ext.w} height={ext.h} fill="url(#fp-grid)" />
 
         {/* Fixtures (drawn first, walls sit on top) */}
         {plan.fixtures.map((f, i) => (

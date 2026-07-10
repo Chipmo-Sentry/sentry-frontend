@@ -13525,7 +13525,8 @@
               "shelf",
               "exit",
               "entrance",
-              "checkout"
+              "checkout",
+              "furniture"
             ],
             "title": "Type"
           },
@@ -13588,8 +13589,8 @@
             "minItems": 2,
             "title": "Size",
             "default": [
-              200.0,
-              200.0
+              20.0,
+              20.0
             ]
           },
           "walls": {
