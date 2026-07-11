@@ -181,6 +181,22 @@ export function LiveCameraTile({
           setStatus("error");
           setErrorMsg(e.message);
         },
+        // Re-mint the read token before each reconnect — a dashboard left open
+        // longer than the token TTL (~1h) would otherwise reconnect with a stale
+        // ?jwt= and die on 401 until a manual page refresh.
+        refreshSource: streamCameraId
+          ? async () => {
+              try {
+                const { token, hls_url } = await camerasApi.streamToken(streamCameraId);
+                if (hls_url)
+                  return { whepUrl: "", hlsUrl: API_BASE_URL + hls_url, hlsOnly: true };
+                const q = `?jwt=${encodeURIComponent(token)}`;
+                return { whepUrl: whepUrl + q, hlsUrl: hlsUrl + q };
+              } catch {
+                return null; // keep current URLs; the retry loop continues
+              }
+            }
+          : undefined,
       },
     );
 
@@ -191,7 +207,7 @@ export function LiveCameraTile({
       if (stalledTimer) clearTimeout(stalledTimer);
       detach?.();
     };
-  }, [authUrls]);
+  }, [authUrls, streamCameraId, whepUrl, hlsUrl]);
 
   useEffect(() => {
     function onFsChange() {
@@ -652,7 +668,9 @@ export function LiveCameraTile({
           </div>
           <div>
             <p className="text-sm text-white/90">{STATUS_LABEL[status]}…</p>
-            <p className="mt-0.5 text-xs text-white/45">LAN-аас шууд</p>
+            <p className="mt-0.5 text-xs text-white/45">
+              {transport === "webrtc" ? "WebRTC" : "HLS"} холболт
+            </p>
           </div>
         </div>
       )}

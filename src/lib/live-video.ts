@@ -14,6 +14,10 @@ export type AttachCallbacks = {
   onTransport?: (t: LiveTransport) => void;
   onConnected?: () => void;
   onError?: (err: Error) => void;
+  /** Called before each reconnect attempt to re-mint the stream URLs — the
+   * `?jwt=` read token expires after ~1h, so a long-lived dashboard reconnecting
+   * with its original URLs would 401 forever. Return null to keep current URLs. */
+  refreshSource?: () => Promise<LiveVideoSource | null>;
 };
 
 export type LiveVideoSource = {
@@ -30,16 +34,21 @@ export type LiveVideoSource = {
  */
 const RECONNECT_MIN_MS = 1000;
 const RECONNECT_MAX_MS = 30000;
+// Source-down (503/502/404) retry floor: slow enough not to hammer a downed
+// tunnel/node, fast enough that recovery doesn't need a page refresh.
+const UNAVAILABLE_RETRY_MS = 15000;
 
 export function attachLiveVideo(
   video: HTMLVideoElement,
-  src: LiveVideoSource,
+  initialSrc: LiveVideoSource,
   cbs: AttachCallbacks = {},
 ): () => void {
+  let src = initialSrc;
   let disposed = false;
   let cleanup: (() => void) | null = null;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   let backoffMs = RECONNECT_MIN_MS;
+  let attemptNo = 0;
 
   // The browser can't play this stream at all (H.265/HEVC: unsupported over
   // WebRTC AND undecodable in browser HLS). Stop everything and show ONE
@@ -78,15 +87,26 @@ export function attachLiveVideo(
     if (disposed || reconnectTimer) return;
     cleanup?.();
     cleanup = null;
-    reconnectTimer = setTimeout(() => {
+    reconnectTimer = setTimeout(async () => {
       reconnectTimer = null;
       backoffMs = Math.min(backoffMs * 2, RECONNECT_MAX_MS);
-      attempt();
+      // Re-mint the stream URLs first — the embedded read token may have
+      // expired while the tile was up (or while the source was down).
+      if (cbs.refreshSource) {
+        try {
+          const fresh = await cbs.refreshSource();
+          if (fresh) src = fresh;
+        } catch {
+          /* keep the current URLs; the attempt below will retry anyway */
+        }
+      }
+      if (!disposed) attempt();
     }, backoffMs);
   }
 
   function attempt() {
     if (disposed) return;
+    attemptNo += 1;
     let fellBack = false;
     let connectedOnce = false;
 
@@ -111,7 +131,12 @@ export function attachLiveVideo(
         video.addEventListener("playing", stopWatchdog);
         frameWatchdog = setTimeout(() => {
           if (disposed) return;
-          if (video.readyState < 2) giveUp(UNSUPPORTED_MSG);
+          if (video.readyState < 2) {
+            // Terminal (H.265) only on the very first attempt — on a RETRY the
+            // same symptom is usually just a source that's still down.
+            if (attemptNo <= 1) giveUp(UNSUPPORTED_MSG);
+            else scheduleReconnect();
+          }
         }, 12000);
       }
 
@@ -126,10 +151,14 @@ export function attachLiveVideo(
             giveUp(UNSUPPORTED_MSG);
           },
           onUnavailable: (status) => {
-            // Stream source is down (node offline / not serving) — show the real
-            // reason instead of retrying into the misleading H.265 watchdog.
+            // Stream source is down (node/tunnel offline, camera not publishing).
+            // Show the real reason but KEEP retrying — an agent restart or a
+            // tunnel blip must not require a manual page refresh: the tile
+            // self-heals the moment the source is back (video `playing` event).
             stopWatchdog();
-            giveUp(unavailableMsg(status));
+            cbs.onError?.(new Error(unavailableMsg(status)));
+            backoffMs = Math.max(backoffMs, UNAVAILABLE_RETRY_MS);
+            scheduleReconnect();
           },
         });
       } catch {
