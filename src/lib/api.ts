@@ -14,6 +14,7 @@ import type {
   EventLogPublic,
   FloorPlan,
   FlowSummary,
+  PathsSummary,
   ZoneFlowSummary,
   FootfallGrid,
   LoginResponse,
@@ -188,6 +189,11 @@ export const stores = {
   flow: (id: string, hours = 24) =>
     request<FlowSummary>(
       `/api/v1/stores/${id}/analytics/flow?hours=${hours}`,
+    ),
+  /** docs/30 F4 paths: recent anonymous visitor paths (spaghetti layer). */
+  paths: (id: string, hours = 24) =>
+    request<PathsSummary>(
+      `/api/v1/stores/${id}/analytics/paths?hours=${hours}`,
     ),
   /** docs/30 F4 zone flow: net movement between named plan fixtures. */
   zoneFlow: (id: string, hours = 24) =>

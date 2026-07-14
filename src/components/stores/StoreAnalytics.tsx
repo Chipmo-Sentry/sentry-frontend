@@ -14,6 +14,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { DemographicsPanel } from "@/components/stores/DemographicsPanel";
 import { FloorPlanViewport } from "@/components/stores/FloorPlanViewport";
+import { PathsLayer } from "@/components/stores/PathsLayer";
 import { ZoneFlowLayer } from "@/components/stores/ZoneFlowLayer";
 import { HeatmapLayer } from "@/components/stores/HeatmapLayer";
 import { PeakMatrix } from "@/components/stores/PeakMatrix";
@@ -23,6 +24,7 @@ import { stores } from "@/lib/api";
 import type {
   DemographicsSummary,
   FloorPlan,
+  PathsSummary,
   ZoneFlowSummary,
   FootfallGrid,
   PeakMatrix as PeakMatrixData,
@@ -63,7 +65,7 @@ export function RangeTabs({
   );
 }
 
-type LayerKey = "plan" | "dwell" | "flow";
+type LayerKey = "plan" | "dwell" | "flow" | "paths";
 
 /**
  * The retail-analytics dashboard for ONE store, self-contained by `storeId` +
@@ -85,10 +87,12 @@ export function StoreAnalytics({
     plan: true,
     dwell: true,
     flow: true,
+    paths: false,
   });
   const [heat, setHeat] = useState<FootfallGrid | null>(null);
   const [heatLoading, setHeatLoading] = useState(false);
   const [flow, setFlow] = useState<ZoneFlowSummary | null>(null);
+  const [paths, setPaths] = useState<PathsSummary | null>(null);
   const [traffic, setTraffic] = useState<TrafficSummary | null>(null);
   const [zones, setZones] = useState<ZoneBreakdown | null>(null);
   const [peak, setPeak] = useState<PeakMatrixData | null>(null);
@@ -184,11 +188,22 @@ export function StoreAnalytics({
   useEffect(() => {
     if (layers.dwell) loadHeat();
   }, [layers.dwell, loadHeat]);
+  const loadPaths = useCallback(async () => {
+    try {
+      setPaths(await stores.paths(storeId, hours));
+    } catch {
+      setPaths(null);
+    }
+  }, [storeId, hours]);
+
   // Flow loads with the window (not on toggle) — the trails are a headline
   // feature, so the data is ready the moment the layer is switched on.
   useEffect(() => {
     loadFlow();
   }, [loadFlow]);
+  useEffect(() => {
+    if (layers.paths) loadPaths();
+  }, [layers.paths, loadPaths]);
   useEffect(() => {
     loadTraffic();
   }, [loadTraffic]);
@@ -279,10 +294,13 @@ export function StoreAnalytics({
         <div className="grid gap-4 lg:grid-cols-[1fr_260px]">
           <FloorPlanViewport
             plan={plan}
-            dimPlan={layers.flow && !!flow}
+            dimPlan={(layers.flow && !!flow) || (layers.paths && !!paths)}
             overlay={
               <>
                 {layers.dwell && heat ? <HeatmapLayer grid={heat} /> : null}
+                {layers.paths && paths ? (
+                  <PathsLayer plan={plan} data={paths} />
+                ) : null}
                 {layers.flow && flow ? (
                   <ZoneFlowLayer plan={plan} flow={flow} />
                 ) : null}
@@ -307,7 +325,13 @@ export function StoreAnalytics({
                 onChange={(v) => setLayers((s) => ({ ...s, dwell: v }))}
               />
               <LayerRow
-                label="Хөдөлгөөний урсгал"
+                label="Зочдын зам (тус бүр)"
+                checked={layers.paths}
+                hint={layers.paths && paths && paths.paths.length === 0 ? "дата хуримтлагдаж байна" : undefined}
+                onChange={(v) => setLayers((s) => ({ ...s, paths: v }))}
+              />
+              <LayerRow
+                label="Зочдын урсгал"
                 checked={layers.flow}
                 hint={failed.flow ? "алдаа" : undefined}
                 onChange={(v) => setLayers((s) => ({ ...s, flow: v }))}

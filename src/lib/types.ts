@@ -80,6 +80,16 @@ export interface ZoneFlowEdge {
   to_id: string;
   count: number;
 }
+export interface WalkedPath {
+  started_at: string;
+  duration_sec: number;
+  points: number[][];
+}
+export interface PathsSummary {
+  window_from: string;
+  window_to: string;
+  paths: WalkedPath[];
+}
 export interface ZoneFlowSummary {
   window_from: string;
   window_to: string;
