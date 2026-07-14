@@ -67,6 +67,26 @@ export type ZoneActivity = Schemas["ZoneActivity"];
 export type ZoneBreakdown = Required<Schemas["ZoneBreakdown"]>;
 export type FlowEdge = Schemas["FlowEdge"];
 export type FlowSummary = Required<Schemas["FlowSummary"]>;
+// Zone-level flow (docs/30 F4): hand-typed until the OpenAPI types regen.
+export interface ZoneFlowNode {
+  id: string;
+  label: string;
+  type: string;
+  x: number;
+  y: number;
+}
+export interface ZoneFlowEdge {
+  from_id: string;
+  to_id: string;
+  count: number;
+}
+export interface ZoneFlowSummary {
+  window_from: string;
+  window_to: string;
+  max_count: number;
+  nodes: ZoneFlowNode[];
+  edges: ZoneFlowEdge[];
+}
 export type PeakCell = Schemas["PeakCell"];
 export type PeakMatrix = Required<Schemas["PeakMatrix"]>;
 export type DemographicSlice = Schemas["DemographicSlice"];

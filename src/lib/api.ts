@@ -14,6 +14,7 @@ import type {
   EventLogPublic,
   FloorPlan,
   FlowSummary,
+  ZoneFlowSummary,
   FootfallGrid,
   LoginResponse,
   OrganizationPublic,
@@ -187,6 +188,11 @@ export const stores = {
   flow: (id: string, hours = 24) =>
     request<FlowSummary>(
       `/api/v1/stores/${id}/analytics/flow?hours=${hours}`,
+    ),
+  /** docs/30 F4 zone flow: net movement between named plan fixtures. */
+  zoneFlow: (id: string, hours = 24) =>
+    request<ZoneFlowSummary>(
+      `/api/v1/stores/${id}/analytics/zone-flow?hours=${hours}`,
     ),
   /** docs/30 peak matrix: visitors by weekday × hour over the last `days`. */
   peak: (id: string, days = 28) =>

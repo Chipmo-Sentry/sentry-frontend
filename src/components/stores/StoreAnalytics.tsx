@@ -14,7 +14,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { DemographicsPanel } from "@/components/stores/DemographicsPanel";
 import { FloorPlanViewport } from "@/components/stores/FloorPlanViewport";
-import { FlowLayer } from "@/components/stores/FlowLayer";
+import { ZoneFlowLayer } from "@/components/stores/ZoneFlowLayer";
 import { HeatmapLayer } from "@/components/stores/HeatmapLayer";
 import { PeakMatrix } from "@/components/stores/PeakMatrix";
 import { TrafficChart } from "@/components/stores/TrafficChart";
@@ -23,7 +23,7 @@ import { stores } from "@/lib/api";
 import type {
   DemographicsSummary,
   FloorPlan,
-  FlowSummary,
+  ZoneFlowSummary,
   FootfallGrid,
   PeakMatrix as PeakMatrixData,
   TrafficSummary,
@@ -88,7 +88,7 @@ export function StoreAnalytics({
   });
   const [heat, setHeat] = useState<FootfallGrid | null>(null);
   const [heatLoading, setHeatLoading] = useState(false);
-  const [flow, setFlow] = useState<FlowSummary | null>(null);
+  const [flow, setFlow] = useState<ZoneFlowSummary | null>(null);
   const [traffic, setTraffic] = useState<TrafficSummary | null>(null);
   const [zones, setZones] = useState<ZoneBreakdown | null>(null);
   const [peak, setPeak] = useState<PeakMatrixData | null>(null);
@@ -142,7 +142,7 @@ export function StoreAnalytics({
   const loadFlow = useCallback(async () => {
     setFailed((f) => ({ ...f, flow: false }));
     try {
-      setFlow(await stores.flow(storeId, hours));
+      setFlow(await stores.zoneFlow(storeId, hours));
     } catch {
       setFlow(null);
       setFailed((f) => ({ ...f, flow: true }));
@@ -284,7 +284,7 @@ export function StoreAnalytics({
               <>
                 {layers.dwell && heat ? <HeatmapLayer grid={heat} /> : null}
                 {layers.flow && flow ? (
-                  <FlowLayer plan={plan} flow={flow} />
+                  <ZoneFlowLayer plan={plan} flow={flow} />
                 ) : null}
               </>
             }
@@ -323,26 +323,32 @@ export function StoreAnalytics({
                       Урсгал ачаалж чадсангүй — дахин оролдох
                     </button>
                   ) : flow && flow.edges.length > 0 ? (
-                    <div className="flex items-center gap-2">
-                      <svg width="46" height="10" aria-hidden>
-                        <line
-                          x1="2"
-                          y1="5"
-                          x2="38"
-                          y2="5"
-                          stroke="rgba(96,165,250,0.9)"
-                          strokeWidth="3"
-                          strokeLinecap="round"
-                        />
-                        <path d="M 38 1 L 45 5 L 38 9 z" fill="rgba(96,165,250,0.9)" />
-                      </svg>
-                      <span>
-                        Явсан мөр: зузаан = олон хүн, сум = чиглэл (
-                        {flow.edges.length} шилжилт)
-                      </span>
+                    <div>
+                      <div className="mb-1 font-medium">Топ шилжилтүүд</div>
+                      {(() => {
+                        const byId = new Map(flow.nodes.map((n) => [n.id, n]));
+                        const total =
+                          flow.edges.reduce((s, e) => s + e.count, 0) || 1;
+                        return flow.edges.slice(0, 6).map((e, i) => (
+                          <div
+                            key={i}
+                            className="flex items-center justify-between gap-2 py-0.5"
+                          >
+                            <span className="truncate">
+                              {byId.get(e.from_id)?.label ?? "?"} →{" "}
+                              {byId.get(e.to_id)?.label ?? "?"}
+                            </span>
+                            <span className="shrink-0 font-medium">
+                              {Math.round((e.count / total) * 100)}%
+                            </span>
+                          </div>
+                        ));
+                      })()}
                     </div>
+                  ) : flow && flow.nodes.length === 0 ? (
+                    "Бүсийн урсгалд план дээр дор хаяж 2 тавиур/бүс зурсан байх хэрэгтэй."
                   ) : (
-                    "Явсан мөр: хүмүүс хөдөлж эхэлмэгц урсгалын шугамууд харагдана."
+                    "Хүмүүс хөдөлж эхэлмэгц бүс хоорондын урсгал харагдана."
                   )}
                 </div>
               ) : null}
