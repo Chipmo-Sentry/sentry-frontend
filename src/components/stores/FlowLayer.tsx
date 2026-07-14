@@ -143,6 +143,11 @@ export function FlowLayer({
   const thickBase = Math.min(ext.w, ext.h) / 110;
   const fontSize = Math.min(ext.w, ext.h) / 22;
 
+  // SMIL ignores prefers-reduced-motion — honor it ourselves (static arrows).
+  const reduceMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
   const nets = netEdges(flow);
   if (nets.length === 0) return null;
   const maxNet = nets[0]!.count;
@@ -182,21 +187,38 @@ export function FlowLayer({
       ))}
       {routes.map((r, i) => {
         const t = r.count / (routes[0]!.count || 1);
-        const width = (0.9 + 1.6 * t) * thickBase;
         const share = Math.round((r.count / totalRouteCount) * 100);
         const mid = r.pts[Math.floor(r.pts.length / 2)]!;
+        const d = smoothPath(r.pts, w, h);
+        // Motion carries the story: dots stream along the corridor — the eye
+        // reads direction and volume instantly, without decoding arrowheads.
+        // Dot count/speed scale with traffic; the faint track gives context.
+        const dots = 3 + Math.round(4 * t);
+        const roughLen = r.pts.length - 1; // segments ≈ relative length
+        const durSec = Math.max(3, roughLen * (2.2 - 1.2 * t));
+        const dotR = (0.55 + 0.55 * t) * thickBase * 1.6;
         return (
           <g key={`p${i}`}>
             <path
-              d={smoothPath(r.pts, w, h)}
+              d={d}
               fill="none"
-              stroke="rgba(96,165,250,0.9)"
-              strokeWidth={width}
+              stroke={reduceMotion ? "rgba(96,165,250,0.9)" : "rgba(96,165,250,0.45)"}
+              strokeWidth={thickBase * (reduceMotion ? 0.9 + 1.6 * t : 0.9)}
               strokeLinecap="round"
               strokeLinejoin="round"
-              opacity={0.5 + 0.4 * t}
-              markerEnd="url(#flow-arrow)"
+              markerEnd={reduceMotion ? "url(#flow-arrow)" : undefined}
             />
+            {!reduceMotion &&
+              Array.from({ length: dots }, (_, j) => (
+                <circle key={j} r={dotR} fill="rgba(147,197,253,0.95)">
+                  <animateMotion
+                    dur={`${durSec}s`}
+                    begin={`${(durSec / dots) * j - durSec}s`}
+                    repeatCount="indefinite"
+                    path={d}
+                  />
+                </circle>
+              ))}
             <text
               x={mid.x * w + fontSize * 0.4}
               y={mid.y * h - fontSize * 0.4}
