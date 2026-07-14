@@ -3669,7 +3669,7 @@ export interface components {
              * Type
              * @enum {string}
              */
-            type: "shelf" | "exit" | "entrance" | "checkout" | "furniture" | "fridge";
+            type: "shelf" | "exit" | "entrance" | "checkout" | "furniture" | "fridge" | "mannequin";
             /** Label */
             label?: string | null;
             /** Points */
@@ -4915,7 +4915,7 @@ export interface components {
              * Type
              * @enum {string}
              */
-            type: "exit" | "shelf" | "checkout" | "entrance" | "furniture" | "fridge";
+            type: "exit" | "shelf" | "checkout" | "entrance" | "furniture" | "fridge" | "mannequin";
             /** Points */
             points: [
                 number,
