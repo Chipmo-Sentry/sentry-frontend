@@ -279,6 +279,7 @@ export function StoreAnalytics({
         <div className="grid gap-4 lg:grid-cols-[1fr_260px]">
           <FloorPlanViewport
             plan={plan}
+            dimPlan={layers.flow && !!flow}
             overlay={
               <>
                 {layers.dwell && heat ? <HeatmapLayer grid={heat} /> : null}

@@ -21,6 +21,9 @@ interface Props {
   /** Optional: overlay children rendered inside the same SVG viewport
    * (heatmap, flow lines, live points — added in F2+). */
   overlay?: React.ReactNode;
+  /** Fade fixtures/walls so a data overlay (flow routes) reads first — the
+   * plan stays for context, the data carries the story. */
+  dimPlan?: boolean;
 }
 
 /**
@@ -30,7 +33,7 @@ interface Props {
  * with a translucent FOV cone (dir_deg → 60° wedge, cosmetic only until Phase B
  * homography lands).
  */
-export function FloorPlanViewport({ plan, overlay }: Props) {
+export function FloorPlanViewport({ plan, overlay, dimPlan = false }: Props) {
   const [hover, setHover] = useState<string | null>(null);
 
   // Frame the DRAWN store, not the whole canvas: a ~10×10 m store on a 20-200 m
@@ -85,29 +88,32 @@ export function FloorPlanViewport({ plan, overlay }: Props) {
         </defs>
         <rect x={ext.x} y={ext.y} width={ext.w} height={ext.h} fill="url(#fp-grid)" />
 
-        {/* Fixtures (drawn first, walls sit on top) */}
-        {plan.fixtures.map((f, i) => (
-          <FixturePolygon
-            key={f.id ?? `f${i}`}
-            fixture={f}
-            stroke={fixtureStroke}
-            hovered={hover === (f.id ?? `f${i}`)}
-            onHoverChange={(on) => setHover(on ? (f.id ?? `f${i}`) : null)}
-          />
-        ))}
+        {/* Fixtures (drawn first, walls sit on top). The group fades when a
+            data overlay should read first (dimPlan). */}
+        <g opacity={dimPlan ? 0.3 : 1}>
+          {plan.fixtures.map((f, i) => (
+            <FixturePolygon
+              key={f.id ?? `f${i}`}
+              fixture={f}
+              stroke={fixtureStroke}
+              hovered={hover === (f.id ?? `f${i}`)}
+              onHoverChange={(on) => setHover(on ? (f.id ?? `f${i}`) : null)}
+            />
+          ))}
 
-        {/* Walls */}
-        {plan.walls.map((wall, i) => (
-          <polyline
-            key={`w${i}`}
-            points={wall.points.map(([x, y]) => `${x},${y}`).join(" ")}
-            fill="none"
-            stroke="rgba(250,250,250,0.85)"
-            strokeWidth={wallStroke}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        ))}
+          {/* Walls */}
+          {plan.walls.map((wall, i) => (
+            <polyline
+              key={`w${i}`}
+              points={wall.points.map(([x, y]) => `${x},${y}`).join(" ")}
+              fill="none"
+              stroke="rgba(250,250,250,0.85)"
+              strokeWidth={wallStroke}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          ))}
+        </g>
 
         {/* Cameras: FOV cone + body + label */}
         {plan.cameras.map((c, i) => (
