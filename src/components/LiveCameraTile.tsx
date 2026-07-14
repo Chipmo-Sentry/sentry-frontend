@@ -77,6 +77,12 @@ export function LiveCameraTile({
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const zonesCanvasRef = useRef<HTMLCanvasElement>(null);
+  // Short walking trails: per-track foot points (source-pixel coords) from the
+  // last few seconds, drawn as fading dots behind each person. Ref (not state)
+  // — mutated on every metadata frame, read only inside draw().
+  const trailsRef = useRef<Map<string | number, { x: number; y: number; at: number }[]>>(
+    new Map(),
+  );
   const [status, setStatus] = useState<Status>("loading");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -233,6 +239,34 @@ export function LiveCameraTile({
     const video = videoRef.current;
     if (!canvas || !video) return;
 
+    // Feed the trail buffer: one foot point per visible track per frame.
+    if (latest) {
+      const nowMs = Date.now();
+      const TRAIL_MS = 6000;
+      const trails = trailsRef.current;
+      for (const t of latest.tracks) {
+        const pid = t.store_person_id ?? t.person_id;
+        if (pid == null) continue;
+        const [x1, , x2, y2] = t.box;
+        const arr = trails.get(pid) ?? [];
+        const fx = (x1 + x2) / 2;
+        const last = arr[arr.length - 1];
+        // Record on real movement only (≥ ~0.5% of frame) so a standing
+        // person doesn't pile dots on one spot.
+        const minStep = latest.width * 0.005;
+        if (!last || Math.hypot(fx - last.x, y2 - last.y) >= minStep) {
+          arr.push({ x: fx, y: y2, at: nowMs });
+          if (arr.length > 80) arr.shift();
+          trails.set(pid, arr);
+        }
+      }
+      for (const [pid, arr] of trails) {
+        const alive = arr.filter((s) => nowMs - s.at < TRAIL_MS);
+        if (alive.length === 0) trails.delete(pid);
+        else trails.set(pid, alive);
+      }
+    }
+
     let raf = 0;
     function draw() {
       raf = 0;
@@ -284,6 +318,23 @@ export function LiveCameraTile({
         ctx.fillStyle = fill;
         ctx.fill();
       };
+
+      // Walking trails first — dots fade with age, so each person carries a
+      // comet-tail of where they came from. Under the boxes/pills.
+      {
+        const nowMs = Date.now();
+        const TRAIL_MS = 6000;
+        for (const arr of trailsRef.current.values()) {
+          for (const s of arr) {
+            const age = (nowMs - s.at) / TRAIL_MS;
+            if (age >= 1) continue;
+            ctx.beginPath();
+            ctx.arc(offX + s.x * sx, offY + s.y * sy, 2.4 * (1 - age * 0.5), 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(147, 197, 253, ${0.85 * (1 - age)})`;
+            ctx.fill();
+          }
+        }
+      }
 
       for (const t of latest.tracks) {
         const [x1, y1, x2, y2] = t.box;
