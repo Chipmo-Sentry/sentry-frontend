@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { LiveAlertRail } from "@/components/LiveAlertRail";
+import { LiveRiskFeed } from "@/components/LiveRiskFeed";
 import { LiveBehaviorPanel } from "@/components/LiveBehaviorPanel";
 import { LiveCameraTile } from "@/components/LiveCameraTile";
 import { LiveKpiBar } from "@/components/LiveKpiBar";
@@ -325,7 +326,10 @@ export default function LivePage() {
             </div>
           </div>
 
-          <div className="min-h-0 lg:h-full">
+          <div className="flex min-h-0 flex-col gap-3 lg:h-full">
+            <div className="max-h-[45%] min-h-[120px]">
+              <LiveRiskFeed cams={cams.map((c) => ({ path: c.path, name: c.name }))} />
+            </div>
             <LiveAlertRail
               alerts={recentAlerts}
               connected={alertConnected}
