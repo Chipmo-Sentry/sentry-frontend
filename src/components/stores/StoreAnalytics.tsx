@@ -294,7 +294,7 @@ export function StoreAnalytics({
         <div className="grid gap-4 lg:grid-cols-[1fr_260px]">
           <FloorPlanViewport
             plan={plan}
-            dimPlan={(layers.flow && !!flow) || (layers.paths && !!paths)}
+            dimPlan={layers.paths && !!paths}
             overlay={
               <>
                 {layers.dwell && heat ? <HeatmapLayer grid={heat} /> : null}
@@ -360,10 +360,13 @@ export function StoreAnalytics({
                         />
                         <path d="M 38 1 L 45 5 L 38 9 z" fill="rgba(96,165,250,0.9)" />
                       </svg>
-                      <span>Гол коридорууд: зузаан = олон хүн, % = эзлэх хувь</span>
+                      <span>
+                        Явсан мөр: зузаан = олон хүн, сум = чиглэл (
+                        {flow.edges.length} шилжилт)
+                      </span>
                     </div>
                   ) : (
-                    "Хүмүүс хөдөлж эхэлмэгц гол коридорууд харагдана."
+                    "Явсан мөр: хүмүүс хөдөлж эхэлмэгц урсгалын шугамууд харагдана."
                   )}
                 </div>
               ) : null}
