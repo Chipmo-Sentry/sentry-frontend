@@ -15,7 +15,13 @@ import { useLiveMetadata, type Track } from "@/lib/live-ws";
  * metadata WebSocket frames the tiles already receive.
  */
 
-const MIN_RISK_PCT = 15; // below this a person is just shopping
+// Only the vLLM stage of the chain belongs here: agent → YOLO → behavior
+// engine → (HIGH risk) → vLLM verify → THIS FEED → alert rail. A person
+// qualifies when the engine has escalated them (HIGH/CRITICAL level, an
+// ALERT/CONCEALMENT state) or their risk crossed the breach territory.
+const MIN_RISK_PCT = 50;
+const HOT_LEVELS = new Set(["HIGH", "CRITICAL"]);
+const HOT_STATES = new Set(["CONCEALMENT", "ALERT"]);
 const STALE_MS = 12_000; // a camera that stopped sending drops out
 const MAX_ROWS = 10;
 
@@ -47,7 +53,11 @@ function RiskSource({
     const rows: FeedRow[] = [];
     for (const t of latest.tracks as Track[]) {
       const risk = t.risk_pct ?? 0;
-      if (risk < MIN_RISK_PCT && !(t.behaviors && t.behaviors.length > 0)) continue;
+      const hot =
+        risk >= MIN_RISK_PCT ||
+        (t.level != null && HOT_LEVELS.has(t.level)) ||
+        (t.state != null && HOT_STATES.has(t.state));
+      if (!hot) continue;
       const points = t.behavior_scores
         ? Object.values(t.behavior_scores).reduce((a, b) => a + (Number(b) || 0), 0)
         : 0;
@@ -99,13 +109,13 @@ export function LiveRiskFeed({
         <Activity className="h-3.5 w-3.5 text-(--color-muted-foreground)" aria-hidden />
         <span className="text-xs font-medium">Эрсдэлтэй үйлдлүүд</span>
         <span className="ml-auto text-[10px] text-(--color-muted-foreground)">
-          YOLO · зан төлөв
+          өндөр эрсдэл · vLLM шат
         </span>
       </div>
       <div className="min-h-0 flex-1 overflow-auto p-2">
         {flat.length === 0 ? (
           <p className="px-1 py-2 text-[11px] text-(--color-muted-foreground)">
-            Одоогоор сэжигтэй үйлдэл алга — хүн бүр зүгээр л дэлгүүр хэсэж байна.
+            Одоогоор өндөр эрсдэлтэй үйлдэл алга.
           </p>
         ) : (
           <ul className="flex flex-col gap-1.5">
