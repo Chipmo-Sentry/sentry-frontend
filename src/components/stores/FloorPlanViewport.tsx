@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 
+import { calibratedCoverage } from "@/lib/camera-coverage";
 import { planExtent } from "@/lib/plan-extent";
 import type {
   FloorFixture,
@@ -117,7 +118,7 @@ export function FloorPlanViewport({ plan, overlay, dimPlan = false }: Props) {
 
         {/* Cameras: FOV cone + body + label */}
         {plan.cameras.map((c, i) => (
-          <CameraMarker key={c.camera_id + i} camera={c} base={base} />
+          <CameraMarker key={c.camera_id + i} camera={c} base={base} walls={plan.walls} />
         ))}
 
         {overlay}
@@ -188,17 +189,23 @@ function FixturePolygon({
 function CameraMarker({
   camera,
   base,
+  walls,
 }: {
   camera: {
     camera_id: string;
     name?: string | null;
     pos: [number, number];
     dir_deg: number;
+    homography?: number[][] | null;
   };
   /** Smaller plan dimension — all marks scale off it (see FloorPlanViewport). */
   base: number;
+  walls: { points: number[][] }[];
 }) {
   const [cx, cy] = camera.pos;
+  // Calibrated camera → its REAL wall-clipped ground footprint (same math as
+  // the agent editor's coverage overlay); uncalibrated → the cosmetic wedge.
+  const coverage = calibratedCoverage(camera, walls);
   // 60° FOV wedge + camera dot, both sized as a fraction of the plan so they
   // read the same on any store's plan (not fixed plan-units).
   const R = base * 0.12;
@@ -211,12 +218,22 @@ function CameraMarker({
   const fovPath = `M ${cx} ${cy} L ${p1[0]} ${p1[1]} A ${R} ${R} 0 0 1 ${p2[0]} ${p2[1]} Z`;
   return (
     <g>
-      <path
-        d={fovPath}
-        fill="rgba(37,99,235,0.18)"
-        stroke="rgba(37,99,235,0.45)"
-        strokeWidth={base * 0.003}
-      />
+      {coverage ? (
+        <polygon
+          points={coverage.map(([x, y]) => `${x},${y}`).join(" ")}
+          fill="rgba(37,99,235,0.16)"
+          stroke="rgba(37,99,235,0.5)"
+          strokeWidth={base * 0.003}
+          strokeLinejoin="round"
+        />
+      ) : (
+        <path
+          d={fovPath}
+          fill="rgba(37,99,235,0.18)"
+          stroke="rgba(37,99,235,0.45)"
+          strokeWidth={base * 0.003}
+        />
+      )}
       <circle
         cx={cx}
         cy={cy}
