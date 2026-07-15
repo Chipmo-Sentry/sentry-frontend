@@ -24,7 +24,7 @@ export function FlowLayer({
   // Thickness scales to the DRAWN store extent (like the viewport's marks),
   // not the canvas — canvas-proportioned arrows dwarfed a small store.
   const ext = planExtent(plan);
-  const thickBase = Math.min(ext.w, ext.h) / 100;
+  const thickBase = Math.min(ext.w, ext.h) / 170;
   const max = flow.max_count || 1;
   const edges = flow.edges.slice(0, topN);
   if (edges.length === 0) return null;
@@ -37,8 +37,8 @@ export function FlowLayer({
           viewBox="0 0 10 10"
           refX="8"
           refY="5"
-          markerWidth="6"
-          markerHeight="6"
+          markerWidth="4.5"
+          markerHeight="4.5"
           orient="auto-start-reverse"
         >
           <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(96,165,250,0.9)" />
