@@ -84,6 +84,8 @@ export interface WalkedPath {
   started_at: string;
   duration_sec: number;
   points: number[][];
+  gender?: string | null;
+  age_band?: string | null;
 }
 export interface PathsSummary {
   window_from: string;

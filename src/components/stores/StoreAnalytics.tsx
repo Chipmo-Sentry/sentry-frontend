@@ -93,6 +93,7 @@ export function StoreAnalytics({
   const [heatLoading, setHeatLoading] = useState(false);
   const [flow, setFlow] = useState<FlowSummary | null>(null);
   const [paths, setPaths] = useState<PathsSummary | null>(null);
+  const [pathAge, setPathAge] = useState<string | null>(null);
   const [traffic, setTraffic] = useState<TrafficSummary | null>(null);
   const [zones, setZones] = useState<ZoneBreakdown | null>(null);
   const [peak, setPeak] = useState<PeakMatrixData | null>(null);
@@ -299,7 +300,7 @@ export function StoreAnalytics({
               <>
                 {layers.dwell && heat ? <HeatmapLayer grid={heat} /> : null}
                 {layers.paths && paths ? (
-                  <PathsLayer plan={plan} data={paths} />
+                  <PathsLayer plan={plan} data={paths} ageBand={pathAge} />
                 ) : null}
                 {layers.flow && flow ? (
                   <FlowLayer plan={plan} flow={flow} />
@@ -330,6 +331,32 @@ export function StoreAnalytics({
                 hint={layers.paths && paths && paths.paths.length === 0 ? "дата хуримтлагдаж байна" : undefined}
                 onChange={(v) => setLayers((s) => ({ ...s, paths: v }))}
               />
+              {layers.paths ? (
+                <div className="mt-1 mb-2 rounded-md border border-(--color-border) p-2 text-[10px] text-(--color-muted-foreground)">
+                  <div className="mb-1 flex items-center gap-3">
+                    <span className="flex items-center gap-1">
+                      <span className="inline-block h-2 w-2 rounded-full bg-[#3b82f6]" /> Эр
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="inline-block h-2 w-2 rounded-full bg-[#ef4444]" /> Эм
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="inline-block h-2 w-2 rounded-full bg-[#4ade80]" /> Тодорхойгүй
+                    </span>
+                  </div>
+                  <select
+                    value={pathAge ?? ""}
+                    onChange={(e) => setPathAge(e.target.value || null)}
+                    className="w-full rounded border border-(--color-border) bg-(--color-background) px-1 py-0.5 text-[10px]"
+                  >
+                    <option value="">Бүх нас</option>
+                    <option value="child">Хүүхэд</option>
+                    <option value="youth">Залуу</option>
+                    <option value="adult">Насанд хүрсэн</option>
+                    <option value="senior">Ахмад</option>
+                  </select>
+                </div>
+              ) : null}
               <LayerRow
                 label="Зочдын урсгал"
                 checked={layers.flow}

@@ -13,12 +13,23 @@ import type { FloorPlan, PathsSummary } from "@/lib/types";
  * reads as a string of dots (like classic traffic-trace plots) at a fraction
  * of the DOM cost of thousands of <circle> elements.
  */
+// Gender → trace colour (owner spec): male blue, female red, unclassified
+// keeps the neutral green so the map still works before face hits appear.
+const GENDER_RGB: Record<string, string> = {
+  male: "59, 130, 246",
+  female: "239, 68, 68",
+};
+const DEFAULT_RGB = "74, 222, 128";
+
 export function PathsLayer({
   plan,
   data,
+  ageBand = null,
 }: {
   plan: FloorPlan;
   data: PathsSummary;
+  /** When set, only paths of this age band draw (child|youth|adult|senior). */
+  ageBand?: string | null;
 }) {
   const [w, h] = plan.size;
   const ext = planExtent(plan);
@@ -35,6 +46,8 @@ export function PathsLayer({
     <g>
       {data.paths.map((p, i) => {
         if (p.points.length < 2) return null;
+        if (ageBand && p.age_band !== ageBand) return null;
+        const rgb = (p.gender && GENDER_RGB[p.gender]) || DEFAULT_RGB;
         const d = p.points
           .map((pt, j) => `${j === 0 ? "M" : "L"} ${pt[0]! * w} ${pt[1]! * h}`)
           .join(" ");
@@ -45,7 +58,7 @@ export function PathsLayer({
             key={i}
             d={d}
             fill="none"
-            stroke={`rgba(74, 222, 128, ${alpha})`}
+            stroke={`rgba(${rgb}, ${alpha})`}
             strokeWidth={dotW}
             strokeLinecap="round"
             strokeLinejoin="round"
