@@ -42,14 +42,27 @@ function invert3x3(m: number[][]): number[][] | null {
   ];
 }
 
+/** Project an image point through H⁻¹ onto the plan. Points at/behind the
+ * horizon (w ≤ 0) have no ground image — they must be dropped, not drawn:
+ * keeping them folds the footprint into a degenerate sliver. */
 function applyH(m: number[][], p: Pt): Pt | null {
   const [x, y] = p;
   const w = m[2]![0]! * x + m[2]![1]! * y + m[2]![2]!;
-  if (Math.abs(w) < 1e-9) return null;
+  if (w < 1e-9) return null;
   return [
     (m[0]![0]! * x + m[0]![1]! * y + m[0]![2]!) / w,
     (m[1]![0]! * x + m[1]![1]! * y + m[1]![2]!) / w,
   ];
+}
+
+function polyArea(pts: Pt[]): number {
+  let s = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i]!;
+    const b = pts[(i + 1) % pts.length]!;
+    s += a[0] * b[1] - b[0] * a[1];
+  }
+  return Math.abs(s) / 2;
 }
 
 /** Parametric t (≥ eps) where ray o+t·d crosses segment a-b, or null. */
@@ -132,22 +145,35 @@ function occludeFootprint(pos: Pt, pts: Pt[], walls: WallLike[]): Pt[] {
 export function calibratedCoverage(
   camera: PlanCameraLike,
   walls: WallLike[],
+  /** Cap on how far (plan units) the footprint may reach from the camera —
+   * image points near the horizon project absurdly far; a camera doesn't
+   * usefully see 200 m anyway. */
+  maxRange = 25,
 ): Pt[] | null {
   if (!camera.homography) return null;
   const inv = invert3x3(camera.homography);
   if (!inv) return null;
-  const corners: Pt[] = [
-    [0, 0],
-    [1, 0],
-    [1, 1],
-    [0, 1],
-  ];
-  const quad: Pt[] = [];
-  for (const c of corners) {
+  // Sample the whole image border (not just 4 corners): when the top of the
+  // image crosses the horizon those samples drop out and the rest still
+  // outline the visible ground patch.
+  const border: Pt[] = [];
+  const N = 8;
+  for (let i = 0; i < N; i++) border.push([i / N, 0]);
+  for (let i = 0; i < N; i++) border.push([1, i / N]);
+  for (let i = 0; i < N; i++) border.push([1 - i / N, 1]);
+  for (let i = 0; i < N; i++) border.push([0, 1 - i / N]);
+  const [cx, cy] = camera.pos;
+  const pts: Pt[] = [];
+  for (const c of border) {
     const p = applyH(inv, c);
-    if (!p) return null;
-    quad.push(p);
+    if (!p) continue;
+    const dx = p[0] - cx;
+    const dy = p[1] - cy;
+    const d = Math.hypot(dx, dy);
+    // Clamp runaway far points to the range cap along their own bearing.
+    pts.push(d > maxRange ? [cx + (dx / d) * maxRange, cy + (dy / d) * maxRange] : p);
   }
-  const clipped = occludeFootprint(camera.pos, quad, walls);
-  return clipped.length >= 3 ? clipped : null;
+  if (pts.length < 3 || polyArea(pts) < 0.5) return null;
+  const clipped = occludeFootprint(camera.pos, pts, walls);
+  return clipped.length >= 3 && polyArea(clipped) >= 0.5 ? clipped : null;
 }
