@@ -94,6 +94,7 @@ export function StoreAnalytics({
   const [flow, setFlow] = useState<FlowSummary | null>(null);
   const [paths, setPaths] = useState<PathsSummary | null>(null);
   const [pathAge, setPathAge] = useState<string | null>(null);
+  const [pathGender, setPathGender] = useState<string | null>(null);
   const [traffic, setTraffic] = useState<TrafficSummary | null>(null);
   const [zones, setZones] = useState<ZoneBreakdown | null>(null);
   const [peak, setPeak] = useState<PeakMatrixData | null>(null);
@@ -300,7 +301,7 @@ export function StoreAnalytics({
               <>
                 {layers.dwell && heat ? <HeatmapLayer grid={heat} /> : null}
                 {layers.paths && paths ? (
-                  <PathsLayer plan={plan} data={paths} ageBand={pathAge} />
+                  <PathsLayer plan={plan} data={paths} ageBand={pathAge} gender={pathGender} />
                 ) : null}
                 {layers.flow && flow ? (
                   <FlowLayer plan={plan} flow={flow} />
@@ -333,16 +334,32 @@ export function StoreAnalytics({
               />
               {layers.paths ? (
                 <div className="mt-1 mb-2 rounded-md border border-(--color-border) p-2 text-[10px] text-(--color-muted-foreground)">
-                  <div className="mb-1 flex items-center gap-3">
-                    <span className="flex items-center gap-1">
-                      <span className="inline-block h-2 w-2 rounded-full bg-[#3b82f6]" /> Эр
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="inline-block h-2 w-2 rounded-full bg-[#ef4444]" /> Эм
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="inline-block h-2 w-2 rounded-full bg-[#4ade80]" /> Тодорхойгүй
-                    </span>
+                  <div className="mb-1 flex items-center gap-1.5">
+                    {(
+                      [
+                        [null, "Бүгд", "#a3a3a3"],
+                        ["male", "Эр", "#3b82f6"],
+                        ["female", "Эм", "#ef4444"],
+                        ["unknown", "Тодорхойгүй", "#4ade80"],
+                      ] as [string | null, string, string][]
+                    ).map(([val, lbl, col]) => (
+                      <button
+                        key={lbl}
+                        type="button"
+                        onClick={() => setPathGender(val)}
+                        className={`flex items-center gap-1 rounded border px-1.5 py-0.5 ${
+                          pathGender === val
+                            ? "border-(--color-primary) bg-(--color-primary)/15"
+                            : "border-(--color-border)"
+                        }`}
+                      >
+                        <span
+                          className="inline-block h-2 w-2 rounded-full"
+                          style={{ background: col }}
+                        />
+                        {lbl}
+                      </button>
+                    ))}
                   </div>
                   <select
                     value={pathAge ?? ""}

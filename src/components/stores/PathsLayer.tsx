@@ -25,11 +25,14 @@ export function PathsLayer({
   plan,
   data,
   ageBand = null,
+  gender = null,
 }: {
   plan: FloorPlan;
   data: PathsSummary;
   /** When set, only paths of this age band draw (child|youth|adult|senior). */
   ageBand?: string | null;
+  /** When set, only paths of this gender draw (male|female|unknown). */
+  gender?: string | null;
 }) {
   const [w, h] = plan.size;
   const ext = planExtent(plan);
@@ -47,6 +50,8 @@ export function PathsLayer({
       {data.paths.map((p, i) => {
         if (p.points.length < 2) return null;
         if (ageBand && p.age_band !== ageBand) return null;
+        if (gender === "unknown" ? p.gender != null : gender && p.gender !== gender)
+          return null;
         const rgb = (p.gender && GENDER_RGB[p.gender]) || DEFAULT_RGB;
         const d = p.points
           .map((pt, j) => `${j === 0 ? "M" : "L"} ${pt[0]! * w} ${pt[1]! * h}`)
