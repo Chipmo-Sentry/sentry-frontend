@@ -86,7 +86,10 @@ function nearestWallT(o: Pt, d: Pt, tmax: number, walls: WallLike[]): number {
   for (const w of walls) {
     const pts = w.points;
     for (let i = 0; i < pts.length - 1; i++) {
-      const t = raySegT(o, d, pts[i] as Pt, pts[i + 1] as Pt, 1e-3);
+      // Cameras are MOUNTED on walls: a hit within half a metre of the
+      // camera is its own mounting wall, not an occluder — without this the
+      // camera's own wall swallows the whole footprint and nothing draws.
+      const t = raySegT(o, d, pts[i] as Pt, pts[i + 1] as Pt, 0.5);
       if (t !== null && t < best) best = t;
     }
   }
