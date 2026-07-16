@@ -17,6 +17,9 @@ interface PlanCameraLike {
   pos: [number, number];
   dir_deg?: number;
   homography?: number[][] | null;
+  /** v0.7.95+ calibrations fit H against k1-undistorted image coords and
+   * persist the term — raw frame points must be undistorted before H. */
+  k1?: number | null;
 }
 
 interface WallLike {
@@ -163,9 +166,15 @@ export function calibratedCoverage(
   for (let i = 0; i < N; i++) border.push([1 - i / N, 1]);
   for (let i = 0; i < N; i++) border.push([0, 1 - i / N]);
   const [cx, cy] = camera.pos;
+  const k1 = Number(camera.k1) || 0;
   const pts: Pt[] = [];
   for (const c of border) {
-    const p = applyH(inv, c);
+    // Undo the lens' radial distortion (same model as the agent) so the
+    // border samples live in the coordinate space H was fitted against.
+    const ddx = c[0] - 0.5;
+    const ddy = c[1] - 0.5;
+    const s = 1 + k1 * (ddx * ddx + ddy * ddy);
+    const p = applyH(inv, [0.5 + ddx * s, 0.5 + ddy * s]);
     if (!p) continue;
     const dx = p[0] - cx;
     const dy = p[1] - cy;
