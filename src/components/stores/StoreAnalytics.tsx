@@ -334,37 +334,51 @@ export function StoreAnalytics({
               />
               {layers.paths ? (
                 <div className="mt-1 mb-2 rounded-md border border-(--color-border) p-2 text-[10px] text-(--color-muted-foreground)">
-                  <div className="mb-1 flex items-center gap-1.5">
+                  <div className="mb-2 grid grid-cols-4 gap-1">
                     {(
                       [
-                        [null, "Бүгд", "#a3a3a3"],
-                        ["male", "Эр", "#3b82f6"],
-                        ["female", "Эм", "#ef4444"],
-                        ["unknown", "Тодорхойгүй", "#4ade80"],
+                        [null, "Бүгд", "163,163,163"],
+                        ["male", "Эр", "59,130,246"],
+                        ["female", "Эм", "239,68,68"],
+                        ["unknown", "Бусад", "74,222,128"],
                       ] as [string | null, string, string][]
-                    ).map(([val, lbl, col]) => (
-                      <button
-                        key={lbl}
-                        type="button"
-                        onClick={() => setPathGender(val)}
-                        className={`flex items-center gap-1 rounded border px-1.5 py-0.5 ${
-                          pathGender === val
-                            ? "border-(--color-primary) bg-(--color-primary)/15"
-                            : "border-(--color-border)"
-                        }`}
-                      >
-                        <span
-                          className="inline-block h-2 w-2 rounded-full"
-                          style={{ background: col }}
-                        />
-                        {lbl}
-                      </button>
-                    ))}
+                    ).map(([val, lbl, rgb]) => {
+                      const active = pathGender === val;
+                      return (
+                        <button
+                          key={lbl}
+                          type="button"
+                          onClick={() => setPathGender(val)}
+                          className="flex items-center justify-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-medium transition-colors"
+                          style={
+                            active
+                              ? {
+                                  borderColor: `rgb(${rgb})`,
+                                  background: `rgba(${rgb}, 0.18)`,
+                                  color: "#fafafa",
+                                }
+                              : {
+                                  borderColor: "var(--color-border)",
+                                  color: "var(--color-muted-foreground)",
+                                }
+                          }
+                        >
+                          <span
+                            className="inline-block h-2 w-2 shrink-0 rounded-full"
+                            style={{
+                              background: `rgb(${rgb})`,
+                              opacity: active ? 1 : 0.55,
+                            }}
+                          />
+                          {lbl}
+                        </button>
+                      );
+                    })}
                   </div>
                   <select
                     value={pathAge ?? ""}
                     onChange={(e) => setPathAge(e.target.value || null)}
-                    className="w-full rounded border border-(--color-border) bg-(--color-background) px-1 py-0.5 text-[10px]"
+                    className="w-full rounded-md border border-(--color-border) bg-(--color-background) px-2 py-1.5 text-[11px]"
                   >
                     <option value="">Бүх нас</option>
                     <option value="child">Хүүхэд</option>
