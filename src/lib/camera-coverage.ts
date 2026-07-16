@@ -168,6 +168,7 @@ export function calibratedCoverage(
   const [cx, cy] = camera.pos;
   const k1 = Number(camera.k1) || 0;
   const pts: Pt[] = [];
+  let unstable = 0; // horizon-dropped or range-clamped samples
   for (const c of border) {
     // Undo the lens' radial distortion (same model as the agent) so the
     // border samples live in the coordinate space H was fitted against.
@@ -175,13 +176,24 @@ export function calibratedCoverage(
     const ddy = c[1] - 0.5;
     const s = 1 + k1 * (ddx * ddx + ddy * ddy);
     const p = applyH(inv, [0.5 + ddx * s, 0.5 + ddy * s]);
-    if (!p) continue;
+    if (!p) {
+      unstable++;
+      continue;
+    }
     const dx = p[0] - cx;
     const dy = p[1] - cy;
     const d = Math.hypot(dx, dy);
-    // Clamp runaway far points to the range cap along their own bearing.
-    pts.push(d > maxRange ? [cx + (dx / d) * maxRange, cy + (dy / d) * maxRange] : p);
+    if (d > maxRange) {
+      unstable++;
+      pts.push([cx + (dx / d) * maxRange, cy + (dy / d) * maxRange]);
+    } else {
+      pts.push(p);
+    }
   }
+  // A steep / near-horizon camera explodes most of its image border — a
+  // polygon stitched from the survivors is geometry noise, not coverage.
+  // Fall back to the wedge (like the agent editor does) instead of drawing it.
+  if (unstable > border.length * 0.4) return null;
   if (pts.length < 3 || polyArea(pts) < 0.5) return null;
   const clipped = occludeFootprint(camera.pos, pts, walls);
   return clipped.length >= 3 && polyArea(clipped) >= 0.5 ? clipped : null;
