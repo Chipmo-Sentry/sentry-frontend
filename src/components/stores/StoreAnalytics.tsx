@@ -238,7 +238,7 @@ export function StoreAnalytics({
         <KpiCard
           icon={Users}
           label="Зочид"
-          hint="Орц/гарцын бүсээр илэрсэн хүн"
+          hint="Орц/гарцаар орсон давхардалгүй зочин (re-ID)"
           value={traffic ? traffic.total.toLocaleString() : "—"}
         />
         <KpiCard
