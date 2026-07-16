@@ -320,13 +320,13 @@ export function StoreAnalytics({
                 onChange={(v) => setLayers((s) => ({ ...s, plan: v }))}
               />
               <LayerRow
-                label="Зогсох дулаан"
+                label="Хэрэглэгчдийн төвлөрөл"
                 checked={layers.dwell}
                 hint={heatLoading ? "…" : undefined}
                 onChange={(v) => setLayers((s) => ({ ...s, dwell: v }))}
               />
               <LayerRow
-                label="Зочдын зам (тус бүр)"
+                label="Хэрэглэгчийн зам (тус бүр)"
                 checked={layers.paths}
                 hint={layers.paths && paths && paths.paths.length === 0 ? "дата хуримтлагдаж байна" : undefined}
                 onChange={(v) => setLayers((s) => ({ ...s, paths: v }))}
@@ -358,7 +358,7 @@ export function StoreAnalytics({
                 </div>
               ) : null}
               <LayerRow
-                label="Зочдын урсгал"
+                label="Хэрэглэгчийн урсгал"
                 checked={layers.flow}
                 hint={failed.flow ? "алдаа" : undefined}
                 onChange={(v) => setLayers((s) => ({ ...s, flow: v }))}
@@ -403,7 +403,7 @@ export function StoreAnalytics({
                   {heat && heat.cells.length > 0 ? (
                     <>
                       <div className="mb-1 text-xs text-(--color-muted-foreground)">
-                        Зогсох эрчим
+                        Төвлөрлийн эрчим
                       </div>
                       <div
                         className="h-2 w-full rounded"
