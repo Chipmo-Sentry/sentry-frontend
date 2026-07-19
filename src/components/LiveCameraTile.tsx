@@ -119,11 +119,18 @@ export function LiveCameraTile({
     let cancelled = false;
     setPaymentRequired(false);
     camerasApi.streamToken(streamCameraId).then(
-      ({ token, hls_url }) => {
+      ({ token, hls_url, whep_url }) => {
         if (cancelled) return;
-        // Prefer the backend's same-origin HTTPS HLS proxy (no mixed-content, no
-        // hardcoded ephemeral node port). whep="" makes attachLiveVideo go straight
-        // to HLS — WebRTC can't traverse the proxy.
+        // Best case: the node reports an HTTPS WHEP base → sub-second WebRTC
+        // (jwt already appended by the backend), with the same-origin HLS proxy
+        // as the in-player fallback.
+        if (whep_url && hls_url) {
+          setAuthUrls({ whep: whep_url, hls: API_BASE_URL + hls_url });
+          return;
+        }
+        // Otherwise the backend's HTTPS HLS proxy (no mixed-content, no
+        // hardcoded ephemeral node port). whep="" makes attachLiveVideo go
+        // straight to HLS — WebRTC can't traverse the proxy.
         if (hls_url) {
           setAuthUrls({ whep: "", hls: API_BASE_URL + hls_url });
           return;
@@ -193,7 +200,14 @@ export function LiveCameraTile({
         refreshSource: streamCameraId
           ? async () => {
               try {
-                const { token, hls_url } = await camerasApi.streamToken(streamCameraId);
+                const { token, hls_url, whep_url } =
+                  await camerasApi.streamToken(streamCameraId);
+                if (whep_url && hls_url)
+                  return {
+                    whepUrl: whep_url,
+                    hlsUrl: API_BASE_URL + hls_url,
+                    hlsOnly: false,
+                  };
                 if (hls_url)
                   return { whepUrl: "", hlsUrl: API_BASE_URL + hls_url, hlsOnly: true };
                 const q = `?jwt=${encodeURIComponent(token)}`;
@@ -350,7 +364,12 @@ export function LiveCameraTile({
         // store_risk_pct lives in the panel.) The band/colour is derived from
         // risk_pct via the shared ui-kit spec — the SAME mapping the agent uses.
         const risk = t.risk_pct;
-        const color = riskColor(risk);
+        // Staff (badge lock on the node) draw in a fixed cyan so they read as
+        // "us", never as a risk band — but the risk % stays visible below:
+        // alerts are NOT suppressed for staff (internal theft stays monitored).
+        const staff = t.is_staff === true;
+        const staffColor = "#06b6d4";
+        const color = staff ? staffColor : riskColor(risk);
 
         // Box: rounded, band-coloured, 2px.
         ctx.beginPath();
@@ -364,7 +383,13 @@ export function LiveCameraTile({
         // the SAME person shows the SAME id across the store's cameras
         // (ADR-0023); fall back to the per-camera ByteTrack id when re-ID is off.
         const pid = t.store_person_id ?? t.person_id;
-        const riskTxt = risk > 0 ? `${risk.toFixed(0)}%` : "—";
+        const riskTxt = staff
+          ? risk > 0
+            ? `Ажилтан · ${risk.toFixed(0)}%`
+            : "Ажилтан"
+          : risk > 0
+            ? `${risk.toFixed(0)}%`
+            : "—";
         const idTxt = `#${pid}`;
         const pad = 8;
         const gap = 5;

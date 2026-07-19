@@ -27,6 +27,10 @@ export type Track = {
   behavior_scores?: Record<string, number>; // accumulated score per criterion
   reasons?: string[]; // Mongolian display strings (latest non-empty frame)
   episode_started_ms?: number | null; // node epoch ms of the episode's first firing
+  // Staff identification (badge-color + VLM lock on the node). Recolors the
+  // box + labels «Ажилтан»; risk still shown — alerts are NOT suppressed for
+  // staff (internal theft stays monitored). Optional: older nodes don't send it.
+  is_staff?: boolean;
 };
 
 /**

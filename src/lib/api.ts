@@ -246,9 +246,14 @@ export const cameras = {
   /** Short-lived per-camera WHEP/HLS read token — append as `?jwt=<token>` to
    * the MediaMTX stream URL so playback is authenticated (not `user: any`). */
   streamToken: (id: string) =>
-    request<{ token: string; expires_in: number; hls_url?: string | null }>(
-      `/api/v1/cameras/${encodeURIComponent(id)}/stream-token`,
-    ),
+    request<{
+      token: string;
+      expires_in: number;
+      hls_url?: string | null;
+      // Absolute HTTPS WHEP URL on the serving node (jwt appended) — present
+      // only when the node reports an HTTPS WHEP base; sub-second WebRTC.
+      whep_url?: string | null;
+    }>(`/api/v1/cameras/${encodeURIComponent(id)}/stream-token`),
 };
 
 /** Absolute base for backend-served URLs (e.g. the live HLS proxy) so a <video>
