@@ -29,6 +29,9 @@ const FIXTURE_DEFAULT_H: Record<string, number> = {
   exit: 0,
   entrance: 0,
   furniture: 0,
+  sofa: 0.8,
+  chair: 0.9,
+  door: 0,
 };
 const WALL_DEFAULT_H = 2.8;
 const WALL_THICKNESS = 0.12;

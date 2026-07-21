@@ -21,6 +21,11 @@ const ZONE_STYLE: Record<string, { color: string; label: string }> = {
   fridge: { color: "#38BDF8", label: "Хөргүүр" },
   mannequin: { color: "#F472B6", label: "Маникен" },
   furniture: { color: "#A78BFA", label: "Тавилга" },
+  // Named scenery + interior doorway (owner request 07-21) — plan-only types,
+  // never Camera.zones; `door` is NOT a visit gate (entrance/exit are).
+  sofa: { color: "#FB923C", label: "Буйдан" },
+  chair: { color: "#84CC16", label: "Сандал" },
+  door: { color: "#2DD4BF", label: "Дотор хаалга" },
 };
 
 const FALLBACK = { color: "#9CA3AF", label: "Зон" };
