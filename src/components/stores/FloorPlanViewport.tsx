@@ -374,10 +374,10 @@ function CameraMarker({
   base: number;
 }) {
   const [cx, cy] = camera.pos;
-  // 60° FOV wedge + camera dot, both sized as a fraction of the plan so they
-  // read the same on any store's plan (not fixed plan-units).
+  // 60° FOV wedge + a top-view CCTV glyph (was a bare dot), both sized as a
+  // fraction of the plan so they read the same on any store's plan.
   const R = base * 0.12;
-  const dot = base * 0.02;
+  const s = base * 0.028; // glyph half-size unit
   const half = 30; // half-angle deg
   const a1 = ((camera.dir_deg - half) * Math.PI) / 180;
   const a2 = ((camera.dir_deg + half) * Math.PI) / 180;
@@ -392,14 +392,32 @@ function CameraMarker({
         stroke="rgba(37,99,235,0.45)"
         strokeWidth={base * 0.003}
       />
-      <circle
-        cx={cx}
-        cy={cy}
-        r={dot}
-        fill="#2563eb"
+      {/* Camera glyph, rotated to face dir_deg (0° = +x, same as the wedge):
+          rounded body + a lens barrel poking INTO the FOV cone so the shape
+          itself shows which way it looks even before the cone registers. */}
+      <g
+        transform={`translate(${cx} ${cy}) rotate(${camera.dir_deg})`}
         stroke="#0a0a0a"
-        strokeWidth={dot * 0.3}
-      />
+        strokeWidth={s * 0.18}
+      >
+        <rect
+          x={-s * 1.1}
+          y={-s * 0.75}
+          width={s * 1.7}
+          height={s * 1.5}
+          rx={s * 0.35}
+          fill="#2563eb"
+        />
+        <rect
+          x={s * 0.45}
+          y={-s * 0.4}
+          width={s * 0.75}
+          height={s * 0.8}
+          rx={s * 0.18}
+          fill="#2563eb"
+        />
+        <circle cx={s * 0.95} cy={0} r={s * 0.22} fill="#bfdbfe" stroke="none" />
+      </g>
       {/* Friendly name over the raw mediamtx path when the agent supplied one. */}
       <title>{camera.name || camera.camera_id}</title>
     </g>
