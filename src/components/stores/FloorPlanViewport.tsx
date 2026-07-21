@@ -377,7 +377,7 @@ function CameraMarker({
   // 60° FOV wedge + a top-view CCTV glyph (was a bare dot), both sized as a
   // fraction of the plan so they read the same on any store's plan.
   const R = base * 0.12;
-  const s = base * 0.028; // glyph half-size unit
+  const s = base * 0.0056; // glyph half-size unit (owner: 5× smaller than v1)
   const half = 30; // half-angle deg
   const a1 = ((camera.dir_deg - half) * Math.PI) / 180;
   const a2 = ((camera.dir_deg + half) * Math.PI) / 180;
@@ -398,7 +398,7 @@ function CameraMarker({
       <g
         transform={`translate(${cx} ${cy}) rotate(${camera.dir_deg})`}
         stroke="#0a0a0a"
-        strokeWidth={s * 0.18}
+        strokeWidth={s * 0.09} // owner: 10× thinner outline (vs the v1 absolute)
       >
         <rect
           x={-s * 1.1}
