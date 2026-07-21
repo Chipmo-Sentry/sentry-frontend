@@ -194,7 +194,7 @@ export function FloorPlanViewport({ plan, overlay, dimPlan = false }: Props) {
       <svg
         ref={svgRef}
         viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`}
-        className={`block h-auto w-full ${
+        className={`block h-auto max-h-[70vh] w-full ${
           view ? (dragging ? "cursor-grabbing" : "cursor-grab") : ""
         }`}
         style={{ touchAction: view ? "none" : "pan-y" }}
