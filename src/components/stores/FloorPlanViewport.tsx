@@ -377,7 +377,7 @@ function CameraMarker({
   // 60° FOV wedge + a top-view CCTV glyph (was a bare dot), both sized as a
   // fraction of the plan so they read the same on any store's plan.
   const R = base * 0.12;
-  const s = base * 0.0056; // glyph half-size unit (owner: 5× smaller than v1)
+  const s = base * 0.00728; // glyph half-size unit (owner: v2 × 1.3)
   const half = 30; // half-angle deg
   const a1 = ((camera.dir_deg - half) * Math.PI) / 180;
   const a2 = ((camera.dir_deg + half) * Math.PI) / 180;
@@ -393,30 +393,26 @@ function CameraMarker({
         strokeWidth={base * 0.003}
       />
       {/* Camera glyph, rotated to face dir_deg (0° = +x, same as the wedge):
-          rounded body + a lens barrel poking INTO the FOV cone so the shape
+          soft halo (keeps the small mark findable on a busy plan) + rounded
+          body + a flaring lens hood poking INTO the FOV cone, so the shape
           itself shows which way it looks even before the cone registers. */}
-      <g
-        transform={`translate(${cx} ${cy}) rotate(${camera.dir_deg})`}
-        stroke="#0a0a0a"
-        strokeWidth={s * 0.09} // owner: 10× thinner outline (vs the v1 absolute)
-      >
-        <rect
-          x={-s * 1.1}
-          y={-s * 0.75}
-          width={s * 1.7}
-          height={s * 1.5}
-          rx={s * 0.35}
-          fill="#2563eb"
-        />
-        <rect
-          x={s * 0.45}
-          y={-s * 0.4}
-          width={s * 0.75}
-          height={s * 0.8}
-          rx={s * 0.18}
-          fill="#2563eb"
-        />
-        <circle cx={s * 0.95} cy={0} r={s * 0.22} fill="#bfdbfe" stroke="none" />
+      <g transform={`translate(${cx} ${cy}) rotate(${camera.dir_deg})`}>
+        <circle r={s * 1.9} fill="rgba(37,99,235,0.14)" />
+        <g stroke="#0a0a0a" strokeWidth={s * 0.09}>
+          <rect
+            x={-s * 1.15}
+            y={-s * 0.8}
+            width={s * 1.75}
+            height={s * 1.6}
+            rx={s * 0.45}
+            fill="#3b82f6"
+          />
+          <path
+            d={`M ${s * 0.55} ${-s * 0.42} L ${s * 1.35} ${-s * 0.62} L ${s * 1.35} ${s * 0.62} L ${s * 0.55} ${s * 0.42} Z`}
+            fill="#2563eb"
+          />
+          <circle cx={s * 1.05} cy={0} r={s * 0.27} fill="#dbeafe" stroke="none" />
+        </g>
       </g>
       {/* Friendly name over the raw mediamtx path when the agent supplied one. */}
       <title>{camera.name || camera.camera_id}</title>
