@@ -2,6 +2,7 @@
 
 import { Card, CardContent, ErrorState, Spinner } from "@chipmo-sentry/ui-kit";
 import {
+  Box,
   CalendarClock,
   Clock,
   Footprints,
@@ -10,7 +11,21 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useState } from "react";
+
+// three.js stays out of the main bundle — fetched only when 3D is opened.
+const PlanViewport3D = dynamic(
+  () => import("@/components/stores/PlanViewport3D"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[70vh] items-center justify-center rounded-lg border border-(--color-border)">
+        <Spinner />
+      </div>
+    ),
+  },
+);
 
 import { DemographicsPanel } from "@/components/stores/DemographicsPanel";
 import { FloorPlanViewport } from "@/components/stores/FloorPlanViewport";
@@ -83,6 +98,7 @@ export function StoreAnalytics({
   hours: number;
 }) {
   const [plan, setPlan] = useState<FloorPlan | null>(null);
+  const [threeD, setThreeD] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [layers, setLayers] = useState<Record<LayerKey, boolean>>({
     plan: true,
@@ -293,10 +309,31 @@ export function StoreAnalytics({
 
       {/* Store map (floor plan) + layer switcher */}
       <div>
-        <SectionHead icon={MapPinned} title="Дэлгүүрийн план зураг">
-          Тавиур, орц/гарц, камерын байрлал ба зогсох дулааны давхарга
-        </SectionHead>
-        <div className="grid gap-4 md:grid-cols-[1fr_260px]">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <SectionHead icon={MapPinned} title="Дэлгүүрийн план зураг">
+            Тавиур, орц/гарц, камерын байрлал ба зогсох дулааны давхарга
+          </SectionHead>
+          {/* 2D ⇄ 3D: the 3D view extrudes walls/fixtures to their real
+              heights; analytics overlays stay a 2D feature for now. */}
+          <div className="flex rounded-lg border border-(--color-border) p-0.5">
+            {([false, true] as const).map((v) => (
+              <button
+                key={String(v)}
+                onClick={() => setThreeD(v)}
+                className={`flex items-center gap-1 rounded-md px-3 py-1 text-sm transition-colors ${
+                  threeD === v
+                    ? "bg-(--color-primary) text-(--color-primary-foreground)"
+                    : "text-(--color-muted-foreground) hover:text-(--color-foreground)"
+                }`}
+              >
+                {v ? <Box className="h-3.5 w-3.5" /> : null}
+                {v ? "3D" : "2D"}
+              </button>
+            ))}
+          </div>
+        </div>
+        {threeD ? <PlanViewport3D plan={plan} /> : null}
+        <div className={threeD ? "hidden" : "grid gap-4 md:grid-cols-[1fr_260px]"}>
           <FloorPlanViewport
             plan={plan}
             dimPlan={layers.paths && !!paths}
