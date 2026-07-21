@@ -56,13 +56,18 @@ export function TrafficChart({
 
   return (
     <div className="flex gap-2">
-      {/* Y axis: visitor counts for the gridlines */}
+      {/* Y axis: visitor counts for the gridlines. OUTSIDE the scroll pane so
+          the magnitude stays readable while a long window is panned. */}
       <div className="flex h-32 w-8 shrink-0 flex-col justify-between text-right text-[10px] text-(--color-muted-foreground) tabular-nums">
         <span>{max.toLocaleString()}</span>
         <span>{mid.toLocaleString()}</span>
         <span>0</span>
       </div>
-      <div className="min-w-0 flex-1">
+      {/* Bars keep a 2px minimum each, so a 7/30-day window is wider than a
+          phone (or even a desktop card at 30d). Scroll INSIDE the chart —
+          overflowing the card broke the whole page sideways on mobile. */}
+      <div className="min-w-0 flex-1 overflow-x-auto">
+        <div style={{ minWidth: bars.length * 3 }}>
         <div className="relative flex h-32 items-end gap-px">
           {/* gridlines behind the bars */}
           <div className="pointer-events-none absolute inset-0">
@@ -98,6 +103,7 @@ export function TrafficChart({
               {b.idx % labelEvery === 0 ? fmtAxis(b.ts, tz, dayWindow) : ""}
             </div>
           ))}
+        </div>
         </div>
       </div>
     </div>

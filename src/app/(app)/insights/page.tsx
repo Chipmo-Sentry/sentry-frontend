@@ -31,11 +31,13 @@ export default function InsightsPage() {
   }, []);
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
+      {/* Header wraps into stacked rows on phones: title, then the store
+          picker (full width), then the full-width range tabs. */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <div className="flex-1">
-          <h1 className="flex items-center gap-2 text-2xl font-semibold">
-            <BarChart3 className="h-6 w-6 text-(--color-primary)" />
+        <div className="min-w-0 flex-1 basis-full sm:basis-auto">
+          <h1 className="flex items-center gap-2 text-xl font-semibold md:text-2xl">
+            <BarChart3 className="h-6 w-6 shrink-0 text-(--color-primary)" />
             Аналитик
           </h1>
           <p className="text-sm text-(--color-muted-foreground)">
@@ -44,12 +46,12 @@ export default function InsightsPage() {
         </div>
 
         {stores && stores.length > 1 ? (
-          <label className="flex items-center gap-2 text-sm">
-            <Store className="h-4 w-4 text-(--color-muted-foreground)" />
+          <label className="flex w-full items-center gap-2 text-sm sm:w-auto">
+            <Store className="h-4 w-4 shrink-0 text-(--color-muted-foreground)" />
             <Select
               value={storeId}
               onChange={(e) => setStoreId(e.target.value)}
-              className="h-9 w-auto min-w-44"
+              className="h-9 w-full sm:w-auto sm:min-w-44"
             >
               {stores.map((s) => (
                 <option key={s.id} value={s.id}>

@@ -38,7 +38,8 @@ export const ANALYTICS_RANGES: { label: string; hours: number }[] = [
   { label: "30 хоног", hours: 24 * 30 },
 ];
 
-/** Time-range segmented control shared by both analytics routes. */
+/** Time-range segmented control shared by both analytics routes. Full-width
+ * equal-split on phones (easy thumb targets), natural width from sm: up. */
 export function RangeTabs({
   hours,
   onChange,
@@ -47,12 +48,12 @@ export function RangeTabs({
   onChange: (h: number) => void;
 }) {
   return (
-    <div className="flex rounded-lg border border-(--color-border) p-0.5">
+    <div className="flex w-full rounded-lg border border-(--color-border) p-0.5 sm:w-auto">
       {ANALYTICS_RANGES.map((r) => (
         <button
           key={r.hours}
           onClick={() => onChange(r.hours)}
-          className={`rounded-md px-3 py-1 text-sm transition-colors ${
+          className={`flex-1 rounded-md px-3 py-1 text-sm whitespace-nowrap transition-colors sm:flex-initial ${
             hours === r.hours
               ? "bg-(--color-primary) text-(--color-primary-foreground)"
               : "text-(--color-muted-foreground) hover:text-(--color-foreground)"
@@ -293,7 +294,7 @@ export function StoreAnalytics({
         <SectionHead icon={MapPinned} title="Дэлгүүрийн план зураг">
           Тавиур, орц/гарц, камерын байрлал ба зогсох дулааны давхарга
         </SectionHead>
-        <div className="grid gap-4 lg:grid-cols-[1fr_260px]">
+        <div className="grid gap-4 md:grid-cols-[1fr_260px]">
           <FloorPlanViewport
             plan={plan}
             dimPlan={layers.paths && !!paths}
@@ -658,12 +659,16 @@ function KpiCard({
 }) {
   return (
     <Card>
-      <CardContent className="p-4">
+      <CardContent className="p-3 sm:p-4">
         <div className="flex items-center gap-2 text-xs text-(--color-muted-foreground)">
-          <Icon className="h-3.5 w-3.5" />
-          {label}
+          <Icon className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">{label}</span>
         </div>
-        <div className="mt-1 text-2xl font-semibold">{value}</div>
+        {/* Long values ("14:00 · 25 зочин") must wrap, not blow the 2-col
+            phone grid open — smaller size + break-words below sm. */}
+        <div className="mt-1 text-lg font-semibold break-words sm:text-2xl">
+          {value}
+        </div>
         {hint ? (
           <div className="mt-0.5 text-[11px] text-(--color-muted-foreground)">
             {hint}

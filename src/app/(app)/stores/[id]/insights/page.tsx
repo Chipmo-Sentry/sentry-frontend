@@ -26,23 +26,24 @@ export default function StoreInsightsPage() {
   }, [storeId]);
 
   return (
-    <div className="p-8">
-      <div className="mb-4 flex items-center gap-3">
+    <div className="p-4 md:p-8">
+      {/* Wraps on phones: back button + title row, then full-width range tabs. */}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
         <Button variant="ghost" asChild>
           <Link href="/stores">
             <ArrowLeft className="h-4 w-4" />
             Дэлгүүр
           </Link>
         </Button>
-        <div className="flex-1">
-          <h1 className="text-2xl font-semibold">
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-xl font-semibold md:text-2xl">
             {store ? `${store.name} — Аналитик` : "Аналитик"}
           </h1>
           <p className="text-sm text-(--color-muted-foreground)">
             Дэлгүүрийн харилцагчийн урсгал, зогсох дулаан, хүн тоолох
           </p>
         </div>
-        <div className="ml-auto">
+        <div className="w-full sm:ml-auto sm:w-auto">
           <RangeTabs hours={hours} onChange={setHours} />
         </div>
       </div>

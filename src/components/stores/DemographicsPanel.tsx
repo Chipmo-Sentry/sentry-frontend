@@ -69,7 +69,7 @@ function SliceBars({
           const pct = Math.round(s.share * 100);
           return (
             <div key={s.key} className="flex items-center gap-3">
-              <span className="w-28 shrink-0 truncate text-sm">{m.label}</span>
+              <span className="w-22 shrink-0 truncate text-sm sm:w-28">{m.label}</span>
               <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-(--color-muted)">
                 <div
                   className="h-full rounded-full"
@@ -82,8 +82,9 @@ function SliceBars({
               <span className="w-10 shrink-0 text-right text-sm tabular-nums">
                 {pct}%
               </span>
+              {/* Raw count hides on phones — the % + bar carry the story. */}
               <span
-                className="w-14 shrink-0 text-right text-xs text-(--color-muted-foreground) tabular-nums"
+                className="hidden w-14 shrink-0 text-right text-xs text-(--color-muted-foreground) tabular-nums sm:block"
                 title={`${s.count.toLocaleString()} хүн / нийт ${total.toLocaleString()}`}
               >
                 {s.count.toLocaleString()}

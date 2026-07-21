@@ -27,13 +27,15 @@ export function ZoneTable({ data }: { data: ZoneBreakdown }) {
 
   return (
     <div>
-      {/* Column headers — the raw sample count was an unlabelled mystery number. */}
+      {/* Column headers — the raw sample count was an unlabelled mystery number.
+          The count column hides below sm: a 360px phone needs the share bar
+          more than a second number. */}
       <div className="mb-1.5 flex items-center gap-3 text-[11px] text-(--color-muted-foreground)">
-        <span className="w-24 shrink-0">Бүс</span>
+        <span className="w-20 shrink-0 sm:w-24">Бүс</span>
         <span className="flex-1" />
         <span className="w-10 shrink-0 text-right">Эзлэх</span>
         <span
-          className="w-16 shrink-0 text-right"
+          className="hidden w-16 shrink-0 text-right sm:block"
           title="Энэ бүсэд бүртгэгдсэн хөдөлгөөний цэг (харьцангуй үзүүлэлт)"
         >
           Бүртгэл
@@ -48,7 +50,7 @@ export function ZoneTable({ data }: { data: ZoneBreakdown }) {
           const pct = Math.round(z.share * 100);
           return (
             <div key={z.fixture_id} className="flex items-center gap-3">
-              <span className="w-24 shrink-0 truncate text-sm" title={label}>
+              <span className="w-20 shrink-0 truncate text-sm sm:w-24" title={label}>
                 {label}
               </span>
               <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-(--color-muted)">
@@ -63,7 +65,7 @@ export function ZoneTable({ data }: { data: ZoneBreakdown }) {
               <span className="w-10 shrink-0 text-right text-sm tabular-nums">
                 {pct}%
               </span>
-              <span className="w-16 shrink-0 text-right text-xs text-(--color-muted-foreground) tabular-nums">
+              <span className="hidden w-16 shrink-0 text-right text-xs text-(--color-muted-foreground) tabular-nums sm:block">
                 {z.samples.toLocaleString()}
               </span>
             </div>
