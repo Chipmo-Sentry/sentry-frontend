@@ -169,7 +169,11 @@ export default function PlanViewport3D({ plan }: { plan: FloorPlan }) {
     );
     for (const cam of plan.cameras) {
       const [px, py] = cam.pos;
-      const mountH = WALL_DEFAULT_H - 0.2;
+      // Calibrated cameras carry their solvePnP-measured mount height (agent
+      // v0.7.102); uncalibrated ones hang just under the default wall height.
+      const solved = (cam as { cam_h_m?: number | null }).cam_h_m;
+      const mountH =
+        typeof solved === "number" && solved > 0 ? solved : WALL_DEFAULT_H - 0.2;
       const body = new THREE.Mesh(
         track(new THREE.BoxGeometry(0.35, 0.22, 0.22)),
         camMat,
