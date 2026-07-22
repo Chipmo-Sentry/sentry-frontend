@@ -26,6 +26,7 @@ const ZONE_STYLE: Record<string, { color: string; label: string }> = {
   sofa: { color: "#FB923C", label: "Буйдан" },
   chair: { color: "#84CC16", label: "Сандал" },
   door: { color: "#2DD4BF", label: "Дотор хаалга" },
+  exterior_door: { color: "#A8A29E", label: "Гадна хаалга" },
 };
 
 const FALLBACK = { color: "#9CA3AF", label: "Зон" };

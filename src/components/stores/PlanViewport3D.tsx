@@ -32,11 +32,77 @@ const FIXTURE_DEFAULT_H: Record<string, number> = {
   sofa: 0.8,
   chair: 0.9,
   door: 0,
+  exterior_door: 0,
 };
 const WALL_DEFAULT_H = 2.8;
 const WALL_THICKNESS = 0.12;
+// Any door-like fixture cuts an OPENING through the wall it sits on (нэвт
+// харагдана): the wall renders in pieces around it, with a lintel above.
+const DOOR_TYPES = new Set(["door", "exterior_door", "exit", "entrance"]);
+const DOOR_OPENING_H = 2.05;
 
 type WithHeight = { height_m?: number | null };
+type Poly = [number, number][];
+
+/** [t0,t1] spans (0-1 along the segment) where it passes inside `poly`. */
+function segSpansInPoly(
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  poly: Poly,
+): [number, number][] {
+  const inside = (px: number, py: number): boolean => {
+    let odd = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const [xi, yi] = poly[i]!;
+      const [xj, yj] = poly[j]!;
+      if (yi > py !== yj > py && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) {
+        odd = !odd;
+      }
+    }
+    return odd;
+  };
+  const ts: number[] = [];
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [ax, ay] = poly[j]!;
+    const [bx, by] = poly[i]!;
+    const rx = bx - ax;
+    const ry = by - ay;
+    const den = dx * ry - dy * rx;
+    if (Math.abs(den) < 1e-12) continue;
+    const t = ((ax - x1) * ry - (ay - y1) * rx) / den;
+    const u = ((ax - x1) * dy - (ay - y1) * dx) / den;
+    if (t > 0 && t < 1 && u >= 0 && u <= 1) ts.push(t);
+  }
+  ts.sort((a, b) => a - b);
+  const bounds = [0, ...ts, 1];
+  const spans: [number, number][] = [];
+  for (let i = 0; i < bounds.length - 1; i++) {
+    const a = bounds[i]!;
+    const b = bounds[i + 1]!;
+    if (b - a < 1e-6) continue;
+    const mid = (a + b) / 2;
+    if (inside(x1 + dx * mid, y1 + dy * mid)) spans.push([a, b]);
+  }
+  return spans;
+}
+
+/** Merge overlapping [t0,t1] spans. */
+function mergeSpans(spans: [number, number][]): [number, number][] {
+  if (spans.length === 0) return spans;
+  spans.sort((a, b) => a[0] - b[0]);
+  const out: [number, number][] = [spans[0]!];
+  for (let i = 1; i < spans.length; i++) {
+    const last = out[out.length - 1]!;
+    const cur = spans[i]!;
+    if (cur[0] <= last[1] + 1e-6) last[1] = Math.max(last[1], cur[1]);
+    else out.push(cur);
+  }
+  return out;
+}
 
 export default function PlanViewport3D({ plan }: { plan: FloorPlan }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -92,10 +158,36 @@ export default function PlanViewport3D({ plan }: { plan: FloorPlan }) {
       return o;
     };
 
-    // Walls: each polyline segment becomes a thin box at its own height.
+    // Walls: each polyline segment becomes thin boxes — SPLIT around any
+    // door-like fixture it passes through (нэвт харагдана): the doorway span
+    // is open up to DOOR_OPENING_H, with a lintel box above when the wall is
+    // taller.
+    const doorPolys: Poly[] = plan.fixtures
+      .filter((f) => DOOR_TYPES.has(f.type) && f.points.length >= 3)
+      .map((f) => f.points as Poly);
     const wallMat = track(
       new THREE.MeshStandardMaterial({ color: 0xd4d4d4, roughness: 0.85 }),
     );
+    const addWallPiece = (
+      x1: number,
+      y1: number,
+      x2: number,
+      y2: number,
+      a: number,
+      b: number,
+      h: number,
+      yBase: number,
+    ) => {
+      const len = Math.hypot(x2 - x1, y2 - y1) * (b - a);
+      if (len < 0.01 || h <= 0.01) return;
+      const mx = x1 + (x2 - x1) * ((a + b) / 2);
+      const my = y1 + (y2 - y1) * ((a + b) / 2);
+      const geo = track(new THREE.BoxGeometry(len, h, WALL_THICKNESS));
+      const mesh = new THREE.Mesh(geo, wallMat);
+      mesh.position.set(mx, yBase + h / 2, my);
+      mesh.rotation.y = -Math.atan2(y2 - y1, x2 - x1);
+      scene.add(mesh);
+    };
     for (const wall of plan.walls) {
       const h = (wall as WithHeight).height_m ?? WALL_DEFAULT_H;
       if (h <= 0) continue;
@@ -103,13 +195,20 @@ export default function PlanViewport3D({ plan }: { plan: FloorPlan }) {
       for (let i = 0; i < pts.length - 1; i++) {
         const [x1, y1] = pts[i]!;
         const [x2, y2] = pts[i + 1]!;
-        const len = Math.hypot(x2 - x1, y2 - y1);
-        if (len < 1e-6) continue;
-        const geo = track(new THREE.BoxGeometry(len, h, WALL_THICKNESS));
-        const mesh = new THREE.Mesh(geo, wallMat);
-        mesh.position.set((x1 + x2) / 2, h / 2, (y1 + y2) / 2);
-        mesh.rotation.y = -Math.atan2(y2 - y1, x2 - x1);
-        scene.add(mesh);
+        if (Math.hypot(x2 - x1, y2 - y1) < 1e-6) continue;
+        const doorSpans = mergeSpans(
+          doorPolys.flatMap((p) => segSpansInPoly(x1, y1, x2, y2, p)),
+        );
+        let cursor = 0;
+        for (const [a, b] of doorSpans) {
+          addWallPiece(x1, y1, x2, y2, cursor, a, h, 0);
+          // Lintel over the opening (door top → wall top).
+          if (h > DOOR_OPENING_H) {
+            addWallPiece(x1, y1, x2, y2, a, b, h - DOOR_OPENING_H, DOOR_OPENING_H);
+          }
+          cursor = b;
+        }
+        addWallPiece(x1, y1, x2, y2, cursor, 1, h, 0);
       }
     }
 
