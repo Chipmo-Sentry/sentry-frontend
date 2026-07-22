@@ -47,6 +47,60 @@ const WINDOW_SILL_H = 0.9;
 type WithHeight = { height_m?: number | null };
 type Poly = [number, number][];
 
+/** Calibrated ground footprint: the camera image's 4 corners pushed through
+ * H⁻¹ (k1-undistorted first) onto the floor — same math as the agent editor's
+ * coverage overlay. Null when uncalibrated or a corner sits at/behind the
+ * horizon (caller falls back to the cosmetic cone). */
+function cameraFootprint(cam: {
+  pos: [number, number];
+  homography?: number[][] | null;
+  k1?: number | null;
+}): Poly | null {
+  const H = cam.homography;
+  if (!H || H.length !== 3) return null;
+  const [[a, b, c], [d, e, f], [g, h, i]] = H as [number[], number[], number[]];
+  const A = e! * i! - f! * h!;
+  const B = c! * h! - b! * i!;
+  const C = b! * f! - c! * e!;
+  const det = a! * A + d! * B + g! * C;
+  if (Math.abs(det) < 1e-12) return null;
+  const id = 1 / det;
+  const inv = [
+    [A * id, B * id, C * id],
+    [(f! * g! - d! * i!) * id, (a! * i! - c! * g!) * id, (c! * d! - a! * f!) * id],
+    [(d! * h! - e! * g!) * id, (b! * g! - a! * h!) * id, (a! * e! - b! * d!) * id],
+  ];
+  const k1 = Number(cam.k1) || 0;
+  const [px, py] = cam.pos;
+  const MAXR = 25;
+  const out: Poly = [];
+  for (const [cx, cy] of [
+    [0, 0],
+    [1, 0],
+    [1, 1],
+    [0, 1],
+  ] as Poly) {
+    const dx = cx - 0.5;
+    const dy = cy - 0.5;
+    const s = 1 + k1 * (dx * dx + dy * dy);
+    const ux = 0.5 + dx * s;
+    const uy = 0.5 + dy * s;
+    const w = inv[2]![0]! * ux + inv[2]![1]! * uy + inv[2]![2]!;
+    if (w < 1e-9) return null; // horizon — no ground image
+    let fx = (inv[0]![0]! * ux + inv[0]![1]! * uy + inv[0]![2]!) / w;
+    let fy = (inv[1]![0]! * ux + inv[1]![1]! * uy + inv[1]![2]!) / w;
+    const ddx = fx - px;
+    const ddy = fy - py;
+    const dd = Math.hypot(ddx, ddy);
+    if (dd > MAXR) {
+      fx = px + (ddx / dd) * MAXR;
+      fy = py + (ddy / dd) * MAXR;
+    }
+    out.push([fx, fy]);
+  }
+  return out;
+}
+
 /** [t0,t1] spans (0-1 along the segment) where it passes inside `poly`. */
 function segSpansInPoly(
   x1: number,
@@ -329,28 +383,81 @@ export default function PlanViewport3D({ plan }: { plan: FloorPlan }) {
       body.position.set(px, mountH, py);
       body.rotation.y = -((cam.dir_deg * Math.PI) / 180);
       scene.add(body);
-      // View cone: apex at the camera, opening toward the floor along dir.
-      const reach = Math.min(6, span * 0.3);
-      const cone = new THREE.Mesh(
-        track(new THREE.ConeGeometry(reach * 0.45, reach, 24, 1, true)),
-        coneMat,
+      // Calibrated camera → its REAL ground footprint (H⁻¹ + k1) painted on
+      // the floor with faint sight lines. Uncalibrated → the cosmetic cone.
+      const fp = cameraFootprint(
+        cam as { pos: [number, number]; homography?: number[][] | null; k1?: number | null },
       );
-      // Cone points -y by default after this rotation chain: lay it so the
-      // axis tilts 55° down from horizontal along dir_deg.
-      const dir = (cam.dir_deg * Math.PI) / 180;
-      const tilt = (55 * Math.PI) / 180;
-      const axis = new THREE.Vector3(
-        Math.cos(dir) * Math.cos(tilt),
-        -Math.sin(tilt),
-        Math.sin(dir) * Math.cos(tilt),
-      ).normalize();
-      cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), axis);
-      cone.position.set(
-        px + axis.x * (reach / 2),
-        mountH + axis.y * (reach / 2),
-        py + axis.z * (reach / 2),
-      );
-      scene.add(cone);
+      if (fp) {
+        const shape = new THREE.Shape(fp.map(([fx, fy]) => new THREE.Vector2(fx, -fy)));
+        const patch = new THREE.Mesh(
+          track(new THREE.ShapeGeometry(shape)),
+          track(
+            new THREE.MeshBasicMaterial({
+              color: 0x2563eb,
+              transparent: true,
+              opacity: 0.16,
+              depthWrite: false,
+            }),
+          ),
+        );
+        patch.rotation.x = -Math.PI / 2;
+        patch.position.y = 0.03;
+        scene.add(patch);
+        const loop = new THREE.LineLoop(
+          track(
+            new THREE.BufferGeometry().setFromPoints(
+              fp.map(([fx, fy]) => new THREE.Vector3(fx, 0.04, fy)),
+            ),
+          ),
+          track(
+            new THREE.LineBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.6 }),
+          ),
+        );
+        scene.add(loop);
+        for (const [fx, fy] of fp) {
+          scene.add(
+            new THREE.Line(
+              track(
+                new THREE.BufferGeometry().setFromPoints([
+                  new THREE.Vector3(px, mountH, py),
+                  new THREE.Vector3(fx, 0.04, fy),
+                ]),
+              ),
+              track(
+                new THREE.LineBasicMaterial({
+                  color: 0x3b82f6,
+                  transparent: true,
+                  opacity: 0.22,
+                }),
+              ),
+            ),
+          );
+        }
+      } else {
+        // View cone: apex at the camera, opening toward the floor along dir.
+        const reach = Math.min(6, span * 0.3);
+        const cone = new THREE.Mesh(
+          track(new THREE.ConeGeometry(reach * 0.45, reach, 24, 1, true)),
+          coneMat,
+        );
+        // Cone points -y by default after this rotation chain: lay it so the
+        // axis tilts 55° down from horizontal along dir_deg.
+        const dir = (cam.dir_deg * Math.PI) / 180;
+        const tilt = (55 * Math.PI) / 180;
+        const axis = new THREE.Vector3(
+          Math.cos(dir) * Math.cos(tilt),
+          -Math.sin(tilt),
+          Math.sin(dir) * Math.cos(tilt),
+        ).normalize();
+        cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), axis);
+        cone.position.set(
+          px + axis.x * (reach / 2),
+          mountH + axis.y * (reach / 2),
+          py + axis.z * (reach / 2),
+        );
+        scene.add(cone);
+      }
     }
 
     let raf = 0;
