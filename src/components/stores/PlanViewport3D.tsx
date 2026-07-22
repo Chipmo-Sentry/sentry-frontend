@@ -173,8 +173,16 @@ export default function PlanViewport3D({ plan }: { plan: FloorPlan }) {
     const windowPolys: Poly[] = plan.fixtures
       .filter((f) => (f.type as string) === "window" && f.points.length >= 3)
       .map((f) => f.points as Poly);
+    // Walls render translucent (owner request) so the store interior stays
+    // visible from any angle; depthWrite off keeps fixtures crisp behind them.
     const wallMat = track(
-      new THREE.MeshStandardMaterial({ color: 0xd4d4d4, roughness: 0.85 }),
+      new THREE.MeshStandardMaterial({
+        color: 0xd4d4d4,
+        roughness: 0.85,
+        transparent: true,
+        opacity: 0.45,
+        depthWrite: false,
+      }),
     );
     const glassMat = track(
       new THREE.MeshStandardMaterial({
