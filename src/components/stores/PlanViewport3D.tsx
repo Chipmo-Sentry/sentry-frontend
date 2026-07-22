@@ -33,13 +33,16 @@ const FIXTURE_DEFAULT_H: Record<string, number> = {
   chair: 0.9,
   door: 0,
   exterior_door: 0,
+  window: 0,
 };
 const WALL_DEFAULT_H = 2.8;
 const WALL_THICKNESS = 0.12;
 // Any door-like fixture cuts an OPENING through the wall it sits on (нэвт
 // харагдана): the wall renders in pieces around it, with a lintel above.
+// Windows keep a sill below and get a translucent glass pane in the opening.
 const DOOR_TYPES = new Set(["door", "exterior_door", "exit", "entrance"]);
 const DOOR_OPENING_H = 2.05;
+const WINDOW_SILL_H = 0.9;
 
 type WithHeight = { height_m?: number | null };
 type Poly = [number, number][];
@@ -165,8 +168,21 @@ export default function PlanViewport3D({ plan }: { plan: FloorPlan }) {
     const doorPolys: Poly[] = plan.fixtures
       .filter((f) => DOOR_TYPES.has(f.type) && f.points.length >= 3)
       .map((f) => f.points as Poly);
+    // `window` is newer than the generated FixtureType union — compare as
+    // string until the OpenAPI codegen catches up.
+    const windowPolys: Poly[] = plan.fixtures
+      .filter((f) => (f.type as string) === "window" && f.points.length >= 3)
+      .map((f) => f.points as Poly);
     const wallMat = track(
       new THREE.MeshStandardMaterial({ color: 0xd4d4d4, roughness: 0.85 }),
+    );
+    const glassMat = track(
+      new THREE.MeshStandardMaterial({
+        color: 0x93c5fd,
+        transparent: true,
+        opacity: 0.25,
+        roughness: 0.1,
+      }),
     );
     const addWallPiece = (
       x1: number,
@@ -177,13 +193,14 @@ export default function PlanViewport3D({ plan }: { plan: FloorPlan }) {
       b: number,
       h: number,
       yBase: number,
+      mat: THREE.Material = wallMat,
     ) => {
       const len = Math.hypot(x2 - x1, y2 - y1) * (b - a);
       if (len < 0.01 || h <= 0.01) return;
       const mx = x1 + (x2 - x1) * ((a + b) / 2);
       const my = y1 + (y2 - y1) * ((a + b) / 2);
       const geo = track(new THREE.BoxGeometry(len, h, WALL_THICKNESS));
-      const mesh = new THREE.Mesh(geo, wallMat);
+      const mesh = new THREE.Mesh(geo, mat);
       mesh.position.set(mx, yBase + h / 2, my);
       mesh.rotation.y = -Math.atan2(y2 - y1, x2 - x1);
       scene.add(mesh);
@@ -196,15 +213,39 @@ export default function PlanViewport3D({ plan }: { plan: FloorPlan }) {
         const [x1, y1] = pts[i]!;
         const [x2, y2] = pts[i + 1]!;
         if (Math.hypot(x2 - x1, y2 - y1) < 1e-6) continue;
+        // Doors and windows both interrupt the solid wall; doors win where
+        // they overlap (a window span inside a door span is dropped).
         const doorSpans = mergeSpans(
           doorPolys.flatMap((p) => segSpansInPoly(x1, y1, x2, y2, p)),
         );
+        const winSpans = mergeSpans(
+          windowPolys.flatMap((p) => segSpansInPoly(x1, y1, x2, y2, p)),
+        ).filter(([a, b]) => {
+          const mid = (a + b) / 2;
+          return !doorSpans.some(([da, db]) => mid >= da && mid <= db);
+        });
+        const openings = [
+          ...doorSpans.map(([a, b]) => [a, b, "door"] as const),
+          ...winSpans.map(([a, b]) => [a, b, "window"] as const),
+        ].sort((p, q) => p[0] - q[0]);
         let cursor = 0;
-        for (const [a, b] of doorSpans) {
+        for (const [a, b, kind] of openings) {
           addWallPiece(x1, y1, x2, y2, cursor, a, h, 0);
-          // Lintel over the opening (door top → wall top).
-          if (h > DOOR_OPENING_H) {
-            addWallPiece(x1, y1, x2, y2, a, b, h - DOOR_OPENING_H, DOOR_OPENING_H);
+          if (kind === "door") {
+            // Doorway: open to DOOR_OPENING_H, lintel above.
+            if (h > DOOR_OPENING_H) {
+              addWallPiece(x1, y1, x2, y2, a, b, h - DOOR_OPENING_H, DOOR_OPENING_H);
+            }
+          } else {
+            // Window: sill below, glass pane in the opening, lintel above.
+            addWallPiece(x1, y1, x2, y2, a, b, Math.min(WINDOW_SILL_H, h), 0);
+            const top = Math.min(DOOR_OPENING_H, h);
+            if (top > WINDOW_SILL_H) {
+              addWallPiece(x1, y1, x2, y2, a, b, top - WINDOW_SILL_H, WINDOW_SILL_H, glassMat);
+            }
+            if (h > DOOR_OPENING_H) {
+              addWallPiece(x1, y1, x2, y2, a, b, h - DOOR_OPENING_H, DOOR_OPENING_H);
+            }
           }
           cursor = b;
         }
