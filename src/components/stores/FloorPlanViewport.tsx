@@ -171,7 +171,9 @@ export function FloorPlanViewport({ plan, overlay, dimPlan = false }: Props) {
     if (pointers.current.size < 2) pinchDist.current = null;
     if (pointers.current.size === 0) setDragging(false);
   }, []);
-  const wallStroke = base * 0.006;
+  // Architectural style (owner reference 07-22, colours unchanged): walls at
+  // their REAL 0.12 m thickness (plan units are metres), square joints.
+  const wallStroke = 0.12;
   const fixtureStroke = base * 0.004;
   const gridStep = Math.max(ext.w, ext.h) / 24;
 
@@ -238,7 +240,7 @@ export function FloorPlanViewport({ plan, overlay, dimPlan = false }: Props) {
             />
           ))}
 
-          {/* Walls */}
+          {/* Walls — blueprint-thick, square-jointed */}
           {plan.walls.map((wall, i) => (
             <polyline
               key={`w${i}`}
@@ -246,11 +248,15 @@ export function FloorPlanViewport({ plan, overlay, dimPlan = false }: Props) {
               fill="none"
               stroke="rgba(250,250,250,0.85)"
               strokeWidth={wallStroke}
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              strokeLinecap="butt"
+              strokeLinejoin="miter"
             />
           ))}
         </g>
+
+        {/* Overall dimension lines (blueprint style): width below, height
+            left — drawn only when something IS drawn. */}
+        {!isEmpty ? <DimensionLines plan={plan} ext={ext} base={base} /> : null}
 
         {/* Cameras: FOV cone + body + label */}
         {plan.cameras.map((c, i) => (
@@ -308,6 +314,76 @@ export function FloorPlanViewport({ plan, overlay, dimPlan = false }: Props) {
         </div>
       ) : null}
     </div>
+  );
+}
+
+/** Blueprint-style overall dimensions: store width under the plan, height on
+ * the left — the «6.000 / 9.000» lines of an architectural drawing. Sized off
+ * the DRAWN content bbox (not the padded extent) so the numbers are the real
+ * store size in metres. */
+function DimensionLines({
+  plan,
+  ext,
+  base,
+}: {
+  plan: FloorPlan;
+  ext: { x: number; y: number; w: number; h: number };
+  base: number;
+}) {
+  let x1 = Infinity;
+  let y1 = Infinity;
+  let x2 = -Infinity;
+  let y2 = -Infinity;
+  const eat = ([px, py]: [number, number]) => {
+    x1 = Math.min(x1, px);
+    y1 = Math.min(y1, py);
+    x2 = Math.max(x2, px);
+    y2 = Math.max(y2, py);
+  };
+  for (const w of plan.walls) for (const p of w.points) eat(p);
+  for (const f of plan.fixtures) for (const p of f.points) eat(p);
+  for (const c of plan.cameras) eat(c.pos);
+  if (!isFinite(x1) || x2 - x1 < 0.5 || y2 - y1 < 0.5) return null;
+
+  const stroke = "rgba(163,163,163,0.75)";
+  const sw = base * 0.004;
+  const tick = base * 0.014;
+  const font = Math.max(base * 0.032, 0.3);
+  // Sit the lines in the middle of the extent's padding band.
+  const yd = y2 + (ext.y + ext.h - y2) * 0.55;
+  const xd = ext.x + (x1 - ext.x) * 0.45;
+  return (
+    <g style={{ pointerEvents: "none" }}>
+      {/* width (bottom) */}
+      <line x1={x1} y1={yd} x2={x2} y2={yd} stroke={stroke} strokeWidth={sw} />
+      <line x1={x1} y1={yd - tick} x2={x1} y2={yd + tick} stroke={stroke} strokeWidth={sw} />
+      <line x1={x2} y1={yd - tick} x2={x2} y2={yd + tick} stroke={stroke} strokeWidth={sw} />
+      <text
+        x={(x1 + x2) / 2}
+        y={yd - tick * 0.6}
+        textAnchor="middle"
+        fontSize={font}
+        fill={stroke}
+        fontFamily="ui-sans-serif, system-ui, sans-serif"
+      >
+        {(x2 - x1).toFixed(1)} м
+      </text>
+      {/* height (left) */}
+      <line x1={xd} y1={y1} x2={xd} y2={y2} stroke={stroke} strokeWidth={sw} />
+      <line x1={xd - tick} y1={y1} x2={xd + tick} y2={y1} stroke={stroke} strokeWidth={sw} />
+      <line x1={xd - tick} y1={y2} x2={xd + tick} y2={y2} stroke={stroke} strokeWidth={sw} />
+      <text
+        x={xd - tick * 0.6}
+        y={(y1 + y2) / 2}
+        textAnchor="middle"
+        fontSize={font}
+        fill={stroke}
+        fontFamily="ui-sans-serif, system-ui, sans-serif"
+        transform={`rotate(-90 ${xd - tick * 0.6} ${(y1 + y2) / 2})`}
+      >
+        {(y2 - y1).toFixed(1)} м
+      </text>
+    </g>
   );
 }
 
