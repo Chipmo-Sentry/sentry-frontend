@@ -47,6 +47,101 @@ const WINDOW_SILL_H = 0.9;
 type WithHeight = { height_m?: number | null };
 type Poly = [number, number][];
 
+/** Parametric t (≥ eps) where ray o+t·d crosses segment a-b, or null. */
+function raySegT(
+  o: [number, number],
+  d: [number, number],
+  a: [number, number],
+  b: [number, number],
+  eps: number,
+): number | null {
+  const rx = b[0] - a[0];
+  const ry = b[1] - a[1];
+  const den = d[0] * ry - d[1] * rx;
+  if (Math.abs(den) < 1e-12) return null;
+  const qx = a[0] - o[0];
+  const qy = a[1] - o[1];
+  const t = (qx * ry - qy * rx) / den;
+  const u = (qx * d[1] - qy * d[0]) / -den;
+  return t >= eps && u >= 0 && u <= 1 ? t : null;
+}
+
+function nearestWallT(
+  o: [number, number],
+  d: [number, number],
+  tmax: number,
+  walls: { points: number[][] }[],
+): number {
+  let best = tmax;
+  for (const w of walls) {
+    const pts = w.points;
+    for (let i = 0; i < pts.length - 1; i++) {
+      // Cameras are MOUNTED on walls: a hit within half a metre is the
+      // camera's own wall, not an occluder.
+      const t = raySegT(o, d, pts[i] as [number, number], pts[i + 1] as [number, number], 0.5);
+      if (t !== null && t < best) best = t;
+    }
+  }
+  return best;
+}
+
+function rayPolyInterval(
+  o: [number, number],
+  d: [number, number],
+  poly: Poly,
+): [number, number] | null {
+  const ts: number[] = [];
+  for (let i = 0; i < poly.length; i++) {
+    const t = raySegT(o, d, poly[i]!, poly[(i + 1) % poly.length]!, -1e-9);
+    if (t !== null) ts.push(t);
+  }
+  if (ts.length === 0) return null;
+  return [Math.max(0, Math.min(...ts)), Math.max(...ts)];
+}
+
+/** The footprint with everything behind a wall cut away (ray sweep) — the
+ * blue patch must stop at walls instead of shining through them. */
+function occludeFootprint(
+  pos: [number, number],
+  pts: Poly,
+  walls: { points: number[][] }[],
+): Poly {
+  if (walls.length === 0) return pts;
+  const o = pos;
+  const angles: number[] = [];
+  for (const p of pts) {
+    const dx = p[0] - o[0];
+    const dy = p[1] - o[1];
+    if (Math.hypot(dx, dy) > 1e-9) angles.push(Math.atan2(dy, dx));
+  }
+  if (angles.length === 0) return pts;
+  const ref = angles[0]!;
+  const rel = (a: number) => {
+    let r = a - ref;
+    while (r <= -Math.PI) r += 2 * Math.PI;
+    while (r > Math.PI) r -= 2 * Math.PI;
+    return r;
+  };
+  const offs = angles.map(rel);
+  const amin = Math.min(...offs);
+  const amax = Math.max(...offs);
+  const near: Poly = [];
+  const far: Poly = [];
+  const N = 90;
+  for (let k = 0; k <= N; k++) {
+    const a = ref + amin + ((amax - amin) * k) / N;
+    const d: [number, number] = [Math.cos(a), Math.sin(a)];
+    const iv = rayPolyInterval(o, d, pts);
+    if (!iv || iv[1] <= 1e-6) continue;
+    const tw = nearestWallT(o, d, iv[1], walls);
+    if (tw <= iv[0] + 1e-6) continue;
+    near.push([o[0] + d[0] * iv[0], o[1] + d[1] * iv[0]]);
+    far.push([o[0] + d[0] * tw, o[1] + d[1] * tw]);
+  }
+  if (far.length < 2) return [];
+  return near.concat(far.reverse());
+}
+
 /** Calibrated ground footprint: the camera image's 4 corners pushed through
  * H⁻¹ (k1-undistorted first) onto the floor — same math as the agent editor's
  * coverage overlay. Null when uncalibrated or a corner sits at/behind the
@@ -384,10 +479,19 @@ export default function PlanViewport3D({ plan }: { plan: FloorPlan }) {
       body.rotation.y = -((cam.dir_deg * Math.PI) / 180);
       scene.add(body);
       // Calibrated camera → its REAL ground footprint (H⁻¹ + k1) painted on
-      // the floor with faint sight lines. Uncalibrated → the cosmetic cone.
-      const fp = cameraFootprint(
+      // the floor with faint sight lines — CUT BY WALLS (хана нэвтэлдэггүй):
+      // the ray sweep stops each sight line at the first wall, so the patch
+      // never shines through into the street/next room. Uncalibrated → cone.
+      const fpRaw = cameraFootprint(
         cam as { pos: [number, number]; homography?: number[][] | null; k1?: number | null },
       );
+      const fp =
+        fpRaw && fpRaw.length >= 3
+          ? (() => {
+              const clipped = occludeFootprint([px, py], fpRaw, plan.walls);
+              return clipped.length >= 3 ? clipped : fpRaw;
+            })()
+          : fpRaw;
       if (fp) {
         const shape = new THREE.Shape(fp.map(([fx, fy]) => new THREE.Vector2(fx, -fy)));
         const patch = new THREE.Mesh(
@@ -415,7 +519,11 @@ export default function PlanViewport3D({ plan }: { plan: FloorPlan }) {
           ),
         );
         scene.add(loop);
-        for (const [fx, fy] of fp) {
+        // A handful of sight lines (the clipped outline can be ~180 points —
+        // one line per point would wallpaper the scene).
+        const step = Math.max(1, Math.floor(fp.length / 6));
+        for (let si = 0; si < fp.length; si += step) {
+          const [fx, fy] = fp[si]!;
           scene.add(
             new THREE.Line(
               track(
