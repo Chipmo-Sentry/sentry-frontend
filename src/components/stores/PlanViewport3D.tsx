@@ -337,6 +337,12 @@ export default function PlanViewport3D({ plan }: { plan: FloorPlan }) {
     controls.minDistance = span * 0.15;
     controls.maxDistance = span * 3;
     controls.enableDamping = true;
+    // Shift + left-drag pans (owner request) — release Shift to orbit.
+    const onKey = (e: KeyboardEvent) => {
+      controls.mouseButtons.LEFT = e.shiftKey ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE;
+    };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("keyup", onKey);
 
     // Lights: soft ambient + one sun-like directional for depth cues.
     scene.add(new THREE.AmbientLight(0xffffff, 0.55));
@@ -643,6 +649,8 @@ export default function PlanViewport3D({ plan }: { plan: FloorPlan }) {
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keyup", onKey);
       controls.dispose();
       for (const d of disposables) d.dispose();
       renderer.dispose();
@@ -654,7 +662,7 @@ export default function PlanViewport3D({ plan }: { plan: FloorPlan }) {
     <div className="relative rounded-lg border border-(--color-border) bg-(--color-surface)">
       <div ref={hostRef} className="h-[70vh] w-full overflow-hidden rounded-lg" />
       <div className="pointer-events-none absolute bottom-2 left-2 rounded-md border border-(--color-border) bg-(--color-background)/85 px-2 py-1 text-[11px] text-(--color-muted-foreground)">
-        Чирэх — эргүүлэх · Гүйлгэх — томруулах · Баруун чирэх — зөөх
+        Чирэх — эргүүлэх · Shift+чирэх / баруун чирэх — зөөх · Гүйлгэх — томруулах
       </div>
     </div>
   );
