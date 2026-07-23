@@ -71,14 +71,13 @@ function nearestWallT(
   d: [number, number],
   tmax: number,
   walls: { points: number[][] }[],
+  eps: number,
 ): number {
   let best = tmax;
   for (const w of walls) {
     const pts = w.points;
     for (let i = 0; i < pts.length - 1; i++) {
-      // Cameras are MOUNTED on walls: a hit within half a metre is the
-      // camera's own wall, not an occluder.
-      const t = raySegT(o, d, pts[i] as [number, number], pts[i + 1] as [number, number], 0.5);
+      const t = raySegT(o, d, pts[i] as [number, number], pts[i + 1] as [number, number], eps);
       if (t !== null && t < best) best = t;
     }
   }
@@ -99,12 +98,23 @@ function rayPolyInterval(
   return [Math.max(0, Math.min(...ts)), Math.max(...ts)];
 }
 
+function polyAreaOf(pts: Poly): number {
+  let s = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i]!;
+    const b = pts[(i + 1) % pts.length]!;
+    s += a[0] * b[1] - b[0] * a[1];
+  }
+  return Math.abs(s) / 2;
+}
+
 /** The footprint with everything behind a wall cut away (ray sweep) — the
  * blue patch must stop at walls instead of shining through them. */
 function occludeFootprint(
   pos: [number, number],
   pts: Poly,
   walls: { points: number[][] }[],
+  eps: number,
 ): Poly {
   if (walls.length === 0) return pts;
   const o = pos;
@@ -133,13 +143,28 @@ function occludeFootprint(
     const d: [number, number] = [Math.cos(a), Math.sin(a)];
     const iv = rayPolyInterval(o, d, pts);
     if (!iv || iv[1] <= 1e-6) continue;
-    const tw = nearestWallT(o, d, iv[1], walls);
+    const tw = nearestWallT(o, d, iv[1], walls, eps);
     if (tw <= iv[0] + 1e-6) continue;
     near.push([o[0] + d[0] * iv[0], o[1] + d[1] * iv[0]]);
     far.push([o[0] + d[0] * tw, o[1] + d[1] * tw]);
   }
   if (far.length < 2) return [];
   return near.concat(far.reverse());
+}
+
+/** Adaptive wall clipping. Strict first (5 cm — every wall blocks, so the
+ * patch CANNOT leak through the camera's own mounting wall to the outside).
+ * Only when that swallows nearly everything (the camera was drawn a little
+ * on the WRONG side of its wall) fall back to the lenient 0.5 m exemption. */
+function clipFootprint(
+  pos: [number, number],
+  pts: Poly,
+  walls: { points: number[][] }[],
+): Poly {
+  const strict = occludeFootprint(pos, pts, walls, 0.05);
+  if (polyAreaOf(strict) >= polyAreaOf(pts) * 0.2 && strict.length >= 3) return strict;
+  const lenient = occludeFootprint(pos, pts, walls, 0.5);
+  return polyAreaOf(lenient) > polyAreaOf(strict) ? lenient : strict;
 }
 
 /** Calibrated ground footprint: the camera image's 4 corners pushed through
@@ -488,7 +513,7 @@ export default function PlanViewport3D({ plan }: { plan: FloorPlan }) {
       const fp =
         fpRaw && fpRaw.length >= 3
           ? (() => {
-              const clipped = occludeFootprint([px, py], fpRaw, plan.walls);
+              const clipped = clipFootprint([px, py], fpRaw, plan.walls);
               return clipped.length >= 3 ? clipped : fpRaw;
             })()
           : fpRaw;
