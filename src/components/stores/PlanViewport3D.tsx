@@ -525,10 +525,18 @@ export default function PlanViewport3D({ plan }: { plan: FloorPlan }) {
     for (const cam of plan.cameras) {
       const [px, py] = cam.pos;
       // Calibrated cameras carry their solvePnP-measured mount height (agent
-      // v0.7.102); uncalibrated ones hang just under the default wall height.
+      // v0.7.102), capped at the plan's tallest wall — a camera cannot hang
+      // above the ceiling; uncalibrated ones sit just under the wall height.
+      let wallMax = WALL_DEFAULT_H;
+      for (const w of plan.walls) {
+        const wh = Number((w as WithHeight).height_m);
+        if (isFinite(wh) && wh > wallMax) wallMax = wh;
+      }
       const solved = (cam as { cam_h_m?: number | null }).cam_h_m;
       const mountH =
-        typeof solved === "number" && solved > 0 ? solved : WALL_DEFAULT_H - 0.2;
+        typeof solved === "number" && solved > 0
+          ? Math.min(solved, wallMax)
+          : WALL_DEFAULT_H - 0.2;
       const body = new THREE.Mesh(
         track(new THREE.BoxGeometry(0.35, 0.22, 0.22)),
         camMat,
