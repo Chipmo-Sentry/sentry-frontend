@@ -62,7 +62,10 @@ function raySegT(
   const qx = a[0] - o[0];
   const qy = a[1] - o[1];
   const t = (qx * ry - qy * rx) / den;
-  const u = (qx * d[1] - qy * d[0]) / -den;
+  // u = ((a−o) × d) / (d × r) — the retired dashboard code divided by −den,
+  // flipping which side of the segment registered a hit; half the walls were
+  // silently pass-through. Verified against synthetic rooms (sim 07-23).
+  const u = (qx * d[1] - qy * d[0]) / den;
   return t >= eps && u >= 0 && u <= 1 ? t : null;
 }
 
@@ -135,21 +138,45 @@ function occludeFootprint(
   const offs = angles.map(rel);
   const amin = Math.min(...offs);
   const amax = Math.max(...offs);
+  // The camera's ground point often sits INSIDE its own footprint (a wide
+  // lens sees all around its base). A ray from an interior origin crosses
+  // the boundary ONCE — min(ts) is then the EXIT, and treating it as the
+  // entry made every ray degenerate/dropped, so the whole clip came back
+  // empty and the caller fell back to the raw (wall-leaking) patch.
+  let insideOrigin = false;
+  {
+    let odd = false;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+      const [xi, yi] = pts[i]!;
+      const [xj, yj] = pts[j]!;
+      if (yi > o[1] !== yj > o[1] && o[0] < ((xj - xi) * (o[1] - yi)) / (yj - yi) + xi) {
+        odd = !odd;
+      }
+    }
+    insideOrigin = odd;
+  }
   const near: Poly = [];
   const far: Poly = [];
   const N = 90;
+  // Interior origin sees all around — sweep the FULL circle, not just the
+  // vertex angular range (which has a gap at the reference discontinuity).
+  const sweepMin = insideOrigin ? -Math.PI : amin;
+  const sweepMax = insideOrigin ? Math.PI : amax;
   for (let k = 0; k <= N; k++) {
-    const a = ref + amin + ((amax - amin) * k) / N;
+    const a = ref + sweepMin + ((sweepMax - sweepMin) * k) / N;
     const d: [number, number] = [Math.cos(a), Math.sin(a)];
     const iv = rayPolyInterval(o, d, pts);
     if (!iv || iv[1] <= 1e-6) continue;
+    const nearT = insideOrigin ? 0 : iv[0];
     const tw = nearestWallT(o, d, iv[1], walls, eps);
-    if (tw <= iv[0] + 1e-6) continue;
-    near.push([o[0] + d[0] * iv[0], o[1] + d[1] * iv[0]]);
+    if (tw <= nearT + 1e-6) continue;
+    near.push([o[0] + d[0] * nearT, o[1] + d[1] * nearT]);
     far.push([o[0] + d[0] * tw, o[1] + d[1] * tw]);
   }
   if (far.length < 2) return [];
-  return near.concat(far.reverse());
+  // Interior origin: every near point is the origin itself — the polygon is
+  // just the far ring.
+  return insideOrigin ? far : near.concat(far.reverse());
 }
 
 /** Adaptive wall clipping. Strict first (5 cm — every wall blocks, so the
