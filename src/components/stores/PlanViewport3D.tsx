@@ -220,20 +220,24 @@ function cameraFootprint(cam: {
   const k1 = Number(cam.k1) || 0;
   const [px, py] = cam.pos;
   const MAXR = 25;
+  // Sample the WHOLE image border: a tilted-up camera's top samples cross the
+  // horizon and drop out, while the rest still outline the ground patch —
+  // corner-only sampling collapsed such cameras back to the cone.
+  const border: Poly = [];
+  const NB = 8;
+  for (let i = 0; i < NB; i++) border.push([i / NB, 0]);
+  for (let i = 0; i < NB; i++) border.push([1, i / NB]);
+  for (let i = 0; i < NB; i++) border.push([1 - i / NB, 1]);
+  for (let i = 0; i < NB; i++) border.push([0, 1 - i / NB]);
   const out: Poly = [];
-  for (const [cx, cy] of [
-    [0, 0],
-    [1, 0],
-    [1, 1],
-    [0, 1],
-  ] as Poly) {
+  for (const [cx, cy] of border) {
     const dx = cx - 0.5;
     const dy = cy - 0.5;
     const s = 1 + k1 * (dx * dx + dy * dy);
     const ux = 0.5 + dx * s;
     const uy = 0.5 + dy * s;
     const w = inv[2]![0]! * ux + inv[2]![1]! * uy + inv[2]![2]!;
-    if (w < 1e-9) return null; // horizon — no ground image
+    if (w < 1e-9) continue; // horizon — this sample has no ground image
     let fx = (inv[0]![0]! * ux + inv[0]![1]! * uy + inv[0]![2]!) / w;
     let fy = (inv[1]![0]! * ux + inv[1]![1]! * uy + inv[1]![2]!) / w;
     const ddx = fx - px;
@@ -245,7 +249,7 @@ function cameraFootprint(cam: {
     }
     out.push([fx, fy]);
   }
-  return out;
+  return out.length >= 3 && polyAreaOf(out) > 0.5 ? out : null;
 }
 
 /** [t0,t1] spans (0-1 along the segment) where it passes inside `poly`. */
