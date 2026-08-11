@@ -48,9 +48,13 @@ export function attachHls(
 ): () => void {
   if (Hls.isSupported()) {
     const hls = new Hls({
-      lowLatencyMode: true,
-      liveSyncDuration: 1,
-      liveMaxLatencyDuration: 5,
+      // The node serves plain 2s fMP4 segments through the Cloudflare tunnel
+      // (LL-HLS stalls over that path — each sub-second part pays full proxy
+      // RTT). Keep ~3 segments buffered so playback rides out fetch jitter;
+      // real low-latency viewing is WebRTC/WHEP's job, not HLS's.
+      lowLatencyMode: false,
+      liveSyncDurationCount: 3,
+      liveMaxLatencyDurationCount: 8,
       backBufferLength: 10,
     });
     let mediaRecoveries = 0;
