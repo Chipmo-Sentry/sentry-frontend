@@ -21,11 +21,21 @@ const GENDER_RGB: Record<string, string> = {
 };
 const DEFAULT_RGB = "74, 222, 128";
 
+/** Visit-start hour → hue: morning ≈ blue (200°) sliding to evening ≈ red (0°),
+ * clamped to typical store hours so pre-open/после-close visits stay legible. */
+function hourHue(startedAt: string): number {
+  const hour = new Date(startedAt).getHours();
+  const h = Math.min(22, Math.max(7, hour));
+  return 200 - ((h - 7) / 15) * 200;
+}
+
 export function PathsLayer({
   plan,
   data,
   ageBand = null,
   gender = null,
+  minDurationSec = null,
+  colorByHour = false,
 }: {
   plan: FloorPlan;
   data: PathsSummary;
@@ -33,6 +43,10 @@ export function PathsLayer({
   ageBand?: string | null;
   /** When set, only paths of this gender draw (male|female|unknown). */
   gender?: string | null;
+  /** When set, only visits that stayed at least this long draw. */
+  minDurationSec?: number | null;
+  /** Colour traces by visit-start hour instead of gender. */
+  colorByHour?: boolean;
 }) {
   const [w, h] = plan.size;
   const ext = planExtent(plan);
@@ -52,18 +66,22 @@ export function PathsLayer({
         if (ageBand && p.age_band !== ageBand) return null;
         if (gender === "unknown" ? p.gender != null : gender && p.gender !== gender)
           return null;
+        if (minDurationSec != null && p.duration_sec < minDurationSec) return null;
         const rgb = (p.gender && GENDER_RGB[p.gender]) || DEFAULT_RGB;
         const d = p.points
           .map((pt, j) => `${j === 0 ? "M" : "L"} ${pt[0]! * w} ${pt[1]! * h}`)
           .join(" ");
         const recency = (i + 1) / n; // API returns newest first → invert below
         const alpha = 0.18 + 0.3 * (1 - recency);
+        const stroke = colorByHour
+          ? `hsla(${hourHue(p.started_at)}, 85%, 60%, ${alpha})`
+          : `rgba(${rgb}, ${alpha})`;
         return (
           <path
             key={i}
             d={d}
             fill="none"
-            stroke={`rgba(${rgb}, ${alpha})`}
+            stroke={stroke}
             strokeWidth={dotW}
             strokeLinecap="round"
             strokeLinejoin="round"

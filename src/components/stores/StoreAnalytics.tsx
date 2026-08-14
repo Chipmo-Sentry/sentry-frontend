@@ -112,6 +112,9 @@ export function StoreAnalytics({
   const [paths, setPaths] = useState<PathsSummary | null>(null);
   const [pathAge, setPathAge] = useState<string | null>(null);
   const [pathGender, setPathGender] = useState<string | null>(null);
+  // Path-layer extras (owner backlog): hide short pass-throughs, colour by hour.
+  const [pathMinDur, setPathMinDur] = useState<number | null>(null);
+  const [pathColorHour, setPathColorHour] = useState(false);
   const [traffic, setTraffic] = useState<TrafficSummary | null>(null);
   const [zones, setZones] = useState<ZoneBreakdown | null>(null);
   const [peak, setPeak] = useState<PeakMatrixData | null>(null);
@@ -341,7 +344,14 @@ export function StoreAnalytics({
               <>
                 {layers.dwell && heat ? <HeatmapLayer grid={heat} /> : null}
                 {layers.paths && paths ? (
-                  <PathsLayer plan={plan} data={paths} ageBand={pathAge} gender={pathGender} />
+                  <PathsLayer
+                    plan={plan}
+                    data={paths}
+                    ageBand={pathAge}
+                    gender={pathGender}
+                    minDurationSec={pathMinDur}
+                    colorByHour={pathColorHour}
+                  />
                 ) : null}
                 {layers.flow && flow ? (
                   <ZoneFlowLayer plan={plan} flow={flow} />
@@ -426,6 +436,41 @@ export function StoreAnalytics({
                     <option value="adult">Насанд хүрсэн</option>
                     <option value="senior">Ахмад</option>
                   </select>
+                  <select
+                    value={pathMinDur ?? ""}
+                    onChange={(e) =>
+                      setPathMinDur(e.target.value ? Number(e.target.value) : null)
+                    }
+                    className="mt-1 w-full rounded-md border border-(--color-border) bg-(--color-background) px-2 py-1.5 text-[11px]"
+                  >
+                    <option value="">Бүх зочид</option>
+                    <option value="120">2+ минут зогссон</option>
+                    <option value="300">5+ минут зогссон</option>
+                    <option value="600">10+ минут зогссон</option>
+                  </select>
+                  <label className="mt-2 flex cursor-pointer items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={pathColorHour}
+                      onChange={(e) => setPathColorHour(e.target.checked)}
+                      className="h-3 w-3"
+                    />
+                    Цагаар өнгөөр ялгах
+                  </label>
+                  {pathColorHour ? (
+                    <div className="mt-1.5 flex items-center gap-1.5">
+                      <span>Өглөө</span>
+                      <span
+                        aria-hidden
+                        className="h-1.5 flex-1 rounded-full"
+                        style={{
+                          background:
+                            "linear-gradient(90deg, hsl(200 85% 60%), hsl(133 85% 60%), hsl(67 85% 60%), hsl(0 85% 60%))",
+                        }}
+                      />
+                      <span>Орой</span>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
               <LayerRow

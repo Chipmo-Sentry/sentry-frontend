@@ -12,6 +12,7 @@ import { LiveCameraTile } from "@/components/LiveCameraTile";
 import { LiveKpiBar } from "@/components/LiveKpiBar";
 import {
   alerts as alertsApi,
+  nodes as nodesApi,
   behaviors as behaviorsApi,
   cameras as camerasApi,
 } from "@/lib/api";
@@ -104,6 +105,30 @@ export default function LivePage() {
     );
     return () => {
       cancelled = true;
+    };
+  }, []);
+
+  // Real AI health: an ONLINE org node must exist (heartbeat within the server's
+  // online window). The old `online > 0` proxy showed "AI: Эрүүл" from mere
+  // video flow even when no node was analysing anything. Polled at the same
+  // 30s cadence the nodes heartbeat with; null = not yet known → optimistic.
+  const [aiHealthy, setAiHealthy] = useState<boolean | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    const poll = () =>
+      nodesApi.list().then(
+        (list) => {
+          if (!cancelled) setAiHealthy(list.some((n) => n.is_online));
+        },
+        () => {
+          /* keep last known state on a fetch error */
+        },
+      );
+    poll();
+    const t = setInterval(poll, 30_000);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
     };
   }, []);
 
@@ -304,7 +329,7 @@ export default function LivePage() {
           total={cams.length}
           todayAlerts={todayAlerts}
           avgLatencyMs={avgLatencyMs}
-          aiHealthy={online > 0}
+          aiHealthy={aiHealthy ?? online > 0}
         />
 
         {/* Spotlight (auto-focused or pinned) + live alert rail. */}
