@@ -369,27 +369,34 @@ export function LiveCameraTile({
         // alerts are NOT suppressed for staff (internal theft stays monitored).
         const staff = t.is_staff === true;
         const staffColor = "#06b6d4";
-        const color = staff ? staffColor : riskColor(risk);
+        // Mannequins draw as a faint dashed gray outline labeled «Манекен» —
+        // visibly recognized, visibly NOT a visitor or a risk band.
+        const mannequin = t.is_mannequin === true && !staff;
+        const color = mannequin ? "#9ca3af" : staff ? staffColor : riskColor(risk);
 
-        // Box: rounded, band-coloured, 2px.
+        // Box: rounded, band-coloured, 2px (dashed for mannequins).
         ctx.beginPath();
         ctx.roundRect(rx, ry, rw, rh, 6);
         ctx.strokeStyle = color;
         ctx.lineWidth = 2;
+        if (mannequin) ctx.setLineDash([6, 5]);
         ctx.stroke();
+        ctx.setLineDash([]);
 
         // Primary pill (reference): solid band-colour, white bold risk %, with
         // the re-ID number tucked in smaller. Prefer the store-global re-ID so
         // the SAME person shows the SAME id across the store's cameras
         // (ADR-0023); fall back to the per-camera ByteTrack id when re-ID is off.
         const pid = t.store_person_id ?? t.person_id;
-        const riskTxt = staff
-          ? risk > 0
-            ? `Ажилтан · ${risk.toFixed(0)}%`
-            : "Ажилтан"
-          : risk > 0
-            ? `${risk.toFixed(0)}%`
-            : "—";
+        const riskTxt = mannequin
+          ? "Манекен"
+          : staff
+            ? risk > 0
+              ? `Ажилтан · ${risk.toFixed(0)}%`
+              : "Ажилтан"
+            : risk > 0
+              ? `${risk.toFixed(0)}%`
+              : "—";
         const idTxt = `#${pid}`;
         const pad = 8;
         const gap = 5;

@@ -31,6 +31,7 @@ export type Track = {
   // box + labels «Ажилтан»; risk still shown — alerts are NOT suppressed for
   // staff (internal theft stays monitored). Optional: older nodes don't send it.
   is_staff?: boolean;
+  is_mannequin?: boolean;
 };
 
 /**
