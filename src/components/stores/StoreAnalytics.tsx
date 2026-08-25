@@ -3,6 +3,7 @@
 import { Card, CardContent, ErrorState, Spinner } from "@chipmo-sentry/ui-kit";
 import {
   Box,
+  ArrowRightLeft,
   CalendarClock,
   ShieldAlert,
   Clock,
@@ -33,6 +34,7 @@ import { FloorPlanViewport } from "@/components/stores/FloorPlanViewport";
 import { PathsLayer } from "@/components/stores/PathsLayer";
 import { RiskLayer } from "@/components/stores/RiskLayer";
 import { RiskPanel } from "@/components/stores/RiskPanel";
+import { ZoneFlowTable } from "@/components/stores/ZoneFlowTable";
 import { ZoneFlowLayer } from "@/components/stores/ZoneFlowLayer";
 import { HeatmapLayer } from "@/components/stores/HeatmapLayer";
 import { PeakMatrix } from "@/components/stores/PeakMatrix";
@@ -104,10 +106,12 @@ export function StoreAnalytics({
   const [plan, setPlan] = useState<FloorPlan | null>(null);
   const [threeD, setThreeD] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // flow arrows default OFF (owner: the table below reads better than arrows
+  // once transitions multiply — the layer stays as an opt-in map view).
   const [layers, setLayers] = useState<Record<LayerKey, boolean>>({
     plan: true,
     dwell: true,
-    flow: true,
+    flow: false,
     paths: false,
     risk: false,
   });
@@ -646,6 +650,26 @@ export function StoreAnalytics({
           </CardContent>
         </Card>
       </div>
+
+      {/* Zone flow as a table — the primary flow reading (owner request);
+          the arrow layer on the map stays as an opt-in toggle. */}
+      <Card>
+        <CardContent className="p-4">
+          <SectionHead icon={ArrowRightLeft} title="Хэрэглэгчийн урсгал" inline>
+            Бүс хоорондын шилжилтүүд — ихээс бага руу
+          </SectionHead>
+          {flow ? (
+            <ZoneFlowTable flow={flow} />
+          ) : (
+            <EmptyBox
+              loading={!failed.flow}
+              error={!!failed.flow}
+              onRetry={loadFlow}
+              text=""
+            />
+          )}
+        </CardContent>
+      </Card>
 
       {/* Risk analytics — the theft-detection half of the product, on the
           analytics page: totals+trend, when incidents happen, what fires. */}
