@@ -35,7 +35,6 @@ import { PathsLayer } from "@/components/stores/PathsLayer";
 import { RiskLayer } from "@/components/stores/RiskLayer";
 import { RiskPanel } from "@/components/stores/RiskPanel";
 import { ZoneFlowTable } from "@/components/stores/ZoneFlowTable";
-import { ZoneFlowLayer } from "@/components/stores/ZoneFlowLayer";
 import { HeatmapLayer } from "@/components/stores/HeatmapLayer";
 import { PeakMatrix } from "@/components/stores/PeakMatrix";
 import { TrafficChart } from "@/components/stores/TrafficChart";
@@ -87,7 +86,7 @@ export function RangeTabs({
   );
 }
 
-type LayerKey = "plan" | "dwell" | "flow" | "paths" | "risk";
+type LayerKey = "plan" | "dwell" | "paths" | "risk";
 
 /**
  * The retail-analytics dashboard for ONE store, self-contained by `storeId` +
@@ -106,12 +105,11 @@ export function StoreAnalytics({
   const [plan, setPlan] = useState<FloorPlan | null>(null);
   const [threeD, setThreeD] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // flow arrows default OFF (owner: the table below reads better than arrows
-  // once transitions multiply — the layer stays as an opt-in map view).
+  // Flow arrows/toggle removed entirely (owner): the flow reads as the
+  // ZoneFlowTable card below the map now.
   const [layers, setLayers] = useState<Record<LayerKey, boolean>>({
     plan: true,
     dwell: true,
-    flow: false,
     paths: false,
     risk: false,
   });
@@ -376,9 +374,6 @@ export function StoreAnalytics({
                     colorByHour={pathColorHour}
                   />
                 ) : null}
-                {layers.flow && flow ? (
-                  <ZoneFlowLayer plan={plan} flow={flow} />
-                ) : null}
                 {layers.risk && risk ? <RiskLayer plan={plan} data={risk} /> : null}
               </>
             }
@@ -507,53 +502,6 @@ export function StoreAnalytics({
                 }
                 onChange={(v) => setLayers((s) => ({ ...s, risk: v }))}
               />
-              <LayerRow
-                label="Хэрэглэгчийн урсгал"
-                checked={layers.flow}
-                hint={failed.flow ? "алдаа" : undefined}
-                onChange={(v) => setLayers((s) => ({ ...s, flow: v }))}
-              />
-
-              {layers.flow ? (
-                <div className="mt-2 rounded-md border border-(--color-border) p-2 text-[10px] text-(--color-muted-foreground)">
-                  {failed.flow ? (
-                    <button
-                      onClick={loadFlow}
-                      className="text-(--color-primary) underline"
-                    >
-                      Урсгал ачаалж чадсангүй — дахин оролдох
-                    </button>
-                  ) : flow && flow.edges.length > 0 ? (
-                    <div>
-                      <div className="mb-1 font-medium">Топ шилжилтүүд</div>
-                      {(() => {
-                        const byId = new Map(flow.nodes.map((n) => [n.id, n]));
-                        const total =
-                          flow.edges.reduce((s, e) => s + e.count, 0) || 1;
-                        return flow.edges.slice(0, 6).map((e, i) => (
-                          <div
-                            key={i}
-                            className="flex items-center justify-between gap-2 py-0.5"
-                          >
-                            <span className="truncate">
-                              {byId.get(e.from_id)?.label ?? "?"} →{" "}
-                              {byId.get(e.to_id)?.label ?? "?"}
-                            </span>
-                            <span className="shrink-0 font-medium">
-                              {Math.round((e.count / total) * 100)}%
-                            </span>
-                          </div>
-                        ));
-                      })()}
-                    </div>
-                  ) : flow && flow.nodes.length === 0 ? (
-                    "Бүсийн урсгалд план дээр дор хаяж 2 тавиур/бүс зурсан байх хэрэгтэй."
-                  ) : (
-                    "Хүмүүс хөдөлж эхэлмэгц бүс хоорондын урсгал харагдана."
-                  )}
-                </div>
-              ) : null}
-
               {layers.dwell ? (
                 <div className="mt-3 rounded-md border border-(--color-border) p-2">
                   {heat && heat.cells.length > 0 ? (
