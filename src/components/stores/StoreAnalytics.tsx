@@ -4,6 +4,7 @@ import { Card, CardContent, ErrorState, Spinner } from "@chipmo-sentry/ui-kit";
 import {
   Box,
   CalendarClock,
+  ShieldAlert,
   Clock,
   Footprints,
   Layers,
@@ -30,6 +31,8 @@ const PlanViewport3D = dynamic(
 import { DemographicsPanel } from "@/components/stores/DemographicsPanel";
 import { FloorPlanViewport } from "@/components/stores/FloorPlanViewport";
 import { PathsLayer } from "@/components/stores/PathsLayer";
+import { RiskLayer } from "@/components/stores/RiskLayer";
+import { RiskPanel } from "@/components/stores/RiskPanel";
 import { ZoneFlowLayer } from "@/components/stores/ZoneFlowLayer";
 import { HeatmapLayer } from "@/components/stores/HeatmapLayer";
 import { PeakMatrix } from "@/components/stores/PeakMatrix";
@@ -42,6 +45,7 @@ import type {
   PathsSummary,
   FootfallGrid,
   PeakMatrix as PeakMatrixData,
+  RiskSummary,
   TrafficSummary,
   ZoneBreakdown,
   ZoneFlowSummary,
@@ -81,7 +85,7 @@ export function RangeTabs({
   );
 }
 
-type LayerKey = "plan" | "dwell" | "flow" | "paths";
+type LayerKey = "plan" | "dwell" | "flow" | "paths" | "risk";
 
 /**
  * The retail-analytics dashboard for ONE store, self-contained by `storeId` +
@@ -105,7 +109,9 @@ export function StoreAnalytics({
     dwell: true,
     flow: true,
     paths: false,
+    risk: false,
   });
+  const [risk, setRisk] = useState<RiskSummary | null>(null);
   const [heat, setHeat] = useState<FootfallGrid | null>(null);
   const [heatLoading, setHeatLoading] = useState(false);
   const [flow, setFlow] = useState<ZoneFlowSummary | null>(null);
@@ -219,6 +225,19 @@ export function StoreAnalytics({
       setPaths(null);
     }
   }, [storeId, hours]);
+
+  // Risk analytics load with the window — the panel below the map always shows
+  // them; the plan layer just toggles the incident dots on the drawing.
+  const loadRisk = useCallback(async () => {
+    try {
+      setRisk(await stores.risk(storeId, hours));
+    } catch {
+      setRisk(null);
+    }
+  }, [storeId, hours]);
+  useEffect(() => {
+    loadRisk();
+  }, [loadRisk]);
 
   // Flow loads with the window (not on toggle) — the trails are a headline
   // feature, so the data is ready the moment the layer is switched on.
@@ -356,6 +375,7 @@ export function StoreAnalytics({
                 {layers.flow && flow ? (
                   <ZoneFlowLayer plan={plan} flow={flow} />
                 ) : null}
+                {layers.risk && risk ? <RiskLayer plan={plan} data={risk} /> : null}
               </>
             }
           />
@@ -473,6 +493,16 @@ export function StoreAnalytics({
                   ) : null}
                 </div>
               ) : null}
+              <LayerRow
+                label="Эрсдэлийн цэгүүд"
+                checked={layers.risk}
+                hint={
+                  layers.risk && risk && risk.points.length === 0
+                    ? "байршилтай үйлдэл алга"
+                    : undefined
+                }
+                onChange={(v) => setLayers((s) => ({ ...s, risk: v }))}
+              />
               <LayerRow
                 label="Хэрэглэгчийн урсгал"
                 checked={layers.flow}
@@ -616,6 +646,21 @@ export function StoreAnalytics({
           </CardContent>
         </Card>
       </div>
+
+      {/* Risk analytics — the theft-detection half of the product, on the
+          analytics page: totals+trend, when incidents happen, what fires. */}
+      <Card>
+        <CardContent className="p-4">
+          <SectionHead icon={ShieldAlert} title="Эрсдэлийн аналитик" inline>
+            Сэжигтэй үйлдлүүд — хэзээ, хаана, юу
+          </SectionHead>
+          {risk ? (
+            <RiskPanel data={risk} />
+          ) : (
+            <EmptyBox loading error={false} onRetry={loadRisk} text="" />
+          )}
+        </CardContent>
+      </Card>
 
       {/* Peak-hour matrix + demographics */}
       <div className="grid gap-4 lg:grid-cols-[1fr_400px]">

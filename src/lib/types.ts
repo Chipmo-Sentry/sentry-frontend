@@ -108,3 +108,38 @@ export type DemographicsSummary = Required<Schemas["DemographicsSummary"]>;
 export type BehaviorDimension = Schemas["BehaviorDimension"];
 export type BehaviorConfig = Schemas["BehaviorConfig"];
 export type BehaviorConfigPatch = Schemas["BehaviorConfigPatch"];
+
+// ── Risk analytics (эрсдэлийн аналитик) ──────────────────────────────────────
+export interface RiskPoint {
+  x: number;
+  y: number;
+  pct: number;
+}
+export interface RiskEpisodeRow {
+  ts: string;
+  camera_name: string;
+  peak_risk_pct: number;
+  level: string;
+  behaviors: string[];
+  alerted: boolean;
+  duration_sec: number;
+}
+export interface RiskCell {
+  dow: number;
+  hour: number;
+  count: number;
+}
+export interface RiskSummary {
+  window_from: string;
+  window_to: string;
+  timezone: string;
+  total: number;
+  alerted: number;
+  prev_total: number;
+  max_cell: number;
+  cells: RiskCell[];
+  points: RiskPoint[];
+  top_behaviors: { key: string; count: number; share: number }[];
+  top_cameras: { key: string; count: number; share: number }[];
+  recent: RiskEpisodeRow[];
+}

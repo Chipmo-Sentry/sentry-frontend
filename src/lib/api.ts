@@ -15,6 +15,7 @@ import type {
   FloorPlan,
   FlowSummary,
   PathsSummary,
+  RiskSummary,
   ZoneFlowSummary,
   FootfallGrid,
   LoginResponse,
@@ -195,6 +196,13 @@ export const stores = {
     request<PathsSummary>(
       `/api/v1/stores/${id}/analytics/paths?hours=${hours}`,
     ),
+  /** Risk analytics: where/when suspicious episodes cluster (plan points,
+   * weekday-hour cells, top behaviors/cameras, latest episodes). */
+  risk: (id: string, hours = 168) =>
+    request<RiskSummary>(
+      `/api/v1/stores/${id}/analytics/risk?hours=${hours}`,
+    ),
+
   /** docs/30 F4 zone flow: net movement between named plan fixtures. */
   zoneFlow: (id: string, hours = 24) =>
     request<ZoneFlowSummary>(
