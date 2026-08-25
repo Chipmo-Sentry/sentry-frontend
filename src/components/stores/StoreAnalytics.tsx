@@ -32,7 +32,6 @@ const PlanViewport3D = dynamic(
 import { DemographicsPanel } from "@/components/stores/DemographicsPanel";
 import { FloorPlanViewport } from "@/components/stores/FloorPlanViewport";
 import { PathsLayer } from "@/components/stores/PathsLayer";
-import { RiskLayer } from "@/components/stores/RiskLayer";
 import { RiskPanel } from "@/components/stores/RiskPanel";
 import { ZoneFlowTable } from "@/components/stores/ZoneFlowTable";
 import { HeatmapLayer } from "@/components/stores/HeatmapLayer";
@@ -86,7 +85,7 @@ export function RangeTabs({
   );
 }
 
-type LayerKey = "plan" | "dwell" | "paths" | "risk";
+type LayerKey = "plan" | "dwell" | "paths";
 
 /**
  * The retail-analytics dashboard for ONE store, self-contained by `storeId` +
@@ -111,7 +110,6 @@ export function StoreAnalytics({
     plan: true,
     dwell: true,
     paths: false,
-    risk: false,
   });
   const [risk, setRisk] = useState<RiskSummary | null>(null);
   const [heat, setHeat] = useState<FootfallGrid | null>(null);
@@ -374,7 +372,6 @@ export function StoreAnalytics({
                     colorByHour={pathColorHour}
                   />
                 ) : null}
-                {layers.risk && risk ? <RiskLayer plan={plan} data={risk} /> : null}
               </>
             }
           />
@@ -492,16 +489,6 @@ export function StoreAnalytics({
                   ) : null}
                 </div>
               ) : null}
-              <LayerRow
-                label="Эрсдэлийн цэгүүд"
-                checked={layers.risk}
-                hint={
-                  layers.risk && risk && risk.points.length === 0
-                    ? "байршилтай үйлдэл алга"
-                    : undefined
-                }
-                onChange={(v) => setLayers((s) => ({ ...s, risk: v }))}
-              />
               {layers.dwell ? (
                 <div className="mt-3 rounded-md border border-(--color-border) p-2">
                   {heat && heat.cells.length > 0 ? (
