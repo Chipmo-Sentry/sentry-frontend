@@ -6,9 +6,10 @@
  */
 
 import { attachHls } from "@/lib/hls";
+import { attachLiveKit } from "@/lib/livekit";
 import { attachWhep } from "@/lib/whep";
 
-export type LiveTransport = "webrtc" | "hls";
+export type LiveTransport = "livekit" | "webrtc" | "hls";
 
 export type AttachCallbacks = {
   onTransport?: (t: LiveTransport) => void;
@@ -26,6 +27,10 @@ export type LiveVideoSource = {
   /** Skip the WebRTC attempt and go straight to HLS. Set for the cloud HTTPS HLS
    * proxy, where WebRTC (UDP/ICE) can't traverse and only adds a 4s dead wait. */
   hlsOnly?: boolean;
+  /** LiveKit SFU room join (adaptive simulcast) — preferred over WHEP/HLS when
+   * both are present. Falls through to the WHEP/HLS chain on failure. */
+  livekitUrl?: string | null;
+  livekitToken?: string | null;
 };
 
 /**
@@ -168,43 +173,85 @@ export function attachLiveVideo(
       }
     }
 
-    // Cloud HTTPS HLS proxy → WebRTC can't traverse it, so don't waste a 4s probe.
-    if (src.hlsOnly) {
-      startHls();
+    function startWhepOrHls() {
+      if (disposed) return;
+      // Cloud HTTPS HLS proxy → WebRTC can't traverse it, so don't waste a 4s probe.
+      if (src.hlsOnly) {
+        startHls();
+        return;
+      }
+
+      cbs.onTransport?.("webrtc");
+      const whep = attachWhep(video, src.whepUrl, {
+        onConnected: () => {
+          if (disposed || fellBack) return;
+          connectedOnce = true;
+          backoffMs = RECONNECT_MIN_MS; // reset after a healthy connection
+          cbs.onConnected?.();
+        },
+        onError: () => {
+          if (disposed || fellBack) return;
+          whep.close();
+          // Post-connect drop → full reconnect; initial failure → try HLS.
+          if (connectedOnce) scheduleReconnect();
+          else startHls();
+        },
+      });
+
+      // Safety net: if WebRTC produces no frames within a few seconds, fall back.
+      const fallbackTimer = setTimeout(() => {
+        if (disposed || fellBack) return;
+        if (video.readyState < 2) {
+          whep.close();
+          startHls();
+        }
+      }, 4000);
+
+      cleanup = () => {
+        clearTimeout(fallbackTimer);
+        whep.close();
+      };
+    }
+
+    // LiveKit first — the only transport with per-viewer ABR (simulcast +
+    // TWCC), so a lossy viewer link degrades quality instead of stuttering.
+    if (src.livekitUrl && src.livekitToken) {
+      cbs.onTransport?.("livekit");
+      let lkDone = false;
+      const lk = attachLiveKit(video, src.livekitUrl, src.livekitToken, {
+        onConnected: () => {
+          if (disposed || lkDone) return;
+          connectedOnce = true;
+          backoffMs = RECONNECT_MIN_MS;
+          cbs.onConnected?.();
+        },
+        onError: () => {
+          if (disposed || lkDone) return;
+          lkDone = true;
+          lk.close();
+          if (connectedOnce) scheduleReconnect();
+          else startWhepOrHls();
+        },
+      });
+      // No frames yet (empty room while the camera publisher is down, or the
+      // signalling ws is blocked) → fall through to WHEP/HLS; the reconnect
+      // loop re-attempts LiveKit on the next cycle.
+      const lkTimer = setTimeout(() => {
+        if (disposed || lkDone) return;
+        if (video.readyState < 2) {
+          lkDone = true;
+          lk.close();
+          startWhepOrHls();
+        }
+      }, 6000);
+      cleanup = () => {
+        clearTimeout(lkTimer);
+        lk.close();
+      };
       return;
     }
 
-    // WebRTC first.
-    cbs.onTransport?.("webrtc");
-    const whep = attachWhep(video, src.whepUrl, {
-      onConnected: () => {
-        if (disposed || fellBack) return;
-        connectedOnce = true;
-        backoffMs = RECONNECT_MIN_MS; // reset after a healthy connection
-        cbs.onConnected?.();
-      },
-      onError: () => {
-        if (disposed || fellBack) return;
-        whep.close();
-        // Post-connect drop → full reconnect; initial failure → try HLS.
-        if (connectedOnce) scheduleReconnect();
-        else startHls();
-      },
-    });
-
-    // Safety net: if WebRTC produces no frames within a few seconds, fall back.
-    const fallbackTimer = setTimeout(() => {
-      if (disposed || fellBack) return;
-      if (video.readyState < 2) {
-        whep.close();
-        startHls();
-      }
-    }, 4000);
-
-    cleanup = () => {
-      clearTimeout(fallbackTimer);
-      whep.close();
-    };
+    startWhepOrHls();
   }
 
   attempt();

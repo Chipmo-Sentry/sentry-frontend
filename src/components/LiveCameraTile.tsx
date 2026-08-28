@@ -49,6 +49,12 @@ const STATUS_LABEL: Record<Status, string> = {
   error: "Алдаа",
 };
 
+const TRANSPORT_LABEL: Record<LiveTransport, string> = {
+  livekit: "LiveKit ABR",
+  webrtc: "WebRTC",
+  hls: "HLS",
+};
+
 const STATUS_TONE: Record<
   Status,
   "neutral" | "success" | "warning" | "danger"
@@ -91,9 +97,12 @@ export function LiveCameraTile({
   const [transport, setTransport] = useState<LiveTransport>("webrtc");
   // Resolved stream URLs (with ?jwt=… when a read token is required). Null until
   // resolved so we don't attach the raw URL then immediately re-attach.
-  const [authUrls, setAuthUrls] = useState<{ whep: string; hls: string } | null>(
-    streamCameraId ? null : { whep: whepUrl, hls: hlsUrl },
-  );
+  const [authUrls, setAuthUrls] = useState<{
+    whep: string;
+    hls: string;
+    livekitUrl?: string | null;
+    livekitToken?: string | null;
+  } | null>(streamCameraId ? null : { whep: whepUrl, hls: hlsUrl });
 
   const { latest, state: wsState } = useLiveMetadata(cameraId);
 
@@ -119,24 +128,25 @@ export function LiveCameraTile({
     let cancelled = false;
     setPaymentRequired(false);
     camerasApi.streamToken(streamCameraId).then(
-      ({ token, hls_url, whep_url }) => {
+      ({ token, hls_url, whep_url, livekit_url, livekit_token }) => {
         if (cancelled) return;
+        const lk = { livekitUrl: livekit_url, livekitToken: livekit_token };
         // Best case: the node reports an HTTPS WHEP base → sub-second WebRTC
         // (jwt already appended by the backend), with the same-origin HLS proxy
         // as the in-player fallback.
         if (whep_url && hls_url) {
-          setAuthUrls({ whep: whep_url, hls: API_BASE_URL + hls_url });
+          setAuthUrls({ whep: whep_url, hls: API_BASE_URL + hls_url, ...lk });
           return;
         }
         // Otherwise the backend's HTTPS HLS proxy (no mixed-content, no
         // hardcoded ephemeral node port). whep="" makes attachLiveVideo go
         // straight to HLS — WebRTC can't traverse the proxy.
         if (hls_url) {
-          setAuthUrls({ whep: "", hls: API_BASE_URL + hls_url });
+          setAuthUrls({ whep: "", hls: API_BASE_URL + hls_url, ...lk });
           return;
         }
         const q = `?jwt=${encodeURIComponent(token)}`;
-        setAuthUrls({ whep: whepUrl + q, hls: hlsUrl + q });
+        setAuthUrls({ whep: whepUrl + q, hls: hlsUrl + q, ...lk });
       },
       (e: unknown) => {
         if (cancelled) return;
@@ -187,7 +197,13 @@ export function LiveCameraTile({
 
     detach = attachLiveVideo(
       video,
-      { whepUrl: authUrls.whep, hlsUrl: authUrls.hls, hlsOnly: !authUrls.whep },
+      {
+        whepUrl: authUrls.whep,
+        hlsUrl: authUrls.hls,
+        hlsOnly: !authUrls.whep,
+        livekitUrl: authUrls.livekitUrl,
+        livekitToken: authUrls.livekitToken,
+      },
       {
         onTransport: setTransport,
         onError: (e) => {
@@ -200,18 +216,25 @@ export function LiveCameraTile({
         refreshSource: streamCameraId
           ? async () => {
               try {
-                const { token, hls_url, whep_url } =
+                const { token, hls_url, whep_url, livekit_url, livekit_token } =
                   await camerasApi.streamToken(streamCameraId);
+                const lk = { livekitUrl: livekit_url, livekitToken: livekit_token };
                 if (whep_url && hls_url)
                   return {
                     whepUrl: whep_url,
                     hlsUrl: API_BASE_URL + hls_url,
                     hlsOnly: false,
+                    ...lk,
                   };
                 if (hls_url)
-                  return { whepUrl: "", hlsUrl: API_BASE_URL + hls_url, hlsOnly: true };
+                  return {
+                    whepUrl: "",
+                    hlsUrl: API_BASE_URL + hls_url,
+                    hlsOnly: true,
+                    ...lk,
+                  };
                 const q = `?jwt=${encodeURIComponent(token)}`;
-                return { whepUrl: whepUrl + q, hlsUrl: hlsUrl + q };
+                return { whepUrl: whepUrl + q, hlsUrl: hlsUrl + q, ...lk };
               } catch {
                 return null; // keep current URLs; the retry loop continues
               }
@@ -752,7 +775,7 @@ export function LiveCameraTile({
           <div>
             <p className="text-sm text-white/90">{STATUS_LABEL[status]}…</p>
             <p className="mt-0.5 text-xs text-white/45">
-              {transport === "webrtc" ? "WebRTC" : "HLS"} холболт
+              {TRANSPORT_LABEL[transport]} холболт
             </p>
           </div>
         </div>
@@ -787,7 +810,7 @@ export function LiveCameraTile({
               }`}
               aria-hidden
             />
-            {transport === "webrtc" ? "WebRTC" : "HLS"}
+            {TRANSPORT_LABEL[transport]}
           </span>
           <span>
             {status === "playing" && latest

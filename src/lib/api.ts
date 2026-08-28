@@ -261,6 +261,10 @@ export const cameras = {
       // Absolute HTTPS WHEP URL on the serving node (jwt appended) — present
       // only when the node reports an HTTPS WHEP base; sub-second WebRTC.
       whep_url?: string | null;
+      // LiveKit SFU (adaptive simulcast) — preferred by the player when both
+      // are present; token joins the camera's room subscribe-only.
+      livekit_url?: string | null;
+      livekit_token?: string | null;
     }>(`/api/v1/cameras/${encodeURIComponent(id)}/stream-token`),
 };
 
