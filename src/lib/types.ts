@@ -74,11 +74,16 @@ export interface ZoneFlowNode {
   type: string;
   x: number;
   y: number;
+  /** Gross movement into/out of the zone over the window (all edges). */
+  in_total?: number;
+  out_total?: number;
 }
 export interface ZoneFlowEdge {
   from_id: string;
   to_id: string;
   count: number;
+  /** Gross count of the opposite direction (count is the net winner). */
+  back_count?: number;
 }
 export interface WalkedPath {
   started_at: string;
