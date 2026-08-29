@@ -16407,6 +16407,30 @@
             },
             "type": "array",
             "title": "Series"
+          },
+          "prev_total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prev Total",
+            "default": null
+          },
+          "prev_avg_dwell_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prev Avg Dwell Seconds",
+            "default": null
           }
         },
         "type": "object",

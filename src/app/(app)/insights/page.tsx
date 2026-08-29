@@ -5,7 +5,11 @@ import { BarChart3, Store } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { RangeTabs, StoreAnalytics } from "@/components/stores/StoreAnalytics";
+import {
+  ANALYTICS_RANGES,
+  RangeTabs,
+  StoreAnalytics,
+} from "@/components/stores/StoreAnalytics";
 import { stores as storesApi } from "@/lib/api";
 import type { StorePublic } from "@/lib/types";
 
@@ -20,15 +24,31 @@ export default function InsightsPage() {
   const [storeId, setStoreId] = useState<string>("");
   const [hours, setHours] = useState(24);
 
+  // Store + range live in the URL (?store=…&h=…) so a refresh or a shared
+  // link lands on the same view instead of resetting to store #1 / 24h.
   useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const h = Number(q.get("h"));
+    if (ANALYTICS_RANGES.some((r) => r.hours === h)) setHours(h);
+    const urlStore = q.get("store");
     storesApi.list().then(
       (list) => {
         setStores(list);
-        if (list[0]) setStoreId(list[0].id);
+        const preferred = urlStore && list.find((s) => s.id === urlStore);
+        if (preferred) setStoreId(preferred.id);
+        else if (list[0]) setStoreId(list[0].id);
       },
       () => setStores([]),
     );
   }, []);
+
+  useEffect(() => {
+    if (!storeId) return;
+    const q = new URLSearchParams(window.location.search);
+    q.set("store", storeId);
+    q.set("h", String(hours));
+    window.history.replaceState(null, "", `?${q.toString()}`);
+  }, [storeId, hours]);
 
   return (
     <div className="p-4 md:p-8">

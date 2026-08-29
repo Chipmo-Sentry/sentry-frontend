@@ -14,7 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // three.js stays out of the main bundle — fetched only when 3D is opened.
 const PlanViewport3D = dynamic(
@@ -39,6 +39,7 @@ import { PeakMatrix } from "@/components/stores/PeakMatrix";
 import { TrafficChart } from "@/components/stores/TrafficChart";
 import { ZoneTable } from "@/components/stores/ZoneTable";
 import { stores } from "@/lib/api";
+import { zoneLabel } from "@/lib/zone-overlay";
 import type {
   DemographicsSummary,
   FloorPlan,
@@ -86,6 +87,92 @@ export function RangeTabs({
 }
 
 type LayerKey = "plan" | "dwell" | "paths";
+
+/** In-page sections for the sticky jump nav — the dashboard is 5+ screens
+ * tall, so the owner needs one-tap access to «Эрсдэл» instead of a scroll hunt. */
+const SECTIONS = [
+  { id: "a-kpi", label: "Тойм" },
+  { id: "a-map", label: "План" },
+  { id: "a-flow", label: "Урсгал" },
+  { id: "a-risk", label: "Эрсдэл" },
+  { id: "a-peak", label: "Хуваарь" },
+] as const;
+
+function SectionNav() {
+  const [active, setActive] = useState<string>(SECTIONS[0].id);
+  // The observer marks a section active while it crosses the upper third of
+  // the viewport — matches where the eye lands after a jump.
+  const ratios = useRef<Record<string, number>>({});
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries)
+          ratios.current[e.target.id] = e.isIntersecting ? e.intersectionRatio : 0;
+        let best: string | null = null;
+        let bestRatio = 0;
+        for (const s of SECTIONS) {
+          const r = ratios.current[s.id] ?? 0;
+          if (r > bestRatio) {
+            bestRatio = r;
+            best = s.id;
+          }
+        }
+        if (best) setActive(best);
+      },
+      { rootMargin: "-64px 0px -40% 0px", threshold: [0, 0.15, 0.4, 0.8] },
+    );
+    for (const s of SECTIONS) {
+      const el = document.getElementById(s.id);
+      if (el) obs.observe(el);
+    }
+    return () => obs.disconnect();
+  }, []);
+
+  return (
+    <nav
+      aria-label="Хэсгүүд"
+      className="sticky top-0 z-20 -mx-1 flex gap-1 overflow-x-auto rounded-lg border border-(--color-border) bg-(--color-background)/90 p-1 backdrop-blur"
+    >
+      {SECTIONS.map((s) => (
+        <button
+          key={s.id}
+          onClick={() =>
+            document
+              .getElementById(s.id)
+              ?.scrollIntoView({ behavior: "smooth", block: "start" })
+          }
+          className={`flex-1 rounded-md px-3 py-1.5 text-sm whitespace-nowrap transition-colors sm:flex-initial ${
+            active === s.id
+              ? "bg-(--color-primary) text-(--color-primary-foreground)"
+              : "text-(--color-muted-foreground) hover:text-(--color-foreground)"
+          }`}
+        >
+          {s.label}
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+/** KPI trend vs the previous same-length window. Visitors/dwell going UP is
+ * good news (unlike RiskPanel's Delta where up is bad). */
+function TrendBadge({ now, prev }: { now: number; prev: number | null | undefined }) {
+  if (prev == null || prev <= 0) return null;
+  const pct = Math.round(((now - prev) / prev) * 100);
+  if (pct === 0)
+    return <span className="text-xs text-(--color-muted-foreground)">±0%</span>;
+  const up = pct > 0;
+  return (
+    <span
+      className={`text-xs font-medium ${
+        up ? "text-(--color-success,#22C55E)" : "text-(--color-danger)"
+      }`}
+      title="Өмнөх ижил урттай үетэй харьцуулав"
+    >
+      {up ? "↑" : "↓"} {Math.abs(pct)}%
+    </span>
+  );
+}
 
 /**
  * The retail-analytics dashboard for ONE store, self-contained by `storeId` +
@@ -272,15 +359,27 @@ export function StoreAnalytics({
   // matrix on a browser set to another timezone.
   const tz = peak?.timezone;
 
+  // Busiest zone — actionable for the owner, unlike the raw sample counter it
+  // replaced. The breakdown arrives busiest-first from the backend.
+  const topZone = zones?.zones[0];
+  const topZoneName = topZone ? topZone.label || zoneLabel(topZone.type) : null;
+
   return (
     <div className="space-y-4">
+      <SectionNav />
+
       {/* KPI row */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div id="a-kpi" className="grid scroll-mt-14 grid-cols-2 gap-3 sm:grid-cols-4">
         <KpiCard
           icon={Users}
           label="Зочид"
           hint="Орц/гарцаар орсон давхардалгүй зочин (re-ID) · ажилтан хасагдсан"
           value={traffic ? traffic.total.toLocaleString() : "—"}
+          delta={
+            traffic ? (
+              <TrendBadge now={traffic.total} prev={traffic.prev_total} />
+            ) : null
+          }
         />
         <KpiCard
           icon={TrendingUp}
@@ -301,12 +400,24 @@ export function StoreAnalytics({
               ? fmtDwell(traffic.avg_dwell_seconds)
               : "—"
           }
+          delta={
+            traffic?.avg_dwell_seconds != null ? (
+              <TrendBadge
+                now={traffic.avg_dwell_seconds}
+                prev={traffic.prev_avg_dwell_seconds}
+              />
+            ) : null
+          }
         />
         <KpiCard
           icon={Footprints}
-          label="Идэвх"
-          hint="Бүртгэгдсэн байршлын цэг — харьцангуй индекс"
-          value={heat ? heat.total_samples.toLocaleString() : "—"}
+          label="Идэвхтэй бүс"
+          hint={
+            topZone
+              ? `Зочдын ${Math.round(topZone.share * 100)}% энд зогссон`
+              : "Хамгийн их зогсдог тавиур/булан"
+          }
+          value={topZoneName ?? "—"}
         />
       </div>
 
@@ -330,7 +441,7 @@ export function StoreAnalytics({
       ) : null}
 
       {/* Store map (floor plan) + layer switcher */}
-      <div>
+      <div id="a-map" className="scroll-mt-14">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <SectionHead icon={MapPinned} title="Дэлгүүрийн план зураг">
             Тавиур, орц/гарц, камерын байрлал ба зогсох дулааны давхарга
@@ -548,7 +659,7 @@ export function StoreAnalytics({
       </div>
 
       {/* Hourly traffic + zone breakdown */}
-      <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
+      <div id="a-flow" className="grid scroll-mt-14 gap-4 lg:grid-cols-[1fr_360px]">
         <Card>
           <CardContent className="p-4">
             <SectionHead icon={TrendingUp} title="Цагийн зочид" inline>
@@ -608,7 +719,7 @@ export function StoreAnalytics({
 
       {/* Risk analytics — the theft-detection half of the product, on the
           analytics page: totals+trend, when incidents happen, what fires. */}
-      <Card>
+      <Card id="a-risk" className="scroll-mt-14">
         <CardContent className="p-4">
           <SectionHead icon={ShieldAlert} title="Эрсдэлийн аналитик" inline>
             Сэжигтэй үйлдлүүд — хэзээ, хаана, юу
@@ -622,7 +733,7 @@ export function StoreAnalytics({
       </Card>
 
       {/* Peak-hour matrix + demographics */}
-      <div className="grid gap-4 lg:grid-cols-[1fr_400px]">
+      <div id="a-peak" className="grid scroll-mt-14 gap-4 lg:grid-cols-[1fr_400px]">
         <Card>
           <CardContent className="p-4">
             <SectionHead icon={CalendarClock} title="Ачааллын хуваарь" inline>
@@ -745,11 +856,13 @@ function KpiCard({
   label,
   value,
   hint,
+  delta,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: string;
   hint?: string;
+  delta?: React.ReactNode;
 }) {
   return (
     <Card>
@@ -760,8 +873,9 @@ function KpiCard({
         </div>
         {/* Long values ("14:00 · 25 зочин") must wrap, not blow the 2-col
             phone grid open — smaller size + break-words below sm. */}
-        <div className="mt-1 text-lg font-semibold break-words sm:text-2xl">
-          {value}
+        <div className="mt-1 flex items-baseline gap-2 text-lg font-semibold break-words sm:text-2xl">
+          <span className="min-w-0">{value}</span>
+          {delta}
         </div>
         {hint ? (
           <div className="mt-0.5 text-[11px] text-(--color-muted-foreground)">

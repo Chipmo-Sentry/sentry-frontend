@@ -3669,7 +3669,7 @@ export interface components {
              * Type
              * @enum {string}
              */
-            type: "shelf" | "exit" | "entrance" | "checkout" | "furniture" | "fridge" | "mannequin";
+            type: "shelf" | "exit" | "entrance" | "checkout" | "furniture" | "fridge";
             /** Label */
             label?: string | null;
             /** Points */
@@ -4762,6 +4762,16 @@ export interface components {
             avg_dwell_seconds?: number | null;
             /** Series */
             series?: components["schemas"]["TrafficPoint"][];
+            /**
+             * Prev Total
+             * @default null
+             */
+            prev_total: number | null;
+            /**
+             * Prev Avg Dwell Seconds
+             * @default null
+             */
+            prev_avg_dwell_seconds: number | null;
         };
         /**
          * UserAdminRow
@@ -4915,7 +4925,7 @@ export interface components {
              * Type
              * @enum {string}
              */
-            type: "exit" | "shelf" | "checkout" | "entrance" | "furniture" | "fridge" | "mannequin";
+            type: "exit" | "shelf" | "checkout" | "entrance" | "furniture" | "fridge";
             /** Points */
             points: [
                 number,
