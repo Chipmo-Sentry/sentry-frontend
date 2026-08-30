@@ -3,6 +3,7 @@
 import { Card, CardContent, ErrorState, Spinner } from "@chipmo-sentry/ui-kit";
 import {
   Box,
+  Activity,
   ArrowRightLeft,
   CalendarClock,
   ShieldAlert,
@@ -38,7 +39,7 @@ import { HeatmapLayer } from "@/components/stores/HeatmapLayer";
 import { PeakMatrix } from "@/components/stores/PeakMatrix";
 import { TrafficChart } from "@/components/stores/TrafficChart";
 import { ZoneTable } from "@/components/stores/ZoneTable";
-import { stores } from "@/lib/api";
+import { stores, type StoreSystemHealth } from "@/lib/api";
 import { zoneLabel } from "@/lib/zone-overlay";
 import type {
   DemographicsSummary,
@@ -96,6 +97,7 @@ const SECTIONS = [
   { id: "a-flow", label: "Урсгал" },
   { id: "a-risk", label: "Эрсдэл" },
   { id: "a-peak", label: "Хуваарь" },
+  { id: "a-health", label: "Чанар" },
 ] as const;
 
 function SectionNav() {
@@ -199,6 +201,7 @@ export function StoreAnalytics({
     paths: false,
   });
   const [risk, setRisk] = useState<RiskSummary | null>(null);
+  const [health, setHealth] = useState<StoreSystemHealth | null>(null);
   const [heat, setHeat] = useState<FootfallGrid | null>(null);
   const [heatLoading, setHeatLoading] = useState(false);
   const [flow, setFlow] = useState<ZoneFlowSummary | null>(null);
@@ -325,6 +328,18 @@ export function StoreAnalytics({
   useEffect(() => {
     loadRisk();
   }, [loadRisk]);
+
+  // System quality: camera availability, detection precision/FP, response time.
+  const loadHealth = useCallback(async () => {
+    try {
+      setHealth(await stores.systemHealth(storeId, hours));
+    } catch {
+      setHealth(null);
+    }
+  }, [storeId, hours]);
+  useEffect(() => {
+    loadHealth();
+  }, [loadHealth]);
 
   // Flow loads with the window (not on toggle) — the trails are a headline
   // feature, so the data is ready the moment the layer is switched on.
@@ -770,6 +785,109 @@ export function StoreAnalytics({
           </CardContent>
         </Card>
       </div>
+
+      {/* System quality — the operational half: is the store actually being
+          watched (camera availability), how accurate are the alerts, and how
+          fast does staff respond. */}
+      <Card id="a-health" className="scroll-mt-14">
+        <CardContent className="p-4">
+          <SectionHead icon={Activity} title="Системийн чанар" inline>
+            Камерын бэлэн байдал, илрүүлэлтийн нарийвчлал, хариу өгөх хугацаа
+          </SectionHead>
+          {health ? (
+            <SystemHealthPanel data={health} />
+          ) : (
+            <EmptyBox loading error={false} onRetry={loadHealth} text="" />
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+/** Camera availability + detection precision + alert response time. */
+function SystemHealthPanel({ data }: { data: StoreSystemHealth }) {
+  const { cameras: c, quality: q, response_time: rt } = data;
+  const fmtMin = (v: number | null) =>
+    v === null ? "—" : v < 1 ? `${Math.round(v * 60)} сек` : `${v} мин`;
+  const availTone =
+    c.availability_pct == null
+      ? ""
+      : c.availability_pct >= 95
+        ? "text-(--color-success,#22C55E)"
+        : c.availability_pct >= 80
+          ? "text-amber-500"
+          : "text-(--color-danger)";
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <HealthTile
+          label="Камерын бэлэн байдал"
+          value={c.availability_pct == null ? "—" : `${c.availability_pct}%`}
+          hint={`${c.online}/${c.online + c.offline} онлайн`}
+          tone={availTone}
+        />
+        <HealthTile
+          label="Илрүүлэлтийн нарийвчлал"
+          value={q.precision == null ? "—" : `${Math.round(q.precision * 100)}%`}
+          hint={q.labeled ? `✓${q.tp} / ✗${q.fp}` : "шошго алга"}
+        />
+        <HealthTile
+          label="Худал дохионы хувь"
+          value={q.fp_rate == null ? "—" : `${Math.round(q.fp_rate * 100)}%`}
+          hint={q.labeled ? `${q.labeled} шошготой` : "шошго алга"}
+        />
+        <HealthTile
+          label="Хариу өгөх хугацаа"
+          value={fmtMin(rt.median_min)}
+          hint={rt.count ? `медиан · ${rt.count} дохио` : "дата алга"}
+        />
+      </div>
+
+      {c.offline_list.length > 0 && (
+        <div className="space-y-1.5">
+          <div className="text-sm font-medium">Офлайн камерууд</div>
+          {c.offline_list.map((cam, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-2.5 rounded-md bg-(--color-muted) px-3 py-1.5 text-sm"
+            >
+              <span className="h-2 w-2 shrink-0 rounded-full bg-(--color-danger)" />
+              <span className="min-w-0 flex-1 truncate">{cam.camera}</span>
+              <span className="shrink-0 text-xs text-(--color-muted-foreground)">
+                {cam.reason}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+      <p className="text-xs text-(--color-muted-foreground)">
+        «Бэлэн байдал» нь одоогийн агшны байдал. Нарийвчлал/худал дохио нь
+        ажилтны «зөв/худал» тэмдэглэгээнээс, хариу өгөх хугацаа нь дохио гарснаас
+        анх тэмдэглэх хүртэлх зөрүү.
+      </p>
+    </div>
+  );
+}
+
+function HealthTile({
+  label,
+  value,
+  hint,
+  tone,
+}: {
+  label: string;
+  value: string;
+  hint: string;
+  tone?: string;
+}) {
+  return (
+    <div className="rounded-lg border border-(--color-border) p-3">
+      <div className="text-xs text-(--color-muted-foreground)">{label}</div>
+      <div className={`mt-1 text-2xl font-semibold tabular-nums ${tone ?? ""}`}>
+        {value}
+      </div>
+      <div className="mt-0.5 text-[11px] text-(--color-muted-foreground)">{hint}</div>
     </div>
   );
 }

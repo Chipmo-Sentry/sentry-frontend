@@ -222,7 +222,38 @@ export const stores = {
     request<DemographicsSummary>(
       `/api/v1/stores/${id}/analytics/demographics?hours=${hours}`,
     ),
+  /** System quality: camera availability + offline list, detection precision /
+   * false-alarm rate (from staff feedback), and alert→response time. */
+  systemHealth: (id: string, hours = 24 * 30) =>
+    request<StoreSystemHealth>(
+      `/api/v1/stores/${id}/analytics/system-health?hours=${hours}`,
+    ),
 };
+
+export interface StoreSystemHealth {
+  cameras: {
+    total_enabled: number;
+    online: number;
+    offline: number;
+    unknown: number;
+    availability_pct: number | null;
+    offline_list: { camera: string; reason: string }[];
+  };
+  quality: {
+    total_alerts: number;
+    labeled: number;
+    tp: number;
+    fp: number;
+    unclear: number;
+    precision: number | null;
+    fp_rate: number | null;
+  };
+  response_time: {
+    count: number;
+    median_min: number | null;
+    mean_min: number | null;
+  };
+}
 
 // === Cameras ===
 
