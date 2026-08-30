@@ -149,6 +149,9 @@ export interface StoreInput {
   address?: string | null;
   timezone?: string;
   telegram_chat_id?: string | null;
+  // Staff lanyard color for this store (named e.g. "orange"); "" clears it and
+  // falls back to the AI node's global color.
+  staff_badge_color?: string | null;
 }
 
 export const stores = {

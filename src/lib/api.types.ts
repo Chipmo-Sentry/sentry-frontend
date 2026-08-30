@@ -4642,6 +4642,11 @@ export interface components {
             timezone: string;
             /** Telegram Chat Id */
             telegram_chat_id?: string | null;
+            /**
+             * Staff Badge Color
+             * @default null
+             */
+            staff_badge_color: string | null;
         };
         /** StorePublic */
         StorePublic: {
@@ -4668,6 +4673,11 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /**
+             * Staff Badge Color
+             * @default null
+             */
+            staff_badge_color: string | null;
         };
         /** StoreUpdate */
         StoreUpdate: {
@@ -4679,6 +4689,11 @@ export interface components {
             timezone?: string | null;
             /** Telegram Chat Id */
             telegram_chat_id?: string | null;
+            /**
+             * Staff Badge Color
+             * @default null
+             */
+            staff_badge_color: string | null;
         };
         /**
          * StreamTokenResponse

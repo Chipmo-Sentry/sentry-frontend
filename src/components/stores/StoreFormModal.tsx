@@ -35,6 +35,20 @@ export function tzLabel(tz: string): string {
   return TIMEZONES.find((t) => t.value === tz)?.label ?? tz;
 }
 
+/** Staff lanyard colors — MUST match sentry-ai staff.py `_NAMED_HSV` keys.
+ * The swatch hex is only for the UI; the backend stores the name. */
+const BADGE_COLORS: { value: string; label: string; swatch: string }[] = [
+  { value: "", label: "— (үндсэн зангилааны өнгө)", swatch: "transparent" },
+  { value: "red", label: "Улаан", swatch: "#ef4444" },
+  { value: "orange", label: "Улбар шар", swatch: "#f97316" },
+  { value: "yellow", label: "Шар", swatch: "#eab308" },
+  { value: "green", label: "Ногоон", swatch: "#22c55e" },
+  { value: "cyan", label: "Цэнхэр (ногоон)", swatch: "#06b6d4" },
+  { value: "blue", label: "Хөх", swatch: "#3b82f6" },
+  { value: "purple", label: "Ягаан хөх", swatch: "#a855f7" },
+  { value: "pink", label: "Ягаан", swatch: "#ec4899" },
+];
+
 export interface StoreFormModalProps {
   open: boolean;
   store: StorePublic | null;
@@ -53,6 +67,7 @@ export function StoreFormModal({
   const [address, setAddress] = useState("");
   const [timezone, setTimezone] = useState(DEFAULT_TZ);
   const [telegramChatId, setTelegramChatId] = useState("");
+  const [badgeColor, setBadgeColor] = useState("");
   const [saving, setSaving] = useState(false);
 
   // Sync form when the target store changes / modal opens.
@@ -62,6 +77,7 @@ export function StoreFormModal({
     setAddress(store?.address ?? "");
     setTimezone(store?.timezone ?? DEFAULT_TZ);
     setTelegramChatId(store?.telegram_chat_id ?? "");
+    setBadgeColor(store?.staff_badge_color ?? "");
   }, [open, store]);
 
   async function onSubmit(e: React.FormEvent) {
@@ -72,6 +88,8 @@ export function StoreFormModal({
       address: address.trim() || null,
       timezone: timezone.trim() || DEFAULT_TZ,
       telegram_chat_id: telegramChatId.trim() || null,
+      // "" tells the backend to clear the override → node-global color.
+      staff_badge_color: badgeColor,
     };
     try {
       if (store) {
@@ -133,6 +151,35 @@ export function StoreFormModal({
                 </option>
               ))}
             </Select>
+          </Field>
+          <Field label="Ажилтны үнэмлэхний өнгө">
+            <div className="flex items-center gap-2">
+              <span
+                aria-hidden
+                className="h-6 w-6 shrink-0 rounded-full border border-(--color-border)"
+                style={{
+                  background:
+                    BADGE_COLORS.find((c) => c.value === badgeColor)?.swatch ??
+                    "transparent",
+                }}
+              />
+              <Select
+                value={badgeColor}
+                onChange={(e) => setBadgeColor(e.target.value)}
+                disabled={saving}
+                className="flex-1"
+              >
+                {BADGE_COLORS.map((c) => (
+                  <option key={c.value || "none"} value={c.value}>
+                    {c.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <span className="mt-1 block text-xs text-(--color-muted-foreground)">
+              Ажилтнууд энэ өнгийн хүзүүний үнэмлэх/оосор зүүсэн бол AI тэднийг
+              таниж, зочдын тооноос хасна. Дэлгүүр бүр өөр өнгөтэй байж болно.
+            </span>
           </Field>
           <div>
             <label

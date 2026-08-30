@@ -16118,6 +16118,19 @@
               }
             ],
             "title": "Telegram Chat Id"
+          },
+          "staff_badge_color": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Staff Badge Color",
+            "default": null
           }
         },
         "type": "object",
@@ -16172,6 +16185,18 @@
             "type": "string",
             "format": "date-time",
             "title": "Created At"
+          },
+          "staff_badge_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Staff Badge Color",
+            "default": null
           }
         },
         "type": "object",
@@ -16236,6 +16261,19 @@
               }
             ],
             "title": "Telegram Chat Id"
+          },
+          "staff_badge_color": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Staff Badge Color",
+            "default": null
           }
         },
         "type": "object",
