@@ -299,6 +299,9 @@ export const cameras = {
       // are present; token joins the camera's room subscribe-only.
       livekit_url?: string | null;
       livekit_token?: string | null;
+      // Cloudflare TURN ICE servers — when present the LiveKit player relays
+      // media through Cloudflare's edge/backbone (low-stutter distant path).
+      ice_servers?: RTCIceServer[] | null;
     }>(`/api/v1/cameras/${encodeURIComponent(id)}/stream-token`),
 };
 

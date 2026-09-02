@@ -102,6 +102,7 @@ export function LiveCameraTile({
     hls: string;
     livekitUrl?: string | null;
     livekitToken?: string | null;
+    iceServers?: RTCIceServer[] | null;
   } | null>(streamCameraId ? null : { whep: whepUrl, hls: hlsUrl });
 
   const { latest, state: wsState } = useLiveMetadata(cameraId);
@@ -128,9 +129,13 @@ export function LiveCameraTile({
     let cancelled = false;
     setPaymentRequired(false);
     camerasApi.streamToken(streamCameraId).then(
-      ({ token, hls_url, whep_url, livekit_url, livekit_token }) => {
+      ({ token, hls_url, whep_url, livekit_url, livekit_token, ice_servers }) => {
         if (cancelled) return;
-        const lk = { livekitUrl: livekit_url, livekitToken: livekit_token };
+        const lk = {
+          livekitUrl: livekit_url,
+          livekitToken: livekit_token,
+          iceServers: ice_servers,
+        };
         // Best case: the node reports an HTTPS WHEP base → sub-second WebRTC
         // (jwt already appended by the backend), with the same-origin HLS proxy
         // as the in-player fallback.
@@ -203,6 +208,7 @@ export function LiveCameraTile({
         hlsOnly: !authUrls.whep,
         livekitUrl: authUrls.livekitUrl,
         livekitToken: authUrls.livekitToken,
+        iceServers: authUrls.iceServers,
       },
       {
         onTransport: setTransport,
@@ -216,9 +222,13 @@ export function LiveCameraTile({
         refreshSource: streamCameraId
           ? async () => {
               try {
-                const { token, hls_url, whep_url, livekit_url, livekit_token } =
+                const { token, hls_url, whep_url, livekit_url, livekit_token, ice_servers } =
                   await camerasApi.streamToken(streamCameraId);
-                const lk = { livekitUrl: livekit_url, livekitToken: livekit_token };
+                const lk = {
+                  livekitUrl: livekit_url,
+                  livekitToken: livekit_token,
+                  iceServers: ice_servers,
+                };
                 if (whep_url && hls_url)
                   return {
                     whepUrl: whep_url,

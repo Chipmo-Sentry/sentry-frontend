@@ -18,9 +18,19 @@ export function attachLiveKit(
   url: string,
   token: string,
   cbs: LiveKitCallbacks = {},
+  iceServers?: RTCIceServer[] | null,
 ): { close: () => void } {
   let closed = false;
-  const room = new Room({ adaptiveStream: true });
+  // With Cloudflare TURN servers present, force media to RELAY through them:
+  // the direct host candidate (the node's public IP) is the long lossy MN→KR
+  // hop, so we skip it in favour of Cloudflare's nearby PoP + backbone. Without
+  // TURN, default ICE (host/srflx) as before.
+  const room = new Room({
+    adaptiveStream: true,
+    ...(iceServers && iceServers.length
+      ? { rtcConfig: { iceServers, iceTransportPolicy: "relay" as RTCIceTransportPolicy } }
+      : {}),
+  });
 
   const attachTrack = (track: Track) => {
     if (closed || track.kind !== Track.Kind.Video) return;

@@ -31,6 +31,9 @@ export type LiveVideoSource = {
    * both are present. Falls through to the WHEP/HLS chain on failure. */
   livekitUrl?: string | null;
   livekitToken?: string | null;
+  /** Cloudflare TURN ICE servers — when set, LiveKit relays media through
+   * Cloudflare's edge/backbone (low-stutter distant path). */
+  iceServers?: RTCIceServer[] | null;
 };
 
 /**
@@ -218,21 +221,27 @@ export function attachLiveVideo(
     if (src.livekitUrl && src.livekitToken) {
       cbs.onTransport?.("livekit");
       let lkDone = false;
-      const lk = attachLiveKit(video, src.livekitUrl, src.livekitToken, {
-        onConnected: () => {
-          if (disposed || lkDone) return;
-          connectedOnce = true;
-          backoffMs = RECONNECT_MIN_MS;
-          cbs.onConnected?.();
+      const lk = attachLiveKit(
+        video,
+        src.livekitUrl,
+        src.livekitToken,
+        {
+          onConnected: () => {
+            if (disposed || lkDone) return;
+            connectedOnce = true;
+            backoffMs = RECONNECT_MIN_MS;
+            cbs.onConnected?.();
+          },
+          onError: () => {
+            if (disposed || lkDone) return;
+            lkDone = true;
+            lk.close();
+            if (connectedOnce) scheduleReconnect();
+            else startWhepOrHls();
+          },
         },
-        onError: () => {
-          if (disposed || lkDone) return;
-          lkDone = true;
-          lk.close();
-          if (connectedOnce) scheduleReconnect();
-          else startWhepOrHls();
-        },
-      });
+        src.iceServers,
+      );
       // No frames yet (empty room while the camera publisher is down, or the
       // signalling ws is blocked) → fall through to WHEP/HLS; the reconnect
       // loop re-attempts LiveKit on the next cycle.
