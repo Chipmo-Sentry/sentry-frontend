@@ -10,7 +10,16 @@ import { zoneColor, zoneLabel } from "@/lib/zone-overlay";
  * are numbered (Тавиур 1, Тавиур 2…) in the order returned. Colours come from
  * the shared zone-style map so they match the plan viewport and /live.
  */
-export function ZoneTable({ data }: { data: ZoneBreakdown }) {
+export function ZoneTable({
+  data,
+  names,
+}: {
+  data: ZoneBreakdown;
+  /** Plan-wide zone names (fixture-names.ts) so this table says «Тавиур 2»
+   * for the same shelf the plan drawing labels «Тавиур 2». Without it the
+   * fallback numbers by activity rank, which changes with every window. */
+  names?: Map<string, string>;
+}) {
   if (data.zones.length === 0) {
     return (
       <div className="flex h-24 items-center justify-center text-sm text-(--color-muted-foreground)">
@@ -45,6 +54,7 @@ export function ZoneTable({ data }: { data: ZoneBreakdown }) {
         {data.zones.map((z) => {
           if (!z.label) seen[z.type] = (seen[z.type] ?? 0) + 1;
           const label =
+            names?.get(z.fixture_id) ||
             z.label ||
             zoneLabel(z.type) + (unnamedOfType(z.type) > 1 ? ` ${seen[z.type]}` : "");
           const pct = Math.round(z.share * 100);

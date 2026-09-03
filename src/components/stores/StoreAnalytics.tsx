@@ -15,7 +15,7 @@ import {
   Users,
 } from "lucide-react";
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // three.js stays out of the main bundle — fetched only when 3D is opened.
 const PlanViewport3D = dynamic(
@@ -40,6 +40,7 @@ import { PeakMatrix } from "@/components/stores/PeakMatrix";
 import { TrafficChart } from "@/components/stores/TrafficChart";
 import { ZoneTable } from "@/components/stores/ZoneTable";
 import { stores, type StoreSystemHealth } from "@/lib/api";
+import { fixtureNames } from "@/lib/fixture-names";
 import { zoneLabel } from "@/lib/zone-overlay";
 import type {
   DemographicsSummary,
@@ -87,7 +88,7 @@ export function RangeTabs({
   );
 }
 
-type LayerKey = "plan" | "dwell" | "paths";
+type LayerKey = "plan" | "labels" | "dwell" | "paths";
 
 /** In-page sections for the sticky jump nav — the dashboard is 5+ screens
  * tall, so the owner needs one-tap access to «Эрсдэл» instead of a scroll hunt. */
@@ -197,9 +198,12 @@ export function StoreAnalytics({
   // ZoneFlowTable card below the map now.
   const [layers, setLayers] = useState<Record<LayerKey, boolean>>({
     plan: true,
+    labels: true,
     dwell: true,
     paths: false,
   });
+  // One naming for the plan labels AND the zone tables (see fixture-names.ts).
+  const names = useMemo(() => (plan ? fixtureNames(plan) : undefined), [plan]);
   const [risk, setRisk] = useState<RiskSummary | null>(null);
   const [health, setHealth] = useState<StoreSystemHealth | null>(null);
   const [heat, setHeat] = useState<FootfallGrid | null>(null);
@@ -484,6 +488,7 @@ export function StoreAnalytics({
         <div className={threeD ? "hidden" : "grid gap-4 md:grid-cols-[1fr_260px]"}>
           <FloorPlanViewport
             plan={plan}
+            showLabels={layers.labels}
             dimPlan={layers.paths && !!paths}
             overlay={
               <>
@@ -511,6 +516,11 @@ export function StoreAnalytics({
                 label="План зураг"
                 checked={layers.plan}
                 onChange={(v) => setLayers((s) => ({ ...s, plan: v }))}
+              />
+              <LayerRow
+                label="Бүсийн нэр (тавиур, орц/гарц)"
+                checked={layers.labels}
+                onChange={(v) => setLayers((s) => ({ ...s, labels: v }))}
               />
               <LayerRow
                 label="Хэрэглэгчдийн төвлөрөл"
@@ -699,7 +709,7 @@ export function StoreAnalytics({
               Аль тавиур/буланд хамгийн их зогсдог
             </SectionHead>
             {zones && !noData ? (
-              <ZoneTable data={zones} />
+              <ZoneTable data={zones} names={names} />
             ) : (
               <EmptyBox
                 loading={!zones && !failed.traffic}
@@ -720,7 +730,7 @@ export function StoreAnalytics({
             Бүс хоорондын шилжилтүүд — ихээс бага руу
           </SectionHead>
           {flow ? (
-            <ZoneFlowTable flow={flow} />
+            <ZoneFlowTable flow={flow} names={names} />
           ) : (
             <EmptyBox
               loading={!failed.flow}

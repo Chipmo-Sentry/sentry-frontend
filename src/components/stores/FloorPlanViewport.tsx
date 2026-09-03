@@ -3,6 +3,7 @@
 import { Maximize2, Minus, Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { fixtureName, fixtureNames } from "@/lib/fixture-names";
 import { planExtent } from "@/lib/plan-extent";
 import type {
   FloorFixture,
@@ -25,6 +26,10 @@ interface Props {
   /** Fade fixtures/walls so a data overlay (flow routes) reads first — the
    * plan stays for context, the data carries the story. */
   dimPlan?: boolean;
+  /** Print each zone's name on the drawing («Тавиур 2», «Орц/Гарц», the
+   * operator's own «Архины тавиур») — the owner reads the analytics tables
+   * against the plan, so the plan has to say which shelf is which. */
+  showLabels?: boolean;
 }
 
 /**
@@ -39,8 +44,14 @@ const MAX_ZOOM = 8;
 
 type ViewBox = { x: number; y: number; w: number; h: number };
 
-export function FloorPlanViewport({ plan, overlay, dimPlan = false }: Props) {
+export function FloorPlanViewport({
+  plan,
+  overlay,
+  dimPlan = false,
+  showLabels = true,
+}: Props) {
   const [hover, setHover] = useState<string | null>(null);
+  const names = useMemo(() => fixtureNames(plan), [plan]);
 
   // Frame the DRAWN store, not the whole canvas: a ~10×10 m store on a 20-200 m
   // canvas rendered as a speck with monstrous canvas-proportioned marks. The
@@ -254,6 +265,21 @@ export function FloorPlanViewport({ plan, overlay, dimPlan = false }: Props) {
           ))}
         </g>
 
+        {/* Zone names at each fixture's centroid. Kept OUT of the dimmed group
+            (only softened) so the names still anchor a data overlay. */}
+        {showLabels ? (
+          <g opacity={dimPlan ? 0.55 : 1} style={{ pointerEvents: "none" }}>
+            {plan.fixtures.map((f, i) => (
+              <FixtureLabel
+                key={`l${f.id ?? i}`}
+                fixture={f}
+                name={fixtureName(names, f, i)}
+                base={base}
+              />
+            ))}
+          </g>
+        ) : null}
+
         {/* Overall dimension lines (blueprint style): width below, height
             left — drawn only when something IS drawn. */}
         {!isEmpty ? <DimensionLines plan={plan} ext={ext} base={base} /> : null}
@@ -433,6 +459,85 @@ function FixturePolygon({
       {/* Operator-named zones («Архины тавиур») read as themselves on hover. */}
       <title>{fixture.label || zoneLabel(fixture.type)}</title>
     </polygon>
+  );
+}
+
+/** Zone name printed at the polygon's area centroid. Sized to fit INSIDE the
+ * fixture (shrinks along its long side, floors at a still-legible size) and
+ * turned vertical for tall narrow shelves so the text runs along them. White
+ * with a dark halo, the same grammar as the flow/route labels. */
+function FixtureLabel({
+  fixture,
+  name,
+  base,
+}: {
+  fixture: FloorFixture;
+  name: string;
+  /** Smaller plan dimension — all marks scale off it (see FloorPlanViewport). */
+  base: number;
+}) {
+  const pts = fixture.points;
+  if (pts.length < 3 || !name) return null;
+  // Signed-area centroid (a plain vertex mean drifts on L-shaped polygons).
+  let area = 0;
+  let cx = 0;
+  let cy = 0;
+  let x1 = Infinity;
+  let y1 = Infinity;
+  let x2 = -Infinity;
+  let y2 = -Infinity;
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i];
+    const b = pts[(i + 1) % pts.length];
+    if (!a || !b) continue;
+    const [ax, ay] = a;
+    const [bx, by] = b;
+    const cross = ax * by - bx * ay;
+    area += cross;
+    cx += (ax + bx) * cross;
+    cy += (ay + by) * cross;
+    x1 = Math.min(x1, ax);
+    y1 = Math.min(y1, ay);
+    x2 = Math.max(x2, ax);
+    y2 = Math.max(y2, ay);
+  }
+  if (Math.abs(area) > 1e-9) {
+    cx /= 3 * area;
+    cy /= 3 * area;
+  } else {
+    cx = (x1 + x2) / 2;
+    cy = (y1 + y2) / 2;
+  }
+  const w = x2 - x1;
+  const h = y2 - y1;
+  const vertical = h > w * 1.4;
+  const along = vertical ? h : w;
+  const across = vertical ? w : h;
+  // Too thin to carry text (a window, a wall-hugging strip): the legend and
+  // the hover title still name it.
+  if (across < base * 0.012) return null;
+  const chars = Math.max(name.length, 3) * 0.58; // ≈ em per character
+  const font = Math.max(
+    Math.min(base * 0.03, (along * 0.9) / chars, across * 0.8),
+    base * 0.014,
+  );
+  return (
+    <text
+      x={cx}
+      y={cy}
+      textAnchor="middle"
+      dominantBaseline="central"
+      fontSize={font}
+      fontWeight={600}
+      fill="#f8fafc"
+      stroke="rgba(10,15,30,0.8)"
+      strokeWidth={font / 7}
+      paintOrder="stroke"
+      fontFamily="ui-sans-serif, system-ui, sans-serif"
+      transform={vertical ? `rotate(-90 ${cx} ${cy})` : undefined}
+    >
+      {name}
+    </text>
   );
 }
 

@@ -13,7 +13,19 @@ import { zoneColor } from "@/lib/zone-overlay";
  * winner vs. the gross return flow). Zone chips wear the shared zone colours so
  * the table reads against the plan and the activity list.
  */
-export function ZoneFlowTable({ flow }: { flow: ZoneFlowSummary }) {
+export function ZoneFlowTable({
+  flow,
+  names,
+}: {
+  flow: ZoneFlowSummary;
+  /** Plan-wide zone names (fixture-names.ts): the backend labels flow nodes
+   * by global fixture index («Тавиур 3» = 3rd fixture, not 3rd shelf), so the
+   * shared map wins whenever it knows the node; walkway-style nodes keep
+   * their backend label. */
+  names?: Map<string, string>;
+}) {
+  const nameOf = (n: { id: string; label: string } | undefined) =>
+    n ? (names?.get(n.id) ?? n.label) : "?";
   const { rows, attractor, source } = useMemo(() => {
     const byId = new Map(flow.nodes.map((n) => [n.id, n]));
     const total = flow.edges.reduce((s, e) => s + e.count, 0) || 1;
@@ -76,7 +88,7 @@ export function ZoneFlowTable({ flow }: { flow: ZoneFlowSummary }) {
             <SummaryChip
               icon={ArrowDownToDot}
               label="Хамгийн их татдаг"
-              zone={attractor.label}
+              zone={nameOf(attractor)}
               color={zoneColor(attractor.type)}
               value={`${(attractor.in_total ?? 0).toLocaleString()} орсон`}
             />
@@ -85,7 +97,7 @@ export function ZoneFlowTable({ flow }: { flow: ZoneFlowSummary }) {
             <SummaryChip
               icon={ArrowUpFromDot}
               label="Хамгийн их гаргадаг"
-              zone={source.label}
+              zone={nameOf(source)}
               color={zoneColor(source.type)}
               value={`${(source.out_total ?? 0).toLocaleString()} гарсан`}
             />
@@ -123,9 +135,9 @@ export function ZoneFlowTable({ flow }: { flow: ZoneFlowSummary }) {
                 </td>
                 <td className="py-2 pr-2">
                   <span className="flex items-center gap-1.5">
-                    <ZoneChip label={r.from?.label ?? "?"} color={zoneColor(r.from?.type ?? "")} />
+                    <ZoneChip label={nameOf(r.from)} color={zoneColor(r.from?.type ?? "")} />
                     <MoveRight className="h-3.5 w-3.5 shrink-0 text-(--color-muted-foreground)" />
-                    <ZoneChip label={r.to?.label ?? "?"} color={zoneColor(r.to?.type ?? "")} />
+                    <ZoneChip label={nameOf(r.to)} color={zoneColor(r.to?.type ?? "")} />
                   </span>
                 </td>
                 <td className="py-2 pr-2 text-right font-medium tabular-nums">
