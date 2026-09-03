@@ -30,6 +30,9 @@ interface Props {
    * operator's own «Архины тавиур») — the owner reads the analytics tables
    * against the plan, so the plan has to say which shelf is which. */
   showLabels?: boolean;
+  /** Small embedded plan (a route preview in a card): no legend chips or
+   * dimension lines competing with the overlay for the little space there is. */
+  compact?: boolean;
 }
 
 /**
@@ -49,6 +52,7 @@ export function FloorPlanViewport({
   overlay,
   dimPlan = false,
   showLabels = true,
+  compact = false,
 }: Props) {
   const [hover, setHover] = useState<string | null>(null);
   const names = useMemo(() => fixtureNames(plan), [plan]);
@@ -282,7 +286,7 @@ export function FloorPlanViewport({
 
         {/* Overall dimension lines (blueprint style): width below, height
             left — drawn only when something IS drawn. */}
-        {!isEmpty ? <DimensionLines plan={plan} ext={ext} base={base} /> : null}
+        {!isEmpty && !compact ? <DimensionLines plan={plan} ext={ext} base={base} /> : null}
 
         {/* Cameras: FOV cone + body + label */}
         {plan.cameras.map((c, i) => (
@@ -320,7 +324,7 @@ export function FloorPlanViewport({
       ) : null}
 
       {/* Legend chip row */}
-      {legend.length > 0 ? (
+      {legend.length > 0 && !compact ? (
         <div className="absolute bottom-2 left-2 flex flex-wrap gap-1.5">
           {legend.map(([type, n]) => (
             <span

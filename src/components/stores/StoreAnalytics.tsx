@@ -34,6 +34,7 @@ import { DemographicsPanel } from "@/components/stores/DemographicsPanel";
 import { FloorPlanViewport } from "@/components/stores/FloorPlanViewport";
 import { PathsLayer } from "@/components/stores/PathsLayer";
 import { RiskPanel } from "@/components/stores/RiskPanel";
+import { VisitorRoutes } from "@/components/stores/VisitorRoutes";
 import { ZoneFlowTable } from "@/components/stores/ZoneFlowTable";
 import { HeatmapLayer } from "@/components/stores/HeatmapLayer";
 import { PeakMatrix } from "@/components/stores/PeakMatrix";
@@ -349,9 +350,11 @@ export function StoreAnalytics({
   useEffect(() => {
     loadFlow();
   }, [loadFlow]);
+  // Paths feed both the opt-in spaghetti layer and the always-on per-visitor
+  // routes card, so they load with the window like the rest.
   useEffect(() => {
-    if (layers.paths) loadPaths();
-  }, [layers.paths, loadPaths]);
+    loadPaths();
+  }, [loadPaths]);
   useEffect(() => {
     loadTraffic();
   }, [loadTraffic]);
@@ -732,6 +735,21 @@ export function StoreAnalytics({
               onRetry={loadFlow}
               text=""
             />
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Per-visitor routes: the tracker follows each person from the door,
+          so show where EACH visitor went, not only the aggregate flow. */}
+      <Card>
+        <CardContent className="p-4">
+          <SectionHead icon={Footprints} title="Үйлчлүүлэгчийн маршрут" inline>
+            Зочин бүр орж ирээд хаагуур явсан — сүүлийн зочид, шинэ нь дээрээ
+          </SectionHead>
+          {paths ? (
+            <VisitorRoutes plan={plan} data={paths} tz={tz} />
+          ) : (
+            <EmptyBox loading error={false} onRetry={loadPaths} text="" />
           )}
         </CardContent>
       </Card>
