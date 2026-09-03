@@ -89,6 +89,12 @@ export function routeStops(path: WalkedPath, polys: Poly[], size: [number, numbe
   return stops;
 }
 
+/** Backend visitor number «20260903-012»; rows older than the backfill fall
+ * back to their position in the window. */
+function visitorNo(p: WalkedPath, idx: number): string {
+  return p.visitor_id || `#${idx + 1}`;
+}
+
 function fmtDuration(sec: number): string {
   const s = Math.round(sec);
   if (s < 60) return `${s} сек`;
@@ -193,7 +199,9 @@ export function VisitorRoutes({
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-(--color-card) text-left text-[11px] text-(--color-muted-foreground)">
               <tr className="border-b border-(--color-border)">
-                <th className="w-8 py-1.5 pr-1 font-medium">#</th>
+                <th className="py-1.5 pr-2 font-medium" title="Зочны дугаар: он-сар-өдөр + тухайн өдрийн дараалал">
+                  ID
+                </th>
                 <th className="w-16 py-1.5 pr-2 font-medium">Цаг</th>
                 <th className="hidden w-24 py-1.5 pr-2 font-medium sm:table-cell">Хугацаа</th>
                 <th className="py-1.5 font-medium">Маршрут</th>
@@ -217,8 +225,8 @@ export function VisitorRoutes({
                       active ? "bg-(--color-primary)/12" : "hover:bg-(--color-muted)/40"
                     }`}
                   >
-                    <td className="py-2 pr-1 text-xs text-(--color-muted-foreground) tabular-nums">
-                      {v.idx + 1}
+                    <td className="py-2 pr-2 text-xs text-(--color-muted-foreground) tabular-nums whitespace-nowrap">
+                      {visitorNo(v.path, v.idx)}
                     </td>
                     <td className="py-2 pr-2 tabular-nums" title={demo || undefined}>
                       <div>{timeFmt.format(new Date(v.path.started_at))}</div>
@@ -254,8 +262,8 @@ export function VisitorRoutes({
       <div>
         <div className="mb-1.5 flex items-center justify-between text-xs text-(--color-muted-foreground)">
           <span>
-            #{current.idx + 1} · {timeFmt.format(new Date(current.path.started_at))} ·{" "}
-            {fmtDuration(current.path.duration_sec)}
+            <b className="text-(--color-foreground)">{visitorNo(current.path, current.idx)}</b> ·{" "}
+            {timeFmt.format(new Date(current.path.started_at))} · {fmtDuration(current.path.duration_sec)}
           </span>
           <span className="flex items-center gap-2">
             <span className="flex items-center gap-1">

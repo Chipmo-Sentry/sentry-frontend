@@ -91,6 +91,9 @@ export interface WalkedPath {
   points: number[][];
   gender?: string | null;
   age_band?: string | null;
+  /** «YYYYMMDD-NNN» visitor number assigned by the backend (store-local date +
+   * that day's running sequence); null for rows older than the backfill. */
+  visitor_id?: string | null;
 }
 export interface PathsSummary {
   window_from: string;
