@@ -88,7 +88,7 @@ export function RangeTabs({
   );
 }
 
-type LayerKey = "plan" | "labels" | "dwell" | "paths";
+type LayerKey = "labels" | "dwell" | "paths";
 
 /** In-page sections for the sticky jump nav — the dashboard is 5+ screens
  * tall, so the owner needs one-tap access to «Эрсдэл» instead of a scroll hunt. */
@@ -197,7 +197,6 @@ export function StoreAnalytics({
   // Flow arrows/toggle removed entirely (owner): the flow reads as the
   // ZoneFlowTable card below the map now.
   const [layers, setLayers] = useState<Record<LayerKey, boolean>>({
-    plan: true,
     labels: true,
     dwell: true,
     paths: false,
@@ -321,7 +320,7 @@ export function StoreAnalytics({
   }, [storeId, hours]);
 
   // Risk analytics load with the window — the panel below the map always shows
-  // them; the plan layer just toggles the incident dots on the drawing.
+  // them.
   const loadRisk = useCallback(async () => {
     try {
       setRisk(await stores.risk(storeId, hours));
@@ -512,11 +511,6 @@ export function StoreAnalytics({
                 <Layers className="h-4 w-4" />
                 Давхарга
               </div>
-              <LayerRow
-                label="План зураг"
-                checked={layers.plan}
-                onChange={(v) => setLayers((s) => ({ ...s, plan: v }))}
-              />
               <LayerRow
                 label="Бүсийн нэр (тавиур, орц/гарц)"
                 checked={layers.labels}
