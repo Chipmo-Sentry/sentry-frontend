@@ -382,8 +382,12 @@ export function StoreAnalytics({
 
   // Busiest zone — actionable for the owner, unlike the raw sample counter it
   // replaced. The breakdown arrives busiest-first from the backend.
+  // Named with the shared plan naming («Тавиур 2», «Архины тавиур») so the
+  // tile says WHICH shelf, matching the drawing and the tables.
   const topZone = zones?.zones[0];
-  const topZoneName = topZone ? topZone.label || zoneLabel(topZone.type) : null;
+  const topZoneName = topZone
+    ? names?.get(topZone.fixture_id) || topZone.label || zoneLabel(topZone.type)
+    : null;
 
   return (
     <div className="space-y-4">
