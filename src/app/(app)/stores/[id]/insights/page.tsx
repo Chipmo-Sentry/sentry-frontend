@@ -48,7 +48,7 @@ export default function StoreInsightsPage() {
         </div>
       </div>
 
-      <StoreAnalytics storeId={storeId} hours={hours} />
+      <StoreAnalytics storeId={storeId} hours={hours} storeName={store?.name} />
     </div>
   );
 }

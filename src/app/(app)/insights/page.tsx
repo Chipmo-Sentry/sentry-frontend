@@ -104,7 +104,11 @@ export default function InsightsPage() {
           </CardContent>
         </Card>
       ) : storeId ? (
-        <StoreAnalytics storeId={storeId} hours={hours} />
+        <StoreAnalytics
+          storeId={storeId}
+          hours={hours}
+          storeName={stores.find((s) => s.id === storeId)?.name}
+        />
       ) : null}
     </div>
   );

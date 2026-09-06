@@ -1,6 +1,17 @@
 "use client";
 
-import { Card, CardContent, ErrorState, Spinner } from "@chipmo-sentry/ui-kit";
+import {
+  Button,
+  Card,
+  CardContent,
+  Dropdown,
+  DropdownContent,
+  DropdownItem,
+  DropdownSeparator,
+  DropdownTrigger,
+  ErrorState,
+  Spinner,
+} from "@chipmo-sentry/ui-kit";
 import {
   Box,
   Activity,
@@ -8,6 +19,7 @@ import {
   CalendarClock,
   ShieldAlert,
   Clock,
+  Download,
   Footprints,
   Layers,
   MapPinned,
@@ -15,7 +27,15 @@ import {
   Users,
 } from "lucide-react";
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 // three.js stays out of the main bundle — fetched only when 3D is opened.
 const PlanViewport3D = dynamic(
@@ -40,7 +60,15 @@ import { HeatmapLayer } from "@/components/stores/HeatmapLayer";
 import { PeakMatrix } from "@/components/stores/PeakMatrix";
 import { TrafficChart } from "@/components/stores/TrafficChart";
 import { ZoneTable } from "@/components/stores/ZoneTable";
-import { stores, type StoreSystemHealth } from "@/lib/api";
+import { behaviors as behaviorsApi, stores, type StoreSystemHealth } from "@/lib/api";
+import {
+  EXPORT_DATASETS,
+  analyticsFileName,
+  buildAnalyticsCsv,
+  downloadCsv,
+  type AnalyticsExportInput,
+  type ExportDataset,
+} from "@/lib/analytics-export";
 import { fixtureNames } from "@/lib/fixture-names";
 import { zoneLabel } from "@/lib/zone-overlay";
 import type {
@@ -102,7 +130,7 @@ const SECTIONS = [
   { id: "a-health", label: "Чанар" },
 ] as const;
 
-function SectionNav() {
+function SectionNav({ actions }: { actions?: ReactNode }) {
   const [active, setActive] = useState<string>(SECTIONS[0].id);
   // The observer marks a section active while it crosses the upper third of
   // the viewport — matches where the eye lands after a jump.
@@ -154,7 +182,78 @@ function SectionNav() {
           {s.label}
         </button>
       ))}
+      {actions ? <div className="ml-auto shrink-0 pl-1">{actions}</div> : null}
     </nav>
+  );
+}
+
+/**
+ * «CSV татах» menu in the sticky section nav. Serialises what the dashboard
+ * already holds (see analytics-export.ts) — one file with every section, or a
+ * single dataset. Behaviour labels are fetched lazily on the first export so
+ * the risk sheet reads in Mongolian like the RiskPanel does.
+ */
+function ExportMenu({
+  disabled,
+  storeName,
+  hours,
+  build,
+}: {
+  disabled: boolean;
+  storeName?: string;
+  hours: number;
+  /** Snapshot of the loaded data, resolved at click time (never stale). */
+  build: () => Omit<AnalyticsExportInput, "behaviorLabels">;
+}) {
+  const [busy, setBusy] = useState(false);
+  const labelsRef = useRef<Record<string, string> | null>(null);
+
+  const run = async (dataset: ExportDataset) => {
+    setBusy(true);
+    try {
+      if (labelsRef.current === null && (dataset === "all" || dataset === "risk")) {
+        try {
+          const cfg = await behaviorsApi.get();
+          const map: Record<string, string> = {};
+          for (const d of cfg.dimensions) map[d.key] = d.label_mn;
+          labelsRef.current = map;
+        } catch {
+          labelsRef.current = {}; // raw keys are fine; don't block the export
+        }
+      }
+      const csv = buildAnalyticsCsv(dataset, {
+        ...build(),
+        behaviorLabels: labelsRef.current ?? undefined,
+      });
+      downloadCsv(analyticsFileName(dataset, storeName, hours), csv);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dropdown>
+      <DropdownTrigger asChild>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={disabled || busy}
+          aria-label="Өгөгдөл татах (CSV)"
+          title="Аналитикийн өгөгдлийг CSV файлаар татах"
+        >
+          <Download className="h-4 w-4" />
+          <span className="hidden sm:inline">CSV татах</span>
+        </Button>
+      </DropdownTrigger>
+      <DropdownContent align="end">
+        {EXPORT_DATASETS.map((d, idx) => (
+          <Fragment key={d.key}>
+            {idx === 1 ? <DropdownSeparator /> : null}
+            <DropdownItem onClick={() => void run(d.key)}>{d.label}</DropdownItem>
+          </Fragment>
+        ))}
+      </DropdownContent>
+    </Dropdown>
   );
 }
 
@@ -188,9 +287,12 @@ function TrendBadge({ now, prev }: { now: number; prev: number | null | undefine
 export function StoreAnalytics({
   storeId,
   hours,
+  storeName,
 }: {
   storeId: string;
   hours: number;
+  /** Shown in the CSV summary + file name; optional (pages may not have it yet). */
+  storeName?: string;
 }) {
   const [plan, setPlan] = useState<FloorPlan | null>(null);
   const [threeD, setThreeD] = useState(false);
@@ -391,7 +493,29 @@ export function StoreAnalytics({
 
   return (
     <div className="space-y-4">
-      <SectionNav />
+      <SectionNav
+        actions={
+          <ExportMenu
+            // Nothing to export until at least one section has loaded.
+            disabled={!traffic && !zones && !flow && !peak && !risk && !demo}
+            storeName={storeName}
+            hours={hours}
+            build={() => ({
+              storeName,
+              hours,
+              tz,
+              names,
+              traffic,
+              zones,
+              flow,
+              demo,
+              peak,
+              risk,
+              health,
+            })}
+          />
+        }
+      />
 
       {/* KPI row */}
       <div id="a-kpi" className="grid scroll-mt-14 grid-cols-2 gap-3 sm:grid-cols-4">
