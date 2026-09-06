@@ -39,8 +39,11 @@ export function TrafficChart({
 
   const max = Math.max(1, ...bars.map((b) => b.entries));
   const dayWindow = bars.length <= 26; // ≈24h view → hour labels; else dates
-  // Down-sample x-axis labels so a 30-day window doesn't crowd.
-  const labelEvery = Math.ceil(bars.length / 12);
+  // Down-sample x-axis labels so a 30-day window doesn't crowd. Multi-day
+  // windows step in whole days so date labels never repeat ("09/01, 09/01").
+  const labelEvery = dayWindow
+    ? Math.ceil(bars.length / 12)
+    : Math.ceil(bars.length / 12 / 24) * 24;
   // Y gridlines at max and its midpoint — enough to read magnitude off the
   // chart without hovering every bar.
   const mid = Math.round(max / 2);
@@ -78,12 +81,16 @@ export function TrafficChart({
           {bars.map((b) => (
             <div
               key={b.idx}
-              className="group relative flex-1"
+              // h-full + items-end: the column must have a DEFINITE height
+              // (the h-32 track) or the bar's percentage height resolves to
+              // 0 and the chart renders as empty axes. (Regression: the
+              // parent's items-end stopped stretching the columns.)
+              className="group relative flex h-full flex-1 items-end"
               style={{ minWidth: 2 }}
             >
               <div
                 className="w-full rounded-t-sm bg-(--color-primary) transition-colors group-hover:bg-(--color-primary)/80"
-                style={{ height: `${(b.entries / max) * 100}%` }}
+                style={{ height: `${(b.entries / max) * 100}%`, minHeight: b.entries > 0 ? 1 : 0 }}
               />
               {/* tooltip */}
               <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded bg-(--color-background) px-2 py-1 text-xs shadow group-hover:block">
